@@ -16,12 +16,16 @@ See the Mulan PSL v2 for more details.
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-oceanbase</artifactId>
+  <artifactId>flink-connector-oceanbase-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <name>Flink : Connectors : OceanBase : Parent</name>
+  <packaging>pom</packaging>
+  <inceptionYear>2023</inceptionYear>
 
-  <name>${project.groupId}:${project.artifactId}</name>
-  <description>Apache Flink Connector for OceanBase</description>
-  <url>https://github.com/oceanbase/flink-connector-oceanbase</url>
+  <organization>
+    <name>OceanBase</name>
+    <url>https://open.oceanbase.com</url>
+  </organization>
 
   <licenses>
     <license>
@@ -49,6 +53,10 @@ See the Mulan PSL v2 for more details.
       <timezone>+8</timezone>
     </developer>
   </developers>
+
+  <modules>
+    <module>flink-connector-oceanbase</module>
+  </modules>
 
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
