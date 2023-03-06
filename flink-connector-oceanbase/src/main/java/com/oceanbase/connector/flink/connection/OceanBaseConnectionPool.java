@@ -38,6 +38,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
                     dataSource.setUrl(options.getUrl());
                     dataSource.setUsername(options.getUsername());
                     dataSource.setPassword(options.getPassword());
+                    dataSource.setDriverClassName(options.getDriverClass());
                     dataSource.configFromPropety(options.getConnectionProperties());
                     dataSource.init();
                     inited = true;
