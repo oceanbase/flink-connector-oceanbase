@@ -53,6 +53,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("The password.");
 
+    public static final ConfigOption<String> DRIVER_CLASS_NAME =
+            ConfigOptions.key("driver-class")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("JDBC driver class name.");
+
     public static final ConfigOption<String> CONNECTION_PROPERTIES =
             ConfigOptions.key("connection-properties")
                     .stringType()
@@ -100,6 +106,7 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(URL),
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
+                allConfig.get(DRIVER_CLASS_NAME),
                 parseProperties(allConfig.get(CONNECTION_PROPERTIES)));
     }
 

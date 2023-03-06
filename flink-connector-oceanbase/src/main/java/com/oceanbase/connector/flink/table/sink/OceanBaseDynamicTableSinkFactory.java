@@ -59,6 +59,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.TABLE_NAME);
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);
+        options.add(OceanBaseConnectorOptions.DRIVER_CLASS_NAME);
         return options;
     }
 
