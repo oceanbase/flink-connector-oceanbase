@@ -59,11 +59,17 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("JDBC driver class name.");
 
-    public static final ConfigOption<String> CONNECTION_PROPERTIES =
-            ConfigOptions.key("connection-properties")
+    public static final ConfigOption<String> CONNECTION_POOL =
+            ConfigOptions.key("connection-pool")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("Connection properties.");
+                    .withDescription("Connection pool type, can be 'druid' or 'hikari'.");
+
+    public static final ConfigOption<String> CONNECTION_POOL_PROPERTIES =
+            ConfigOptions.key("connection-pool-properties")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Properties for specific connection pool.");
 
     public static final ConfigOption<Boolean> UPSERT_MODE =
             ConfigOptions.key("upsert-mode")
@@ -107,7 +113,8 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
                 allConfig.get(DRIVER_CLASS_NAME),
-                parseProperties(allConfig.get(CONNECTION_PROPERTIES)));
+                allConfig.get(CONNECTION_POOL),
+                parseProperties(allConfig.get(CONNECTION_POOL_PROPERTIES)));
     }
 
     public OceanBaseWriterOptions getWriterOptions() {

@@ -13,6 +13,13 @@ See the Mulan PSL v2 for more details.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <parent>
+    <groupId>io.github.zentol.flink</groupId>
+    <artifactId>flink-connector-parent</artifactId>
+    <version>1.0</version>
+  </parent>
+
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.oceanbase</groupId>
@@ -77,7 +84,12 @@ See the Mulan PSL v2 for more details.
       <dependency>
         <groupId>com.alibaba</groupId>
         <artifactId>druid</artifactId>
-        <version>1.2.15</version>
+        <version>1.2.16</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>5.0.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.flink</groupId>
@@ -116,34 +128,20 @@ See the Mulan PSL v2 for more details.
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>2.4.2</version>
-        <configuration>
-          <java>
-            <googleJavaFormat>
-              <version>1.7</version>
-              <style>AOSP</style>
-            </googleJavaFormat>
-
-            <!-- \# refers to the static imports -->
-            <importOrder>
-              <order>org.apache.flink,org.apache.flink.shaded,,javax,java,scala,\#
-              </order>
-            </importOrder>
-
-            <removeUnusedImports/>
-          </java>
-        </configuration>
-        <executions>
-          <execution>
-            <id>spotless-check</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

@@ -40,6 +40,12 @@ See the Mulan PSL v2 for more details.
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>druid</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
@@ -49,6 +55,16 @@ See the Mulan PSL v2 for more details.
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
