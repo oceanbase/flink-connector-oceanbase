@@ -60,13 +60,14 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);
         options.add(OceanBaseConnectorOptions.DRIVER_CLASS_NAME);
+        options.add(OceanBaseConnectorOptions.CONNECTION_POOL);
         return options;
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(OceanBaseConnectorOptions.CONNECTION_PROPERTIES);
+        options.add(OceanBaseConnectorOptions.CONNECTION_POOL_PROPERTIES);
         options.add(OceanBaseConnectorOptions.UPSERT_MODE);
         options.add(OceanBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OceanBaseConnectorOptions.BUFFER_SIZE);

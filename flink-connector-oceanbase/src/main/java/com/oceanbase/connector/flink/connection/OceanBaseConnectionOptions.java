@@ -22,19 +22,22 @@ public class OceanBaseConnectionOptions implements Serializable {
     private final String username;
     private final String password;
     private final String driverClass;
-    private final Properties connectionProperties;
+    private final String connectionPool;
+    private final Properties connectionPoolProperties;
 
     public OceanBaseConnectionOptions(
             String url,
             String username,
             String password,
             String driverClass,
-            Properties connectionProperties) {
+            String connectionPool,
+            Properties connectionPoolProperties) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.driverClass = driverClass;
-        this.connectionProperties = connectionProperties;
+        this.connectionPool = connectionPool;
+        this.connectionPoolProperties = connectionPoolProperties;
     }
 
     public String getUrl() {
@@ -53,7 +56,11 @@ public class OceanBaseConnectionOptions implements Serializable {
         return driverClass;
     }
 
-    public Properties getConnectionProperties() {
-        return connectionProperties;
+    public String getConnectionPool() {
+        return connectionPool;
+    }
+
+    public Properties getConnectionPoolProperties() {
+        return connectionPoolProperties;
     }
 }
