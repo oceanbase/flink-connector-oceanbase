@@ -15,6 +15,7 @@ package com.oceanbase.connector.flink.dialect;
 import javax.annotation.Nonnull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OceanBaseOracleDialect implements OceanBaseDialect {
 
@@ -28,6 +29,46 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields) {
-        throw new UnsupportedOperationException();
+        String sourceFields =
+                fieldNames.stream()
+                        .map(f -> "? AS " + quoteIdentifier(f))
+                        .collect(Collectors.joining(", "));
+
+        String onClause =
+                uniqueKeyFields.stream()
+                        .map(f -> "t." + quoteIdentifier(f) + "=s." + quoteIdentifier(f))
+                        .collect(Collectors.joining(" and "));
+
+        String updateClause =
+                fieldNames.stream()
+                        .filter(f -> !uniqueKeyFields.contains(f))
+                        .map(f -> "t." + quoteIdentifier(f) + "=s." + quoteIdentifier(f))
+                        .collect(Collectors.joining(", "));
+
+        String insertFields =
+                fieldNames.stream().map(this::quoteIdentifier).collect(Collectors.joining(", "));
+
+        String valuesClause =
+                fieldNames.stream()
+                        .map(f -> "s." + quoteIdentifier(f))
+                        .collect(Collectors.joining(", "));
+
+        return "MERGE INTO "
+                + tableName
+                + " t "
+                + " USING (SELECT "
+                + sourceFields
+                + " FROM DUAL) s "
+                + " ON ("
+                + onClause
+                + ") "
+                + " WHEN MATCHED THEN UPDATE SET "
+                + updateClause
+                + " WHEN NOT MATCHED THEN INSERT ("
+                + insertFields
+                + ")"
+                + " VALUES ("
+                + valuesClause
+                + ")";
     }
 }
