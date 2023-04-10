@@ -21,6 +21,8 @@ cd flink-connector-oceanbase
 mvn clean package -DskipTests
 ```
 
+### Download Dependencies
+
 Now the connector supports Alibaba Druid or HikariCP as the database connection pool, you can choose one of them to use in the application system.
 - Druid ：[https://mvnrepository.com/artifact/com.alibaba/druid](https://mvnrepository.com/artifact/com.alibaba/druid)
 - HikariCP：[https://mvnrepository.com/artifact/com.zaxxer/HikariCP](https://mvnrepository.com/artifact/com.zaxxer/HikariCP)
@@ -31,6 +33,18 @@ The MySQL mode of the OceanBase database is compatible with the MySQL protocol, 
 
 - MySQL JDBC：[https://mvnrepository.com/artifact/mysql/mysql-connector-java](https://mvnrepository.com/artifact/mysql/mysql-connector-java)
 - OceanBase JDBC：[https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client](https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client)
+
+### Package with Dependencies
+
+The JAR file of this program does not contain the dependencies mentioned above by default. If you want to package the JAR file with dependencies, you can use [maven-shade-plugin](https://maven.apache.org/plugins/maven-shade-plugin).
+
+Here we provide an [example](tools/maven/shade/pom.xml), you can use the following command to generate a JAR file which contains all dependencies:
+
+```shell
+sh tools/maven/shade/shade.sh
+```
+
+After that the corresponding JAR file will be output to the `tools/maven/shade/target` directory, and the name format is `flink-sql-connector-oceanbase-${version}-shaded.jar`.
 
 ### Demo
 

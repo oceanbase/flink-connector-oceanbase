@@ -21,6 +21,8 @@ cd flink-connector-oceanbase
 mvn clean package -DskipTests
 ```
 
+### 下载依赖
+
 数据库连接池目前支持 Alibaba Druid 和 HikariCP，您可以根据需要选择其中一种加入到应用系统。
 
 - Druid ：[https://mvnrepository.com/artifact/com.alibaba/druid](https://mvnrepository.com/artifact/com.alibaba/druid)
@@ -32,6 +34,18 @@ OceanBase 数据库的 MySQL 模式兼容了 MySQL 协议，因此可以直接�
 
 - MySQL JDBC：[https://mvnrepository.com/artifact/mysql/mysql-connector-java](https://mvnrepository.com/artifact/mysql/mysql-connector-java)
 - OceanBase JDBC：[https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client](https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client)
+
+### 将依赖打包到 JAR 文件
+
+本程序的 JAR 文件默认不包含上述提到的依赖，如果想使 JAR 文件包含依赖项，可以使用 [maven-shade-plugin](https://maven.apache.org/plugins/maven-shade-plugin/)。
+
+这里我们提供了一个[示例](tools/maven/shade/pom.xml)，可以通过如下命令来生成包含所有依赖的 JAR 文件：
+
+```shell
+sh tools/maven/shade/shade.sh
+```
+
+命令执行完成后，对应的 JAR 文件将输出到 `tools/maven/shade/target` 目录下，名称格式为 `flink-sql-connector-oceanbase-${version}-shaded.jar`。
 
 ### 示例
 
