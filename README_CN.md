@@ -2,6 +2,10 @@
 
 [English](README.md) | 简体中文
 
+[![Build Status](https://github.com/oceanbase/flink-connector-oceanbase/actions/workflows/maven_build_main.yml/badge.svg?branch=main)](https://github.com/oceanbase/flink-connector-oceanbase/actions/workflows/maven_build_main.yml)
+[![Release](https://img.shields.io/github/release/oceanbase/flink-connector-oceanbase.svg)](https://github.com/oceanbase/flink-connector-oceanbase/releases)
+[![License](https://img.shields.io/badge/license-Mulan%20PSL%20v2-green.svg)](LICENSE)
+
 本仓库包含 OceanBase 的 Flink Sink Connector。
 
 ## 开始上手
@@ -13,7 +17,7 @@
 - 数据库连接池。可选 Alibaba Druid 或 HikariCP
 - JDBC 驱动。可选 MySQL JDBC 驱动或 OceanBase JDBC 驱动
 
-您可以在 [Releases](https://github.com/oceanbase/flink-connector-oceanbase/releases) 页面找到正式的发布版本，也可以通过源码构建的方式获得程序包。
+您可以在 [Releases 页面](https://github.com/oceanbase/flink-connector-oceanbase/releases) 或者 [Maven 中央仓库](https://mvnrepository.com/artifact/com.oceanbase/flink-connector-oceanbase) 找到正式的发布版本，也可以通过源码构建的方式获得程序包。
 
 ```shell
 git clone https://github.com/oceanbase/flink-connector-oceanbase.git

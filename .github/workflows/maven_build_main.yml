@@ -1,9 +1,9 @@
-name: Maven Build on Master Branch
+name: Maven Build on Main Branch
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
