@@ -41,7 +41,7 @@ The JAR file of this program does not contain the dependencies mentioned above b
 Here we provide an [example](tools/maven/shade/pom.xml), you can use the following command to generate a JAR file which contains all dependencies:
 
 ```shell
-sh tools/maven/shade/shade.sh
+sh tools/maven/build.sh
 ```
 
 After that the corresponding JAR file will be output to the `tools/maven/shade/target` directory, and the name format is `flink-sql-connector-oceanbase-${version}-shaded.jar`.

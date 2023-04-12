@@ -46,7 +46,7 @@ public class OceanBaseSink implements Sink<RowData> {
 
     @Override
     public SinkWriter<RowData> createWriter(InitContext context) throws IOException {
-        OceanBaseStatementExecutor statementExecutor =
+        OceanBaseStatementExecutor<RowData> statementExecutor =
                 new OceanBaseRowDataStatementExecutor(
                         context,
                         writerOptions,
