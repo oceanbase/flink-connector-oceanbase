@@ -42,7 +42,7 @@ OceanBase 数据库的 MySQL 模式兼容了 MySQL 协议，因此可以直接�
 这里我们提供了一个[示例](tools/maven/shade/pom.xml)，可以通过如下命令来生成包含所有依赖的 JAR 文件：
 
 ```shell
-sh tools/maven/shade/shade.sh
+sh tools/maven/build.sh
 ```
 
 命令执行完成后，对应的 JAR 文件将输出到 `tools/maven/shade/target` 目录下，名称格式为 `flink-sql-connector-oceanbase-${version}-shaded.jar`。
