@@ -199,8 +199,8 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         if (closed || rowData == null) {
             return true;
         }
-        try (Connection connection = connectionProvider.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(existStatementSql);
+        try (Connection connection = connectionProvider.getConnection();
+                PreparedStatement statement = connection.prepareStatement(existStatementSql)) {
             setStatementData(statement, rowData, tableSchema.getKeyFieldGetters());
             ResultSet resultSet = statement.executeQuery();
             return resultSet.next();
@@ -213,8 +213,8 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         if (closed || rowDataList == null || rowDataList.isEmpty()) {
             return;
         }
-        try (Connection connection = connectionProvider.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(sql);
+        try (Connection connection = connectionProvider.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             int count = 0;
             for (RowData rowData : rowDataList) {
                 setStatementData(statement, rowData, fieldGetters);
@@ -238,9 +238,9 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
             throws SQLException {
         if (row != null) {
             int index = 1;
-            for (int i = 0; i < fieldGetters.length; i++) {
-                for (int j = 0; j < fieldGetters[i].length; j++) {
-                    Object obj = fieldGetters[i][j].getFieldOrNull(row);
+            for (RowData.FieldGetter[] fieldGetter : fieldGetters) {
+                for (RowData.FieldGetter getter : fieldGetter) {
+                    Object obj = getter.getFieldOrNull(row);
                     if (obj == null) {
                         statement.setObject(index++, null);
                     } else {
