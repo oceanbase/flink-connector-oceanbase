@@ -34,8 +34,9 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
     private final OceanBaseWriterOptions writerOptions;
     private final OceanBaseStatementExecutor<T> statementExecutor;
 
-    private transient ScheduledExecutorService scheduler;
-    private transient ScheduledFuture<?> scheduledFuture;
+    private final transient ScheduledExecutorService scheduler;
+    private final transient ScheduledFuture<?> scheduledFuture;
+
     private transient int bufferCount = 0;
     private transient volatile Exception flushException = null;
     private transient volatile boolean closed = false;
@@ -106,7 +107,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                 if (i >= writerOptions.getMaxRetries()) {
                     throw new IOException(e);
                 }
-                Thread.sleep(1000 * i);
+                Thread.sleep(1000L * i);
             }
         }
     }

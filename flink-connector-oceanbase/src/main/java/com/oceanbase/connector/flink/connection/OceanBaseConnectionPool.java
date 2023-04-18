@@ -33,7 +33,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
         this.options = options;
     }
 
-    public void init() throws SQLException {
+    public void init() {
         if (!inited) {
             synchronized (this) {
                 if (!inited) {

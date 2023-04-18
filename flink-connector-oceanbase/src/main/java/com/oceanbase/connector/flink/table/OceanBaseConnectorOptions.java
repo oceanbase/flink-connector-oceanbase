@@ -122,9 +122,9 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(TABLE_NAME),
                 allConfig.get(UPSERT_MODE),
                 allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis(),
-                allConfig.get(BUFFER_SIZE).intValue(),
-                allConfig.get(BUFFER_BATCH_SIZE).intValue(),
-                allConfig.get(MAX_RETRIES).intValue());
+                allConfig.get(BUFFER_SIZE),
+                allConfig.get(BUFFER_BATCH_SIZE),
+                allConfig.get(MAX_RETRIES));
     }
 
     private Properties parseProperties(String propsStr) {

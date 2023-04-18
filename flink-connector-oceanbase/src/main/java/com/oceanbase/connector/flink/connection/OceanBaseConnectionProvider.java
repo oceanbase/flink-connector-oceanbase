@@ -15,6 +15,7 @@ package com.oceanbase.connector.flink.connection;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public interface OceanBaseConnectionProvider extends AutoCloseable {
 
@@ -33,11 +34,10 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     default String getCompatibleMode() throws SQLException {
-        try (Connection conn = getConnection()) {
-            ResultSet rs =
-                    conn.createStatement()
-                            .executeQuery("SHOW VARIABLES LIKE 'ob_compatibility_mode'");
-            while (rs.next()) {
+        try (Connection conn = getConnection();
+                Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'ob_compatibility_mode'");
+            if (rs.next()) {
                 return rs.getString("Value");
             }
             return null;

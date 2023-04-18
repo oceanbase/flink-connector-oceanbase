@@ -22,6 +22,7 @@ import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -65,11 +66,11 @@ public class OceanBaseSink implements Sink<RowData> {
             throw new IOException("Failed to get compatible mode", e);
         }
 
-        if (compatibleMode != null) {
-            compatibleMode = compatibleMode.toLowerCase();
+        if (StringUtils.isBlank(compatibleMode)) {
+            throw new RuntimeException("Got empty 'ob_compatibility_mode'");
         }
 
-        switch (compatibleMode) {
+        switch (compatibleMode.toLowerCase()) {
             case "mysql":
                 return new OceanBaseMySQLDialect();
             case "oracle":
