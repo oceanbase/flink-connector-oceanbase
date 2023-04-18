@@ -14,6 +14,7 @@ package com.oceanbase.connector.flink.connection;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.sql.DataSource;
 
@@ -28,6 +29,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     private final OceanBaseConnectionOptions options;
     private DataSource dataSource;
     private volatile boolean inited = false;
+    private String compatibleMode;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
@@ -76,6 +78,14 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     public Connection getConnection() throws SQLException {
         init();
         return dataSource.getConnection();
+    }
+
+    @Override
+    public String getCompatibleMode() throws SQLException {
+        if (StringUtils.isBlank(compatibleMode)) {
+            compatibleMode = OceanBaseConnectionProvider.super.getCompatibleMode();
+        }
+        return compatibleMode;
     }
 
     @Override

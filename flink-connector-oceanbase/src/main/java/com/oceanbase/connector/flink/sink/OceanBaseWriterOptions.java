@@ -23,6 +23,8 @@ public class OceanBaseWriterOptions implements Serializable {
     private final int bufferSize;
     private final int batchSize;
     private final int maxRetries;
+    private final double memStoreThreshold;
+    private final long memStoreCheckInterval;
 
     public OceanBaseWriterOptions(
             String tableName,
@@ -30,13 +32,17 @@ public class OceanBaseWriterOptions implements Serializable {
             long batchIntervalMs,
             int bufferSize,
             int batchSize,
-            int maxRetries) {
+            int maxRetries,
+            double memStoreThreshold,
+            long memStoreCheckInterval) {
         this.tableName = tableName;
         this.upsertMode = upsertMode;
         this.batchIntervalMs = batchIntervalMs;
         this.bufferSize = bufferSize;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;
+        this.memStoreThreshold = memStoreThreshold;
+        this.memStoreCheckInterval = memStoreCheckInterval;
     }
 
     public String getTableName() {
@@ -61,5 +67,13 @@ public class OceanBaseWriterOptions implements Serializable {
 
     public int getMaxRetries() {
         return maxRetries;
+    }
+
+    public double getMemStoreThreshold() {
+        return memStoreThreshold;
+    }
+
+    public long getMemStoreCheckInterval() {
+        return memStoreCheckInterval;
     }
 }

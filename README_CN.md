@@ -173,6 +173,8 @@ VALUES (1, 'Tom', 99),
 | buffer-flush.buffer-size   | 否    | 1000 | Integer  | 缓冲区大小                                |
 | buffer-flush.batch-size    | 否    | 100  | Integer  | 刷新批量数据的批大小                           |
 | max-retries                | 否    | 3    | Integer  | 失败重试次数                               |
+| memstore-check.threshold   | 否    | 0.9  | Double   | 内存使用的阈值相对最大限制值的比例                    |
+| memstore-check.interval    | 否    | 30s  | Duration | 内存使用检查周期                             |
 
 ## 社区
 

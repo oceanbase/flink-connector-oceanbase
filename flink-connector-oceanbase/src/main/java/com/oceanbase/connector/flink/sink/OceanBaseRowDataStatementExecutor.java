@@ -21,17 +21,22 @@ import org.apache.flink.types.RowKind;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExecutor<RowData> {
+    private static final Logger LOG =
+            LoggerFactory.getLogger(OceanBaseRowDataStatementExecutor.class);
 
     private static final long serialVersionUID = 1L;
 
@@ -49,6 +54,8 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     private final Map<String, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
 
     private transient volatile boolean closed = false;
+    private String queryMemStoreSql;
+    private volatile long lastCheckMemStoreTime;
 
     public OceanBaseRowDataStatementExecutor(
             Sink.InitContext context,
@@ -76,6 +83,45 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                         options.getTableName(),
                         tableSchema.getFieldNames(),
                         tableSchema.getKeyFieldNames());
+        try {
+            attemptQueryMemStore();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to query memstore view", e);
+        }
+    }
+
+    private void attemptQueryMemStore() throws SQLException {
+        String compatibleMode = connectionProvider.getCompatibleMode();
+        String view, legacyView;
+        if ("mysql".equalsIgnoreCase(compatibleMode)) {
+            view = "oceanbase.GV$OB_MEMSTORE";
+            legacyView = "oceanbase.gv$memstore";
+        } else {
+            view = "SYS.GV$OB_MEMSTORE";
+            legacyView = "SYS.GV$MEMSTORE";
+        }
+        queryMemStoreSql =
+                String.format(
+                        "SELECT 1 FROM %s WHERE MEMSTORE_USED > MEMSTORE_LIMIT * %f",
+                        view, options.getMemStoreThreshold());
+        try {
+            hasMemStoreReachedThreshold();
+        } catch (SQLException e) {
+            LOG.warn("Failed to query memstore view {}, try {} instead", view, legacyView, e);
+            queryMemStoreSql =
+                    String.format(
+                            "SELECT 1 FROM %s WHERE TOTAL > MEM_LIMIT * %f",
+                            legacyView, options.getMemStoreThreshold());
+            hasMemStoreReachedThreshold();
+        }
+    }
+
+    private boolean hasMemStoreReachedThreshold() throws SQLException {
+        try (Connection connection = connectionProvider.getConnection();
+                Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
+            return resultSet.next();
+        }
     }
 
     @Override
@@ -144,6 +190,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
     @Override
     public void executeBatch() throws SQLException {
+        checkMemStore();
         if (!tableSchema.isHasKey()) {
             synchronized (buffer) {
                 executeBatch(insertStatementSql, buffer, tableSchema.getFieldGetters());
@@ -186,6 +233,25 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                 reduceBuffer.clear();
             }
         }
+    }
+
+    private void checkMemStore() throws SQLException {
+        long now = System.currentTimeMillis();
+        if (closed || now - lastCheckMemStoreTime < options.getMemStoreCheckInterval()) {
+            return;
+        }
+        while (!closed && hasMemStoreReachedThreshold()) {
+            LOG.warn(
+                    "Memstore reaches threshold {}, thread will sleep {} milliseconds",
+                    options.getMemStoreThreshold(),
+                    options.getMemStoreCheckInterval());
+            try {
+                Thread.sleep(options.getMemStoreCheckInterval());
+            } catch (InterruptedException e) {
+                LOG.warn(e.getMessage());
+            }
+        }
+        lastCheckMemStoreTime = System.currentTimeMillis();
     }
 
     /**
