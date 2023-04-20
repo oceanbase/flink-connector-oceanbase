@@ -101,6 +101,20 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .intType()
                     .defaultValue(3)
                     .withDescription("The max retry times if writing records to database failed.");
+
+    public static final ConfigOption<Double> MEMSTORE_THRESHOLD =
+            ConfigOptions.key("memstore-check.threshold")
+                    .doubleType()
+                    .defaultValue(0.9)
+                    .withDescription("Memory usage threshold ratio relative to the limit value.");
+
+    public static final ConfigOption<Duration> MEMSTORE_CHECK_INTERVAL =
+            ConfigOptions.key("memstore-check.interval")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(30))
+                    .withDescription(
+                            "The check interval mills, over this time, the writer will check if memstore reaches threshold.");
+
     private final ReadableConfig allConfig;
 
     public OceanBaseConnectorOptions(Map<String, String> allOptions) {
@@ -124,7 +138,9 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis(),
                 allConfig.get(BUFFER_SIZE),
                 allConfig.get(BUFFER_BATCH_SIZE),
-                allConfig.get(MAX_RETRIES));
+                allConfig.get(MAX_RETRIES),
+                allConfig.get(MEMSTORE_THRESHOLD),
+                allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis());
     }
 
     private Properties parseProperties(String propsStr) {

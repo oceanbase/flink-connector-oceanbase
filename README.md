@@ -172,6 +172,8 @@ Once executed, the records should have been written to OceanBase.
 | buffer-flush.buffer-size   | No       | 1000    | Integer  | Buffer size                                                                                                           |
 | buffer-flush.batch-size    | No       | 100     | Integer  | Buffer flush batch size                                                                                               |
 | max-retries                | No       | 3       | Integer  | Max retry times on failure                                                                                            |
+| memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                            |
+| memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                               |
 
 ## Community
 
