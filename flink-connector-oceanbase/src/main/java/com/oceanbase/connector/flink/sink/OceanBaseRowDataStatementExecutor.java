@@ -83,10 +83,12 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                         options.getTableName(),
                         tableSchema.getFieldNames(),
                         tableSchema.getKeyFieldNames());
-        try {
-            attemptQueryMemStore();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to query memstore view", e);
+        if (options.isMemStoreCheckEnabled()) {
+            try {
+                attemptQueryMemStore();
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to query memstore view", e);
+            }
         }
     }
 
@@ -190,7 +192,9 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
     @Override
     public void executeBatch() throws SQLException {
-        checkMemStore();
+        if (options.isMemStoreCheckEnabled()) {
+            checkMemStore();
+        }
         if (!tableSchema.isHasKey()) {
             synchronized (buffer) {
                 executeBatch(insertStatementSql, buffer, tableSchema.getFieldGetters());

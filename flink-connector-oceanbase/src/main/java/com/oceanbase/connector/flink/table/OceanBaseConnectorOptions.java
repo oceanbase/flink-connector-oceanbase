@@ -102,6 +102,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .defaultValue(3)
                     .withDescription("The max retry times if writing records to database failed.");
 
+    public static final ConfigOption<Boolean> MEMSTORE_CHECK_ENABLED =
+            ConfigOptions.key("memstore-check.enabled")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("Whether enable memstore check.");
+
     public static final ConfigOption<Double> MEMSTORE_THRESHOLD =
             ConfigOptions.key("memstore-check.threshold")
                     .doubleType()
@@ -139,6 +145,7 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(BUFFER_SIZE),
                 allConfig.get(BUFFER_BATCH_SIZE),
                 allConfig.get(MAX_RETRIES),
+                allConfig.get(MEMSTORE_CHECK_ENABLED),
                 allConfig.get(MEMSTORE_THRESHOLD),
                 allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis());
     }

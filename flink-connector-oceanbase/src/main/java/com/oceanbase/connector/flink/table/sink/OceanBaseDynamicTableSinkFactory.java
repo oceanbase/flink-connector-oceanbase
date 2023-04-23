@@ -73,6 +73,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.BUFFER_SIZE);
         options.add(OceanBaseConnectorOptions.BUFFER_BATCH_SIZE);
         options.add(OceanBaseConnectorOptions.MAX_RETRIES);
+        options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_ENABLED);
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
         return options;
