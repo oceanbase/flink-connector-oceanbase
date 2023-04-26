@@ -17,12 +17,12 @@ import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.table.data.RowData;
 
+import com.oceanbase.connector.flink.connection.OceanBaseCompatibleMode;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -59,25 +59,15 @@ public class OceanBaseSink implements Sink<RowData> {
 
     private OceanBaseDialect getDialect(OceanBaseConnectionProvider connectionProvider)
             throws IOException {
-        String compatibleMode;
+        OceanBaseCompatibleMode compatibleMode;
         try {
             compatibleMode = connectionProvider.getCompatibleMode();
         } catch (SQLException e) {
             throw new IOException("Failed to get compatible mode", e);
         }
-
-        if (StringUtils.isBlank(compatibleMode)) {
-            throw new RuntimeException("Got empty 'ob_compatibility_mode'");
+        if (OceanBaseCompatibleMode.MYSQL.equals(compatibleMode)) {
+            return new OceanBaseMySQLDialect();
         }
-
-        switch (compatibleMode.toLowerCase()) {
-            case "mysql":
-                return new OceanBaseMySQLDialect();
-            case "oracle":
-                return new OceanBaseOracleDialect();
-            default:
-                throw new UnsupportedOperationException(
-                        "Unsupported compatible mode: " + compatibleMode);
-        }
+        return new OceanBaseOracleDialect();
     }
 }
