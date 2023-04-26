@@ -33,12 +33,12 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
      * @return compatible mode
      * @throws SQLException if a database access error occurs
      */
-    default String getCompatibleMode() throws SQLException {
+    default OceanBaseCompatibleMode getCompatibleMode() throws SQLException {
         try (Connection conn = getConnection();
                 Statement statement = conn.createStatement()) {
             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'ob_compatibility_mode'");
             if (rs.next()) {
-                return rs.getString("Value");
+                return OceanBaseCompatibleMode.fromString(rs.getString("Value"));
             }
             return null;
         }

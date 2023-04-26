@@ -18,6 +18,7 @@ import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 
+import com.oceanbase.connector.flink.connection.OceanBaseCompatibleMode;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
@@ -93,9 +94,9 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     }
 
     private void attemptQueryMemStore() throws SQLException {
-        String compatibleMode = connectionProvider.getCompatibleMode();
+        OceanBaseCompatibleMode compatibleMode = connectionProvider.getCompatibleMode();
         String view, legacyView;
-        if ("mysql".equalsIgnoreCase(compatibleMode)) {
+        if (OceanBaseCompatibleMode.MYSQL.equals(compatibleMode)) {
             view = "oceanbase.GV$OB_MEMSTORE";
             legacyView = "oceanbase.gv$memstore";
         } else {
