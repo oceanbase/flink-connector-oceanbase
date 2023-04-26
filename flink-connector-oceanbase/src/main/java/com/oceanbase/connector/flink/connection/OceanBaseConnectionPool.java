@@ -13,6 +13,9 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
@@ -28,7 +31,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     private final OceanBaseConnectionOptions options;
     private DataSource dataSource;
     private volatile boolean inited = false;
-    private OceanBaseCompatibleMode compatibleMode;
+    private OceanBaseConnectionInfo connectionInfo;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
@@ -80,11 +83,24 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     }
 
     @Override
-    public OceanBaseCompatibleMode getCompatibleMode() throws SQLException {
-        if (compatibleMode == null) {
-            compatibleMode = OceanBaseConnectionProvider.super.getCompatibleMode();
+    public OceanBaseConnectionInfo getConnectionInfo() {
+        if (connectionInfo == null) {
+            try {
+                OceanBaseConnectionInfo.CompatibleMode compatibleMode =
+                        OceanBaseConnectionProvider.super.getCompatibleMode();
+                OceanBaseDialect dialect =
+                        compatibleMode.isMySqlMode()
+                                ? new OceanBaseMySQLDialect()
+                                : new OceanBaseOracleDialect();
+                OceanBaseConnectionInfo.Version version =
+                        OceanBaseConnectionProvider.super.getVersion(dialect);
+                connectionInfo =
+                        new OceanBaseConnectionInfo(options.getPassword(), dialect, version);
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to get connection info", e);
+            }
         }
-        return compatibleMode;
+        return connectionInfo;
     }
 
     @Override

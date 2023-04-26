@@ -123,4 +123,32 @@ public interface OceanBaseDialect {
                         .collect(Collectors.joining(" AND "));
         return "DELETE FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
     }
+
+    /**
+     * Get the system database name
+     *
+     * @return the system database name
+     */
+    String getSysDatabase();
+
+    default String getMemStoreExistStatement(double threshold) {
+        return "SELECT 1 FROM "
+                + getSysDatabase()
+                + ".GV$OB_MEMSTORE WHERE MEMSTORE_USED > MEMSTORE_LIMIT * "
+                + threshold;
+    }
+
+    default String getLegacyMemStoreExistStatement(double threshold) {
+        return "SELECT 1 FROM "
+                + getSysDatabase()
+                + ".GV$MEMSTORE WHERE TOTAL > MEM_LIMIT * "
+                + threshold;
+    }
+
+    /**
+     * Get the select statement for OB_VERSION() function
+     *
+     * @return the select statement for OB_VERSION() function
+     */
+    String getSelectOBVersionStatement();
 }

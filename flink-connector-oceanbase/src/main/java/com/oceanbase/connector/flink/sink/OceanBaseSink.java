@@ -17,15 +17,10 @@ import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.table.data.RowData;
 
-import com.oceanbase.connector.flink.connection.OceanBaseCompatibleMode;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
-import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
-import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 public class OceanBaseSink implements Sink<RowData> {
 
@@ -49,25 +44,7 @@ public class OceanBaseSink implements Sink<RowData> {
     public SinkWriter<RowData> createWriter(InitContext context) throws IOException {
         OceanBaseStatementExecutor<RowData> statementExecutor =
                 new OceanBaseRowDataStatementExecutor(
-                        context,
-                        writerOptions,
-                        tableSchema,
-                        connectionProvider,
-                        getDialect(connectionProvider));
+                        context, writerOptions, tableSchema, connectionProvider);
         return new OceanBaseWriter<>(serializer, writerOptions, statementExecutor);
-    }
-
-    private OceanBaseDialect getDialect(OceanBaseConnectionProvider connectionProvider)
-            throws IOException {
-        OceanBaseCompatibleMode compatibleMode;
-        try {
-            compatibleMode = connectionProvider.getCompatibleMode();
-        } catch (SQLException e) {
-            throw new IOException("Failed to get compatible mode", e);
-        }
-        if (OceanBaseCompatibleMode.MYSQL.equals(compatibleMode)) {
-            return new OceanBaseMySQLDialect();
-        }
-        return new OceanBaseOracleDialect();
     }
 }

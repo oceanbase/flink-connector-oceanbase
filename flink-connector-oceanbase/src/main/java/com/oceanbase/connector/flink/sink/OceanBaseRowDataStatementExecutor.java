@@ -18,9 +18,8 @@ import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 
-import com.oceanbase.connector.flink.connection.OceanBaseCompatibleMode;
+import com.oceanbase.connector.flink.connection.OceanBaseConnectionInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,81 +49,59 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     private final String updateStatementSql;
     private final String deleteStatementSql;
     private final String upsertStatementSql;
+    private final String queryMemStoreSql;
 
     private final List<RowData> buffer = new ArrayList<>();
     private final Map<String, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
 
     private transient volatile boolean closed = false;
-    private String queryMemStoreSql;
     private volatile long lastCheckMemStoreTime;
 
     public OceanBaseRowDataStatementExecutor(
             Sink.InitContext context,
             OceanBaseWriterOptions options,
             OceanBaseTableSchema tableSchema,
-            OceanBaseConnectionProvider connectionProvider,
-            OceanBaseDialect dialect) {
+            OceanBaseConnectionProvider connectionProvider) {
         this.metricGroup = context.metricGroup();
         this.options = options;
         this.tableSchema = tableSchema;
         this.connectionProvider = connectionProvider;
+        OceanBaseConnectionInfo connectionInfo = connectionProvider.getConnectionInfo();
         this.existStatementSql =
-                dialect.getExistStatement(options.getTableName(), tableSchema.getKeyFieldNames());
+                connectionInfo
+                        .getDialect()
+                        .getExistStatement(options.getTableName(), tableSchema.getKeyFieldNames());
         this.insertStatementSql =
-                dialect.getInsertIntoStatement(options.getTableName(), tableSchema.getFieldNames());
+                connectionInfo
+                        .getDialect()
+                        .getInsertIntoStatement(
+                                options.getTableName(), tableSchema.getFieldNames());
         this.updateStatementSql =
-                dialect.getUpdateStatement(
-                        options.getTableName(),
-                        tableSchema.getFieldNames(),
-                        tableSchema.getKeyFieldNames());
+                connectionInfo
+                        .getDialect()
+                        .getUpdateStatement(
+                                options.getTableName(),
+                                tableSchema.getFieldNames(),
+                                tableSchema.getKeyFieldNames());
         this.deleteStatementSql =
-                dialect.getDeleteStatement(options.getTableName(), tableSchema.getKeyFieldNames());
+                connectionInfo
+                        .getDialect()
+                        .getDeleteStatement(options.getTableName(), tableSchema.getKeyFieldNames());
         this.upsertStatementSql =
-                dialect.getUpsertStatement(
-                        options.getTableName(),
-                        tableSchema.getFieldNames(),
-                        tableSchema.getKeyFieldNames());
-        if (options.isMemStoreCheckEnabled()) {
-            try {
-                attemptQueryMemStore();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed to query memstore view", e);
-            }
-        }
-    }
-
-    private void attemptQueryMemStore() throws SQLException {
-        OceanBaseCompatibleMode compatibleMode = connectionProvider.getCompatibleMode();
-        String view, legacyView;
-        if (OceanBaseCompatibleMode.MYSQL.equals(compatibleMode)) {
-            view = "oceanbase.GV$OB_MEMSTORE";
-            legacyView = "oceanbase.gv$memstore";
-        } else {
-            view = "SYS.GV$OB_MEMSTORE";
-            legacyView = "SYS.GV$MEMSTORE";
-        }
-        queryMemStoreSql =
-                String.format(
-                        "SELECT 1 FROM %s WHERE MEMSTORE_USED > MEMSTORE_LIMIT * %f",
-                        view, options.getMemStoreThreshold());
-        try {
-            hasMemStoreReachedThreshold();
-        } catch (SQLException e) {
-            LOG.warn("Failed to query memstore view {}, try {} instead", view, legacyView, e);
-            queryMemStoreSql =
-                    String.format(
-                            "SELECT 1 FROM %s WHERE TOTAL > MEM_LIMIT * %f",
-                            legacyView, options.getMemStoreThreshold());
-            hasMemStoreReachedThreshold();
-        }
-    }
-
-    private boolean hasMemStoreReachedThreshold() throws SQLException {
-        try (Connection connection = connectionProvider.getConnection();
-                Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
-            return resultSet.next();
-        }
+                connectionInfo
+                        .getDialect()
+                        .getUpsertStatement(
+                                options.getTableName(),
+                                tableSchema.getFieldNames(),
+                                tableSchema.getKeyFieldNames());
+        this.queryMemStoreSql =
+                connectionInfo.getVersion().isV4()
+                        ? connectionInfo
+                                .getDialect()
+                                .getMemStoreExistStatement(options.getMemStoreThreshold())
+                        : connectionInfo
+                                .getDialect()
+                                .getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
     }
 
     @Override
@@ -257,6 +234,14 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
             }
         }
         lastCheckMemStoreTime = System.currentTimeMillis();
+    }
+
+    private boolean hasMemStoreReachedThreshold() throws SQLException {
+        try (Connection connection = connectionProvider.getConnection();
+                Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
+            return resultSet.next();
+        }
     }
 
     /**
