@@ -95,7 +95,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
                 OceanBaseConnectionInfo.Version version =
                         OceanBaseConnectionProvider.super.getVersion(dialect);
                 connectionInfo =
-                        new OceanBaseConnectionInfo(options.getPassword(), dialect, version);
+                        new OceanBaseConnectionInfo(options.getUsername(), dialect, version);
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to get connection info", e);
             }
