@@ -38,4 +38,14 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
                 + " ON DUPLICATE KEY UPDATE "
                 + updateClause;
     }
+
+    @Override
+    public String getSysDatabase() {
+        return "oceanbase";
+    }
+
+    @Override
+    public String getSelectOBVersionStatement() {
+        return "SELECT OB_VERSION()";
+    }
 }

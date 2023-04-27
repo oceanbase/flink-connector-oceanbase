@@ -71,4 +71,14 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
                 + valuesClause
                 + ")";
     }
+
+    @Override
+    public String getSysDatabase() {
+        return "SYS";
+    }
+
+    @Override
+    public String getSelectOBVersionStatement() {
+        return "SELECT OB_VERSION() FROM DUAL";
+    }
 }
