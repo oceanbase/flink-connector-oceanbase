@@ -76,6 +76,11 @@ See the Mulan PSL v2 for more details.
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>flink-table-api-java-bridge</artifactId>
+        <version>${flink.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.alibaba</groupId>
         <artifactId>druid</artifactId>
         <version>1.2.16</version>
@@ -84,6 +89,11 @@ See the Mulan PSL v2 for more details.
         <groupId>com.zaxxer</groupId>
         <artifactId>HikariCP</artifactId>
         <version>4.0.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.oceanbase</groupId>
+        <artifactId>ob-partition-calculator</artifactId>
+        <version>1.7.0-RELEASE</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

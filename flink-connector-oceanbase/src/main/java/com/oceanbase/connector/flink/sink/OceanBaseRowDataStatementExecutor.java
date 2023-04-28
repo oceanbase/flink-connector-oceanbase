@@ -44,6 +44,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     private final OceanBaseWriterOptions options;
     private final OceanBaseTableSchema tableSchema;
     private final OceanBaseConnectionProvider connectionProvider;
+    private final OceanBaseConnectionInfo connectionInfo;
     private final String existStatementSql;
     private final String insertStatementSql;
     private final String updateStatementSql;
@@ -66,32 +67,34 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         this.options = options;
         this.tableSchema = tableSchema;
         this.connectionProvider = connectionProvider;
-        OceanBaseConnectionInfo connectionInfo = connectionProvider.getConnectionInfo();
+        this.connectionInfo = connectionProvider.getConnectionInfo();
         this.existStatementSql =
                 connectionInfo
                         .getDialect()
-                        .getExistStatement(options.getTableName(), tableSchema.getKeyFieldNames());
+                        .getExistStatement(
+                                connectionInfo.getTableName(), tableSchema.getKeyFieldNames());
         this.insertStatementSql =
                 connectionInfo
                         .getDialect()
                         .getInsertIntoStatement(
-                                options.getTableName(), tableSchema.getFieldNames());
+                                connectionInfo.getTableName(), tableSchema.getFieldNames());
         this.updateStatementSql =
                 connectionInfo
                         .getDialect()
                         .getUpdateStatement(
-                                options.getTableName(),
+                                connectionInfo.getTableName(),
                                 tableSchema.getFieldNames(),
                                 tableSchema.getKeyFieldNames());
         this.deleteStatementSql =
                 connectionInfo
                         .getDialect()
-                        .getDeleteStatement(options.getTableName(), tableSchema.getKeyFieldNames());
+                        .getDeleteStatement(
+                                connectionInfo.getTableName(), tableSchema.getKeyFieldNames());
         this.upsertStatementSql =
                 connectionInfo
                         .getDialect()
                         .getUpsertStatement(
-                                options.getTableName(),
+                                connectionInfo.getTableName(),
                                 tableSchema.getFieldNames(),
                                 tableSchema.getKeyFieldNames());
         this.queryMemStoreSql =

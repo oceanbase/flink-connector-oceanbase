@@ -56,6 +56,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OceanBaseConnectorOptions.URL);
+        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
         options.add(OceanBaseConnectorOptions.TABLE_NAME);
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);

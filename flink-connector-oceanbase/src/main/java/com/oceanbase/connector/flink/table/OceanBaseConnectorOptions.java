@@ -35,6 +35,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("The JDBC database URL.");
 
+    public static final ConfigOption<String> SCHEMA_NAME =
+            ConfigOptions.key("schema-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The schema name.");
+
     public static final ConfigOption<String> TABLE_NAME =
             ConfigOptions.key("table-name")
                     .stringType()
@@ -130,6 +136,8 @@ public class OceanBaseConnectorOptions implements Serializable {
     public OceanBaseConnectionOptions getConnectionOptions() {
         return new OceanBaseConnectionOptions(
                 allConfig.get(URL),
+                allConfig.get(SCHEMA_NAME),
+                allConfig.get(TABLE_NAME),
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
                 allConfig.get(DRIVER_CLASS_NAME),
@@ -139,7 +147,6 @@ public class OceanBaseConnectorOptions implements Serializable {
 
     public OceanBaseWriterOptions getWriterOptions() {
         return new OceanBaseWriterOptions(
-                allConfig.get(TABLE_NAME),
                 allConfig.get(UPSERT_MODE),
                 allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis(),
                 allConfig.get(BUFFER_SIZE),

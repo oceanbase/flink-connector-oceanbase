@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
 
@@ -87,15 +88,22 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
         if (connectionInfo == null) {
             try {
                 OceanBaseConnectionInfo.CompatibleMode compatibleMode =
-                        OceanBaseConnectionProvider.super.getCompatibleMode();
+                        OceanBaseConnectionInfo.CompatibleMode.fromString(
+                                OceanBaseConnectionProvider.super.getCompatibleMode());
                 OceanBaseDialect dialect =
                         compatibleMode.isMySqlMode()
                                 ? new OceanBaseMySQLDialect()
                                 : new OceanBaseOracleDialect();
-                OceanBaseConnectionInfo.Version version =
-                        OceanBaseConnectionProvider.super.getVersion(dialect);
+                String version = null;
+                try {
+                    version = OceanBaseConnectionProvider.super.getVersion(dialect);
+                } catch (SQLSyntaxErrorException e) {
+                    if (!e.getMessage().contains("not exist")) {
+                        throw e;
+                    }
+                }
                 connectionInfo =
-                        new OceanBaseConnectionInfo(options.getUsername(), dialect, version);
+                        new OceanBaseConnectionInfo(options, compatibleMode, dialect, version);
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to get connection info", e);
             }

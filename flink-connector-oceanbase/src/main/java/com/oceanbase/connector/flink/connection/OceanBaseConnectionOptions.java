@@ -19,6 +19,8 @@ public class OceanBaseConnectionOptions implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String url;
+    private final String schemaName;
+    private final String tableName;
     private final String username;
     private final String password;
     private final String driverClass;
@@ -27,12 +29,16 @@ public class OceanBaseConnectionOptions implements Serializable {
 
     public OceanBaseConnectionOptions(
             String url,
+            String schemaName,
+            String tableName,
             String username,
             String password,
             String driverClass,
             String connectionPool,
             Properties connectionPoolProperties) {
         this.url = url;
+        this.schemaName = schemaName;
+        this.tableName = tableName;
         this.username = username;
         this.password = password;
         this.driverClass = driverClass;
@@ -42,6 +48,14 @@ public class OceanBaseConnectionOptions implements Serializable {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getSchemaName() {
+        return schemaName;
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     public String getUsername() {

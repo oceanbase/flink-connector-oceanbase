@@ -16,9 +16,9 @@ import java.io.Serializable;
 
 public class OceanBaseWriterOptions implements Serializable {
 
-    private final String tableName;
-    private final boolean upsertMode;
+    private static final long serialVersionUID = 1L;
 
+    private final boolean upsertMode;
     private final long batchIntervalMs;
     private final int bufferSize;
     private final int batchSize;
@@ -28,7 +28,6 @@ public class OceanBaseWriterOptions implements Serializable {
     private final long memStoreCheckInterval;
 
     public OceanBaseWriterOptions(
-            String tableName,
             boolean upsertMode,
             long batchIntervalMs,
             int bufferSize,
@@ -37,7 +36,6 @@ public class OceanBaseWriterOptions implements Serializable {
             boolean memStoreCheckEnabled,
             double memStoreThreshold,
             long memStoreCheckInterval) {
-        this.tableName = tableName;
         this.upsertMode = upsertMode;
         this.batchIntervalMs = batchIntervalMs;
         this.bufferSize = bufferSize;
@@ -46,10 +44,6 @@ public class OceanBaseWriterOptions implements Serializable {
         this.memStoreCheckEnabled = memStoreCheckEnabled;
         this.memStoreThreshold = memStoreThreshold;
         this.memStoreCheckInterval = memStoreCheckInterval;
-    }
-
-    public String getTableName() {
-        return tableName;
     }
 
     public boolean isUpsertMode() {
