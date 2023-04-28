@@ -77,6 +77,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_ENABLED);
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
+        options.add(OceanBaseConnectorOptions.PARTITION_KEY);
         return options;
     }
 }

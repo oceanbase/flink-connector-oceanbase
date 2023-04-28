@@ -29,7 +29,10 @@ import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.sink.OceanBaseSink;
 import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
 import com.oceanbase.connector.flink.table.OceanBaseConnectorOptions;
+import com.oceanbase.connector.flink.table.OceanBaseTableMetaData;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
+
+import java.sql.SQLException;
 
 import static org.apache.flink.util.Preconditions.checkState;
 
@@ -64,9 +67,17 @@ public class OceanBaseDynamicTableSink implements DynamicTableSink {
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
         OceanBaseWriterOptions writerOptions = connectorOptions.getWriterOptions();
-        OceanBaseTableSchema tableSchema = new OceanBaseTableSchema(physicalSchema);
         OceanBaseConnectionProvider connectionProvider =
                 new OceanBaseConnectionPool(connectorOptions.getConnectionOptions());
+        OceanBaseTableMetaData tableMetaData;
+        try {
+            tableMetaData = connectionProvider.getTableMetaData();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get table meta data", e);
+        }
+        OceanBaseTableSchema tableSchema =
+                new OceanBaseTableSchema(
+                        physicalSchema, tableMetaData, writerOptions.getPartitionColumns());
         return new DataStreamSinkProvider() {
             @Override
             public DataStreamSink<?> consumeDataStream(

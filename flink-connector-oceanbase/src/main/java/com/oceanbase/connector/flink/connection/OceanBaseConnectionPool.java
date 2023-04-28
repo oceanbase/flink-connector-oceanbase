@@ -16,6 +16,7 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.connector.flink.table.OceanBaseTableMetaData;
 import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
@@ -26,8 +27,11 @@ import javax.sql.DataSource;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
+import java.sql.Statement;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
 
@@ -86,6 +90,34 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     public Connection getConnection() throws SQLException {
         init();
         return dataSource.getConnection();
+    }
+
+    @Override
+    public OceanBaseTableMetaData getTableMetaData() throws SQLException {
+        try (Connection connection = getConnection();
+                Statement statement = connection.createStatement()) {
+            ResultSet rs =
+                    statement.executeQuery(
+                            getConnectionInfo()
+                                    .getDialect()
+                                    .getSelectMetaDataStatement(options.getTableName()));
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            String[] columnNames = new String[columnCount];
+            int[] columnTypes = new int[columnCount];
+            String[] columnTypeNames = new String[columnCount];
+            int[] columnPrecision = new int[columnCount];
+            int[] columnScales = new int[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                columnNames[i] = metaData.getColumnName(i + 1);
+                columnTypes[i] = metaData.getColumnType(i + 1);
+                columnTypeNames[i] = metaData.getColumnTypeName(i + 1);
+                columnPrecision[i] = metaData.getPrecision(i + 1);
+                columnScales[i] = metaData.getScale(i + 1);
+            }
+            return new OceanBaseTableMetaData(
+                    columnNames, columnTypes, columnTypeNames, columnPrecision, columnScales);
+        }
     }
 
     @Override

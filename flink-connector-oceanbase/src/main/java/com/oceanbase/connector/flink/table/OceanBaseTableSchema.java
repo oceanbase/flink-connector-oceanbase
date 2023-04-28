@@ -18,6 +18,7 @@ import org.apache.flink.table.data.RowData;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class OceanBaseTableSchema implements Serializable {
@@ -29,26 +30,41 @@ public class OceanBaseTableSchema implements Serializable {
     private final List<String> keyFieldNames;
     private final RowData.FieldGetter[] keyFieldGetters;
     private final RowData.FieldGetter[] nonKeyFieldGetters;
+    private final RowData.FieldGetter[] partitionFieldGetters;
 
-    public OceanBaseTableSchema(ResolvedSchema schema) {
-        this.fieldNames = schema.getColumnNames();
-        this.fieldGetters = new RowData.FieldGetter[this.fieldNames.size()];
+    public OceanBaseTableSchema(
+            ResolvedSchema schema, OceanBaseTableMetaData metaData, List<String> partitionColumns) {
+        this.fieldNames = Arrays.asList(metaData.getColumnNames());
         this.hasKey = schema.getPrimaryKey().isPresent();
         this.keyFieldNames =
                 schema.getPrimaryKey().map(UniqueConstraint::getColumns).orElse(new ArrayList<>());
-        this.keyFieldGetters = new RowData.FieldGetter[this.keyFieldNames.size()];
-        this.nonKeyFieldGetters =
-                new RowData.FieldGetter[this.fieldNames.size() - this.keyFieldNames.size()];
+        this.fieldGetters = new RowData.FieldGetter[fieldNames.size()];
+        this.keyFieldGetters = new RowData.FieldGetter[fieldNames.size()];
+        this.nonKeyFieldGetters = new RowData.FieldGetter[fieldNames.size() - keyFieldNames.size()];
+        this.partitionFieldGetters = new RowData.FieldGetter[fieldNames.size()];
+
         int k = 0, n = 0;
-        for (int i = 0; i < this.fieldNames.size(); i++) {
+        List<String> columnNames = schema.getColumnNames();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            String fieldName = this.fieldNames.get(i);
+            int index = columnNames.indexOf(fieldName);
+            if (index < 0) {
+                throw new RuntimeException(
+                        "JDBC column " + fieldName + " not found in Flink table");
+            }
             RowData.FieldGetter fieldGetter =
                     RowData.createFieldGetter(
-                            schema.getColumnDataTypes().get(i).getLogicalType(), i);
+                            schema.getColumnDataTypes().get(index).getLogicalType(), index);
             this.fieldGetters[i] = fieldGetter;
-            if (this.keyFieldNames.contains(this.fieldNames.get(i))) {
+            if (this.keyFieldNames.contains(fieldName)) {
                 this.keyFieldGetters[k++] = fieldGetter;
             } else {
                 this.nonKeyFieldGetters[n++] = fieldGetter;
+            }
+            if (partitionColumns.contains(fieldName)) {
+                this.partitionFieldGetters[i] = fieldGetter;
+            } else {
+                this.partitionFieldGetters[i] = row -> null;
             }
         }
     }
@@ -75,5 +91,9 @@ public class OceanBaseTableSchema implements Serializable {
 
     public RowData.FieldGetter[] getNonKeyFieldGetters() {
         return nonKeyFieldGetters;
+    }
+
+    public RowData.FieldGetter[] getPartitionFieldGetters() {
+        return partitionFieldGetters;
     }
 }

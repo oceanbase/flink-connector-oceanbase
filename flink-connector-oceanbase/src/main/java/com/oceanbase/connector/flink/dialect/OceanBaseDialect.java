@@ -28,6 +28,10 @@ public interface OceanBaseDialect {
      */
     String quoteIdentifier(@Nonnull String identifier);
 
+    default String getSelectMetaDataStatement(@Nonnull String tableName) {
+        return "SELECT 1 FROM " + quoteIdentifier(tableName);
+    }
+
     /**
      * Gets the upsert statement
      *
