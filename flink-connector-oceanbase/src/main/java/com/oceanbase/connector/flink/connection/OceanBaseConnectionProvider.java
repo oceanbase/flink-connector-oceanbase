@@ -13,6 +13,7 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.partition.calculator.ObPartIdCalculator;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -35,6 +36,8 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
      * @return connection info
      */
     OceanBaseConnectionInfo getConnectionInfo();
+
+    ObPartIdCalculator getObPartIdCalculator();
 
     /**
      * Attempts to get the compatible mode of OceanBase

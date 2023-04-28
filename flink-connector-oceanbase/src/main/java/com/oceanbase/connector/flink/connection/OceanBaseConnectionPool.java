@@ -16,6 +16,10 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.partition.calculator.ObPartIdCalculator;
+import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
+import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
+import com.oceanbase.partition.calculator.model.TableEntry;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
@@ -33,6 +37,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     private DataSource dataSource;
     private volatile boolean inited = false;
     private OceanBaseConnectionInfo connectionInfo;
+    private TableEntry tableEntry;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
@@ -109,6 +114,35 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
             }
         }
         return connectionInfo;
+    }
+
+    private TableEntry getTableEntry() throws Exception {
+        if (tableEntry == null) {
+            try (Connection connection = getConnection()) {
+                if (getConnectionInfo().getVersion().isV4()) {
+                    tableEntry =
+                            new TableEntryExtractorV4()
+                                    .queryTableEntry(
+                                            connection, getConnectionInfo().getTableEntryKey());
+                } else {
+                    tableEntry =
+                            new TableEntryExtractor()
+                                    .queryTableEntry(
+                                            connection, getConnectionInfo().getTableEntryKey());
+                }
+            }
+        }
+        return tableEntry;
+    }
+
+    @Override
+    public ObPartIdCalculator getObPartIdCalculator() {
+        try {
+            return new ObPartIdCalculator(
+                    false, getTableEntry(), getConnectionInfo().getVersion().isV4());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get ObPartIdCalculator", e);
+        }
     }
 
     @Override
