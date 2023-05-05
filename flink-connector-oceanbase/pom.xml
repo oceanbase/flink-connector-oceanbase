@@ -56,12 +56,10 @@ See the Mulan PSL v2 for more details.
     <dependency>
       <groupId>com.oceanbase</groupId>
       <artifactId>ob-partition-calculator</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
 

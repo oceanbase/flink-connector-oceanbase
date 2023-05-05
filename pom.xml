@@ -95,6 +95,16 @@ See the Mulan PSL v2 for more details.
         <artifactId>ob-partition-calculator</artifactId>
         <version>1.7.0-RELEASE</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.12.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>30.1.1-jre</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -124,10 +134,6 @@ See the Mulan PSL v2 for more details.
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
