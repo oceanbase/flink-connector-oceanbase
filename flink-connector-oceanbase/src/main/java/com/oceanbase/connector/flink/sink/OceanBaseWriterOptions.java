@@ -13,7 +13,6 @@
 package com.oceanbase.connector.flink.sink;
 
 import java.io.Serializable;
-import java.util.List;
 
 public class OceanBaseWriterOptions implements Serializable {
 
@@ -27,7 +26,7 @@ public class OceanBaseWriterOptions implements Serializable {
     private final boolean memStoreCheckEnabled;
     private final double memStoreThreshold;
     private final long memStoreCheckInterval;
-    private final List<String> partitionColumns;
+    private final boolean partitionEnabled;
 
     public OceanBaseWriterOptions(
             boolean upsertMode,
@@ -38,7 +37,7 @@ public class OceanBaseWriterOptions implements Serializable {
             boolean memStoreCheckEnabled,
             double memStoreThreshold,
             long memStoreCheckInterval,
-            List<String> partitionColumns) {
+            boolean partitionEnabled) {
         this.upsertMode = upsertMode;
         this.batchIntervalMs = batchIntervalMs;
         this.bufferSize = bufferSize;
@@ -47,7 +46,7 @@ public class OceanBaseWriterOptions implements Serializable {
         this.memStoreCheckEnabled = memStoreCheckEnabled;
         this.memStoreThreshold = memStoreThreshold;
         this.memStoreCheckInterval = memStoreCheckInterval;
-        this.partitionColumns = partitionColumns;
+        this.partitionEnabled = partitionEnabled;
     }
 
     public boolean isUpsertMode() {
@@ -82,7 +81,7 @@ public class OceanBaseWriterOptions implements Serializable {
         return memStoreCheckInterval;
     }
 
-    public List<String> getPartitionColumns() {
-        return partitionColumns;
+    public boolean isPartitionEnabled() {
+        return partitionEnabled;
     }
 }

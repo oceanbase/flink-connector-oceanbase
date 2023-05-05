@@ -13,8 +13,6 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
-import com.oceanbase.connector.flink.table.OceanBaseTableMetaData;
-import com.oceanbase.partition.calculator.ObPartIdCalculator;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -32,14 +30,6 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
     Connection getConnection() throws SQLException;
 
     /**
-     * Attempts to get the metadata of table
-     *
-     * @return the metadata of table
-     * @throws SQLException if a database access error occurs
-     */
-    OceanBaseTableMetaData getTableMetaData() throws SQLException;
-
-    /**
      * Get connection info
      *
      * @return connection info
@@ -47,11 +37,11 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
     OceanBaseConnectionInfo getConnectionInfo();
 
     /**
-     * Get the {@link ObPartIdCalculator}
+     * Get table partition info
      *
-     * @return the {@link ObPartIdCalculator}
+     * @return table partition info
      */
-    ObPartIdCalculator getObPartIdCalculator();
+    OceanBaseTablePartInfo getTablePartInfo();
 
     /**
      * Attempts to get the compatible mode of OceanBase

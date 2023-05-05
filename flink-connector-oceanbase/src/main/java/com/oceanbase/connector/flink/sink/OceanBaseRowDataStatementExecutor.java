@@ -20,6 +20,7 @@ import org.apache.flink.types.RowKind;
 
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
+import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +31,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExecutor<RowData> {
     private static final Logger LOG =
@@ -44,13 +48,15 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     private final OceanBaseWriterOptions options;
     private final OceanBaseTableSchema tableSchema;
     private final OceanBaseConnectionProvider connectionProvider;
-    private final OceanBaseConnectionInfo connectionInfo;
     private final String existStatementSql;
     private final String insertStatementSql;
     private final String updateStatementSql;
     private final String deleteStatementSql;
     private final String upsertStatementSql;
     private final String queryMemStoreSql;
+
+    private final OceanBaseTablePartInfo tablePartInfo;
+    private final List<Integer> partColumnIndexes;
 
     private final List<RowData> buffer = new ArrayList<>();
     private final Map<String, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
@@ -67,7 +73,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         this.options = options;
         this.tableSchema = tableSchema;
         this.connectionProvider = connectionProvider;
-        this.connectionInfo = connectionProvider.getConnectionInfo();
+        OceanBaseConnectionInfo connectionInfo = connectionProvider.getConnectionInfo();
         this.existStatementSql =
                 connectionInfo
                         .getDialect()
@@ -105,6 +111,20 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                         : connectionInfo
                                 .getDialect()
                                 .getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
+        this.tablePartInfo =
+                options.isPartitionEnabled() ? connectionProvider.getTablePartInfo() : null;
+        this.partColumnIndexes =
+                tablePartInfo != null
+                        ? IntStream.range(0, tableSchema.getFieldNames().size())
+                                .filter(
+                                        i ->
+                                                tablePartInfo
+                                                        .getPartColumnNames()
+                                                        .contains(
+                                                                tableSchema.getFieldNames().get(i)))
+                                .boxed()
+                                .collect(Collectors.toList())
+                        : Collections.emptyList();
     }
 
     @Override
@@ -272,6 +292,30 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         if (closed || rowDataList == null || rowDataList.isEmpty()) {
             return;
         }
+        if (!partColumnIndexes.isEmpty()) {
+            Map<Long, List<RowData>> partRowDataMap = new HashMap<>();
+            for (RowData rowData : rowDataList) {
+                Object[] record = new Object[tableSchema.getFieldNames().size()];
+                for (Integer i : partColumnIndexes) {
+                    tablePartInfo.setColumnValue(
+                            record,
+                            tableSchema.getFieldNames().get(i),
+                            tableSchema.getFieldGetters()[i].getFieldOrNull(rowData));
+                }
+                Long partId = tablePartInfo.getPartIdCalculator().calculatePartId(record);
+                partRowDataMap.computeIfAbsent(partId, k -> new ArrayList<>()).add(rowData);
+            }
+            for (List<RowData> partRowDataList : partRowDataMap.values()) {
+                execute(sql, partRowDataList, fieldGetters);
+            }
+        } else {
+            execute(sql, rowDataList, fieldGetters);
+        }
+    }
+
+    private void execute(
+            String sql, List<RowData> rowDataList, RowData.FieldGetter[]... fieldGetters)
+            throws SQLException {
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             int count = 0;

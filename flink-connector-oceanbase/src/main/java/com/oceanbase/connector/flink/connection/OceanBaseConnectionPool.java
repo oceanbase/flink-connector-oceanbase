@@ -16,8 +16,6 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
-import com.oceanbase.connector.flink.table.OceanBaseTableMetaData;
-import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
@@ -27,11 +25,8 @@ import javax.sql.DataSource;
 
 import java.io.Serializable;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
-import java.sql.Statement;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
 
@@ -41,7 +36,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     private DataSource dataSource;
     private volatile boolean inited = false;
     private OceanBaseConnectionInfo connectionInfo;
-    private TableEntry tableEntry;
+    private OceanBaseTablePartInfo tablePartitionInfo;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
@@ -93,34 +88,6 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     }
 
     @Override
-    public OceanBaseTableMetaData getTableMetaData() throws SQLException {
-        try (Connection connection = getConnection();
-                Statement statement = connection.createStatement()) {
-            ResultSet rs =
-                    statement.executeQuery(
-                            getConnectionInfo()
-                                    .getDialect()
-                                    .getSelectMetaDataStatement(options.getTableName()));
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            String[] columnNames = new String[columnCount];
-            int[] columnTypes = new int[columnCount];
-            String[] columnTypeNames = new String[columnCount];
-            int[] columnPrecision = new int[columnCount];
-            int[] columnScales = new int[columnCount];
-            for (int i = 0; i < columnCount; i++) {
-                columnNames[i] = metaData.getColumnName(i + 1);
-                columnTypes[i] = metaData.getColumnType(i + 1);
-                columnTypeNames[i] = metaData.getColumnTypeName(i + 1);
-                columnPrecision[i] = metaData.getPrecision(i + 1);
-                columnScales[i] = metaData.getScale(i + 1);
-            }
-            return new OceanBaseTableMetaData(
-                    columnNames, columnTypes, columnTypeNames, columnPrecision, columnScales);
-        }
-    }
-
-    @Override
     public OceanBaseConnectionInfo getConnectionInfo() {
         if (connectionInfo == null) {
             try {
@@ -148,8 +115,10 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
         return connectionInfo;
     }
 
-    private TableEntry getTableEntry() throws Exception {
-        if (tableEntry == null) {
+    @Override
+    public OceanBaseTablePartInfo getTablePartInfo() {
+        if (tablePartitionInfo == null) {
+            TableEntry tableEntry;
             try (Connection connection = getConnection()) {
                 if (getConnectionInfo().getVersion().isV4()) {
                     tableEntry =
@@ -162,19 +131,14 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
                                     .queryTableEntry(
                                             connection, getConnectionInfo().getTableEntryKey());
                 }
+                tablePartitionInfo =
+                        new OceanBaseTablePartInfo(
+                                tableEntry, getConnectionInfo().getVersion().isV4());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to get table partition info", e);
             }
         }
-        return tableEntry;
-    }
-
-    @Override
-    public ObPartIdCalculator getObPartIdCalculator() {
-        try {
-            return new ObPartIdCalculator(
-                    false, getTableEntry(), getConnectionInfo().getVersion().isV4());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get ObPartIdCalculator", e);
-        }
+        return tablePartitionInfo;
     }
 
     @Override

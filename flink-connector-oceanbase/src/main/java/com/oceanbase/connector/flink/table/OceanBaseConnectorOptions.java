@@ -23,10 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 public class OceanBaseConnectorOptions implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -129,11 +127,11 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .withDescription(
                             "The check interval mills, over this time, the writer will check if memstore reaches threshold.");
 
-    public static final ConfigOption<String> PARTITION_KEY =
-            ConfigOptions.key("partition.key")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The partition key columns separated by comma.");
+    public static final ConfigOption<Boolean> PARTITION_ENABLED =
+            ConfigOptions.key("partition.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Where to enable partition calculation.");
 
     private final ReadableConfig allConfig;
 
@@ -163,10 +161,7 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(MEMSTORE_CHECK_ENABLED),
                 allConfig.get(MEMSTORE_THRESHOLD),
                 allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis(),
-                Arrays.stream(allConfig.getOptional(PARTITION_KEY).orElse("").split(","))
-                        .filter(StringUtils::isNoneBlank)
-                        .map(String::trim)
-                        .collect(Collectors.toList()));
+                allConfig.get(PARTITION_ENABLED));
     }
 
     private Properties parseProperties(String propsStr) {
