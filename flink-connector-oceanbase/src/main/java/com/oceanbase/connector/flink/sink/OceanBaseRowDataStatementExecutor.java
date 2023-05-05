@@ -297,10 +297,11 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
             for (RowData rowData : rowDataList) {
                 Object[] record = new Object[tableSchema.getFieldNames().size()];
                 for (Integer i : partColumnIndexes) {
-                    tablePartInfo.setColumnValue(
-                            record,
-                            tableSchema.getFieldNames().get(i),
-                            tableSchema.getFieldGetters()[i].getFieldOrNull(rowData));
+                    Integer columnIndex =
+                            tablePartInfo
+                                    .getPartColumnIndexMap()
+                                    .get(tableSchema.getFieldNames().get(i));
+                    record[columnIndex] = tableSchema.getFieldGetters()[i].getFieldOrNull(rowData);
                 }
                 Long partId = tablePartInfo.getPartIdCalculator().calculatePartId(record);
                 partRowDataMap.computeIfAbsent(partId, k -> new ArrayList<>()).add(rowData);

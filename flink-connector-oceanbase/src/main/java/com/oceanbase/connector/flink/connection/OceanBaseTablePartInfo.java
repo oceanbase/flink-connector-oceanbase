@@ -16,11 +16,14 @@ import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.metadata.desc.ObPartColumn;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class OceanBaseTablePartInfo {
+public class OceanBaseTablePartInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final ObPartIdCalculator partIdCalculator;
     private final List<String> partColumnNames;
@@ -46,11 +49,7 @@ public class OceanBaseTablePartInfo {
         return partColumnNames;
     }
 
-    public void setColumnValue(Object[] record, String column, Object value) {
-        if (!partColumnIndexMap.containsKey(column)) {
-            throw new RuntimeException(
-                    "The column name is not existed in table part info: " + column);
-        }
-        record[partColumnIndexMap.get(column)] = value;
+    public Map<String, Integer> getPartColumnIndexMap() {
+        return partColumnIndexMap;
     }
 }
