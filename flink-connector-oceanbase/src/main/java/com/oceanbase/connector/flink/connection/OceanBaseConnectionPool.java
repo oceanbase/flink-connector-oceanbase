@@ -131,6 +131,11 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
                                     .queryTableEntry(
                                             connection, getConnectionInfo().getTableEntryKey());
                 }
+                if (tableEntry == null) {
+                    throw new RuntimeException(
+                            "Failed to get table entry with key: "
+                                    + getConnectionInfo().getTableEntryKey());
+                }
                 tablePartitionInfo =
                         new OceanBaseTablePartInfo(
                                 tableEntry, getConnectionInfo().getVersion().isV4());
