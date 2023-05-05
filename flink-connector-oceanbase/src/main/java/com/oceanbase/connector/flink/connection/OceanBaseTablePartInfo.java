@@ -17,10 +17,8 @@ import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.metadata.desc.ObTablePart;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 public class OceanBaseTablePartInfo implements Serializable {
@@ -28,13 +26,11 @@ public class OceanBaseTablePartInfo implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final ObPartIdCalculator partIdCalculator;
-    private final List<String> partColumnNames;
     private final Map<String, Integer> partColumnIndexMap;
 
     public OceanBaseTablePartInfo(TableEntry tableEntry, boolean isV4) {
         this.partIdCalculator = new ObPartIdCalculator(false, tableEntry, isV4);
-        this.partColumnNames = new ArrayList<>();
-        this.partColumnIndexMap = new HashMap<>();
+        this.partColumnIndexMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         ObTablePart tablePart = tableEntry.getTablePart();
         if (tablePart != null) {
             Stream.concat(
@@ -42,7 +38,6 @@ public class OceanBaseTablePartInfo implements Serializable {
                             tablePart.getSubPartColumns().stream())
                     .forEach(
                             obPartColumn -> {
-                                this.partColumnNames.add(obPartColumn.getColumnName());
                                 this.partColumnIndexMap.put(
                                         obPartColumn.getColumnName(),
                                         obPartColumn.getColumnIndex());
@@ -52,10 +47,6 @@ public class OceanBaseTablePartInfo implements Serializable {
 
     public ObPartIdCalculator getPartIdCalculator() {
         return partIdCalculator;
-    }
-
-    public List<String> getPartColumnNames() {
-        return partColumnNames;
     }
 
     public Map<String, Integer> getPartColumnIndexMap() {

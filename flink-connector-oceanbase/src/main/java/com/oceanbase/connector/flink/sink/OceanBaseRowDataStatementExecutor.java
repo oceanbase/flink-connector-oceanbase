@@ -119,8 +119,8 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                                 .filter(
                                         i ->
                                                 tablePartInfo
-                                                        .getPartColumnNames()
-                                                        .contains(
+                                                        .getPartColumnIndexMap()
+                                                        .containsKey(
                                                                 tableSchema.getFieldNames().get(i)))
                                 .boxed()
                                 .collect(Collectors.toList())
