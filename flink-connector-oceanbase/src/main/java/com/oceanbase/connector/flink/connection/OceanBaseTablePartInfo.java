@@ -14,12 +14,14 @@ package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.model.TableEntry;
-import com.oceanbase.partition.metadata.desc.ObPartColumn;
+import com.oceanbase.partition.metadata.desc.ObTablePart;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OceanBaseTablePartInfo implements Serializable {
 
@@ -31,14 +33,21 @@ public class OceanBaseTablePartInfo implements Serializable {
 
     public OceanBaseTablePartInfo(TableEntry tableEntry, boolean isV4) {
         this.partIdCalculator = new ObPartIdCalculator(false, tableEntry, isV4);
-        List<ObPartColumn> partColumns = tableEntry.getTablePart().getPartColumns();
-        this.partColumnNames =
-                partColumns.stream().map(ObPartColumn::getColumnName).collect(Collectors.toList());
-        this.partColumnIndexMap =
-                tableEntry.getTablePart().getPartColumns().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        ObPartColumn::getColumnName, ObPartColumn::getColumnIndex));
+        this.partColumnNames = new ArrayList<>();
+        this.partColumnIndexMap = new HashMap<>();
+        ObTablePart tablePart = tableEntry.getTablePart();
+        if (tablePart != null) {
+            Stream.concat(
+                            tablePart.getPartColumns().stream(),
+                            tablePart.getSubPartColumns().stream())
+                    .forEach(
+                            obPartColumn -> {
+                                this.partColumnNames.add(obPartColumn.getColumnName());
+                                this.partColumnIndexMap.put(
+                                        obPartColumn.getColumnName(),
+                                        obPartColumn.getColumnIndex());
+                            });
+        }
     }
 
     public ObPartIdCalculator getPartIdCalculator() {
