@@ -132,6 +132,7 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'schema-name' = 'test',
       'table-name' = 't_sink',
       'username' = 'root@test',
       'password' = 'pswd',
@@ -159,23 +160,25 @@ VALUES (1, 'Tom', 99),
 
 ## 配置项
 
-| 参数名                        | 是否必需 | 默认值  | 类型       | 描述                                   |
-|----------------------------|------|------|----------|--------------------------------------|
-| url                        | 是    |      | String   | 数据库的 JDBC url，需要包含库名                 |
-| table-name                 | 是    |      | String   | 表名                                   |
-| username                   | 是    |      | String   | 连接用户名                                |
-| password                   | 是    |      | String   | 连接密码                                 |
-| driver-class               | 是    |      | String   | JDBC 驱动的类名，如 'com.mysql.jdbc.Driver' |
-| connection-pool            | 是    |      | String   | 连接池类型，可以是 'druid' 或 'hikari'         |
-| connection-pool-properties | 否    |      | String   | 连接池属性，需要根据连接池类型进行配置，多个值用分号分隔         |
-| upsert-mode                | 否    | true | Boolean  | 是否使用 upsert 模式                       |
-| buffer-flush.interval      | 否    | 1s   | Duration | 缓冲区刷新周期                              |
-| buffer-flush.buffer-size   | 否    | 1000 | Integer  | 缓冲区大小                                |
-| buffer-flush.batch-size    | 否    | 100  | Integer  | 刷新批量数据的批大小                           |
-| max-retries                | 否    | 3    | Integer  | 失败重试次数                               |
-| memstore-check.enabled     | 否    | true | Boolean  | 是否开启内存检查                             |
-| memstore-check.threshold   | 否    | 0.9  | Double   | 内存使用的阈值相对最大限制值的比例                    |
-| memstore-check.interval    | 否    | 30s  | Duration | 内存使用检查周期                             |
+| 参数名                        | 是否必需 | 默认值   | 类型       | 描述                                   |
+|----------------------------|------|-------|----------|--------------------------------------|
+| url                        | 是    |       | String   | 数据库的 JDBC url，需要包含 Schema 名或库名       |
+| schema-name                | 是    |       | String   | 连接的 Schema 名或库名                      |
+| table-name                 | 是    |       | String   | 表名                                   |
+| username                   | 是    |       | String   | 连接用户名                                |
+| password                   | 是    |       | String   | 连接密码                                 |
+| driver-class               | 是    |       | String   | JDBC 驱动的类名，如 'com.mysql.jdbc.Driver' |
+| connection-pool            | 是    |       | String   | 连接池类型，可以是 'druid' 或 'hikari'         |
+| connection-pool-properties | 否    |       | String   | 连接池属性，需要根据连接池类型进行配置，多个值用分号分隔         |
+| upsert-mode                | 否    | true  | Boolean  | 是否使用 upsert 模式                       |
+| buffer-flush.interval      | 否    | 1s    | Duration | 缓冲区刷新周期                              |
+| buffer-flush.buffer-size   | 否    | 1000  | Integer  | 缓冲区大小                                |
+| buffer-flush.batch-size    | 否    | 100   | Integer  | 刷新批量数据的批大小                           |
+| max-retries                | 否    | 3     | Integer  | 失败重试次数                               |
+| memstore-check.enabled     | 否    | true  | Boolean  | 是否开启内存检查                             |
+| memstore-check.threshold   | 否    | 0.9   | Double   | 内存使用的阈值相对最大限制值的比例                    |
+| memstore-check.interval    | 否    | 30s   | Duration | 内存使用检查周期                             |
+| partition.enabled          | 否    | false | Boolean  | 是否启用分区计算功能                           |
 
 ## 社区
 

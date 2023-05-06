@@ -131,7 +131,7 @@ public class OceanBaseConnectorOptions implements Serializable {
             ConfigOptions.key("partition.enabled")
                     .booleanType()
                     .defaultValue(false)
-                    .withDescription("Where to enable partition calculation.");
+                    .withDescription("Whether enable partition calculation.");
 
     private final ReadableConfig allConfig;
 
