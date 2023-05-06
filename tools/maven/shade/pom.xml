@@ -70,14 +70,39 @@ See the Mulan PSL v2 for more details.
               <shadeTestJar>false</shadeTestJar>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters combine.children="append">
+                <filter>
+                  <artifact>*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <artifactSet>
                 <includes>
                   <include>com.oceanbase:*</include>
                   <include>com.alibaba:druid</include>
                   <include>com.zaxxer:HikariCP</include>
                   <include>mysql:mysql-connector-java</include>
+                  <include>commons-collections:commons-collections</include>
+                  <include>org.apache.commons:commons-lang3</include>
+                  <include>com.google.guava:guava</include>
                 </includes>
               </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>
+                    com.oceanbase.connector.flink.shaded.org.apache.commons
+                  </shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.google</pattern>
+                  <shadedPattern>
+                    com.oceanbase.connector.flink.shaded.com.google
+                  </shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>

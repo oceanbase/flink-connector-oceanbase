@@ -56,6 +56,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OceanBaseConnectorOptions.URL);
+        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
         options.add(OceanBaseConnectorOptions.TABLE_NAME);
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);
@@ -76,6 +77,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_ENABLED);
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
+        options.add(OceanBaseConnectorOptions.PARTITION_ENABLED);
         return options;
     }
 }

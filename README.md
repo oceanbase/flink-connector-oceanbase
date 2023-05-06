@@ -131,6 +131,7 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'schema-name' = 'test',
       'table-name' = 't_sink',
       'username' = 'root@test',
       'password' = 'pswd',
@@ -160,7 +161,8 @@ Once executed, the records should have been written to OceanBase.
 
 | Option                     | Required | Default | Type     | Description                                                                                                           |
 |----------------------------|----------|---------|----------|-----------------------------------------------------------------------------------------------------------------------|
-| url                        | Yes      |         | String   | JDBC url, database name is also required here                                                                         |
+| url                        | Yes      |         | String   | JDBC url, schema name or database name is also required here                                                          |
+| schema-name                | Yes      |         | String   | Schema name or database name                                                                                          |
 | table-name                 | Yes      |         | String   | Table name                                                                                                            |
 | username                   | Yes      |         | String   | User name                                                                                                             |
 | password                   | Yes      |         | String   | Password                                                                                                              |
@@ -175,6 +177,7 @@ Once executed, the records should have been written to OceanBase.
 | memstore-check.enabled     | No       | true    | Boolean  | Whether enable memstore check                                                                                         |
 | memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                            |
 | memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                               |
+| partition.enabled          | No       | false   | Boolean  | Whether enable partition calculation                                                                                  |
 
 ## Community
 

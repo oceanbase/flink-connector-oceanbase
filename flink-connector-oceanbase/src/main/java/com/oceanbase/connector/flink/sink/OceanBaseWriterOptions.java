@@ -16,9 +16,9 @@ import java.io.Serializable;
 
 public class OceanBaseWriterOptions implements Serializable {
 
-    private final String tableName;
-    private final boolean upsertMode;
+    private static final long serialVersionUID = 1L;
 
+    private final boolean upsertMode;
     private final long batchIntervalMs;
     private final int bufferSize;
     private final int batchSize;
@@ -26,9 +26,9 @@ public class OceanBaseWriterOptions implements Serializable {
     private final boolean memStoreCheckEnabled;
     private final double memStoreThreshold;
     private final long memStoreCheckInterval;
+    private final boolean partitionEnabled;
 
     public OceanBaseWriterOptions(
-            String tableName,
             boolean upsertMode,
             long batchIntervalMs,
             int bufferSize,
@@ -36,8 +36,8 @@ public class OceanBaseWriterOptions implements Serializable {
             int maxRetries,
             boolean memStoreCheckEnabled,
             double memStoreThreshold,
-            long memStoreCheckInterval) {
-        this.tableName = tableName;
+            long memStoreCheckInterval,
+            boolean partitionEnabled) {
         this.upsertMode = upsertMode;
         this.batchIntervalMs = batchIntervalMs;
         this.bufferSize = bufferSize;
@@ -46,10 +46,7 @@ public class OceanBaseWriterOptions implements Serializable {
         this.memStoreCheckEnabled = memStoreCheckEnabled;
         this.memStoreThreshold = memStoreThreshold;
         this.memStoreCheckInterval = memStoreCheckInterval;
-    }
-
-    public String getTableName() {
-        return tableName;
+        this.partitionEnabled = partitionEnabled;
     }
 
     public boolean isUpsertMode() {
@@ -82,5 +79,9 @@ public class OceanBaseWriterOptions implements Serializable {
 
     public long getMemStoreCheckInterval() {
         return memStoreCheckInterval;
+    }
+
+    public boolean isPartitionEnabled() {
+        return partitionEnabled;
     }
 }

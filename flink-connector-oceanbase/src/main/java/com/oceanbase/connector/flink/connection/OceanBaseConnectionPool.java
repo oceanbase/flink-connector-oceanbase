@@ -16,6 +16,9 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
+import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
+import com.oceanbase.partition.calculator.model.TableEntry;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
@@ -23,6 +26,7 @@ import javax.sql.DataSource;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
 
@@ -32,6 +36,7 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     private DataSource dataSource;
     private volatile boolean inited = false;
     private OceanBaseConnectionInfo connectionInfo;
+    private OceanBaseTablePartInfo tablePartitionInfo;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
@@ -87,20 +92,58 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
         if (connectionInfo == null) {
             try {
                 OceanBaseConnectionInfo.CompatibleMode compatibleMode =
-                        OceanBaseConnectionProvider.super.getCompatibleMode();
+                        OceanBaseConnectionInfo.CompatibleMode.fromString(
+                                OceanBaseConnectionProvider.super.getCompatibleMode());
                 OceanBaseDialect dialect =
                         compatibleMode.isMySqlMode()
                                 ? new OceanBaseMySQLDialect()
                                 : new OceanBaseOracleDialect();
-                OceanBaseConnectionInfo.Version version =
-                        OceanBaseConnectionProvider.super.getVersion(dialect);
+                String version = null;
+                try {
+                    version = OceanBaseConnectionProvider.super.getVersion(dialect);
+                } catch (SQLSyntaxErrorException e) {
+                    if (!e.getMessage().contains("not exist")) {
+                        throw e;
+                    }
+                }
                 connectionInfo =
-                        new OceanBaseConnectionInfo(options.getUsername(), dialect, version);
+                        new OceanBaseConnectionInfo(options, compatibleMode, dialect, version);
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to get connection info", e);
             }
         }
         return connectionInfo;
+    }
+
+    @Override
+    public OceanBaseTablePartInfo getTablePartInfo() {
+        if (tablePartitionInfo == null) {
+            TableEntry tableEntry;
+            try (Connection connection = getConnection()) {
+                if (getConnectionInfo().getVersion().isV4()) {
+                    tableEntry =
+                            new TableEntryExtractorV4()
+                                    .queryTableEntry(
+                                            connection, getConnectionInfo().getTableEntryKey());
+                } else {
+                    tableEntry =
+                            new TableEntryExtractor()
+                                    .queryTableEntry(
+                                            connection, getConnectionInfo().getTableEntryKey());
+                }
+                if (tableEntry == null) {
+                    throw new RuntimeException(
+                            "Failed to get table entry with key: "
+                                    + getConnectionInfo().getTableEntryKey());
+                }
+                tablePartitionInfo =
+                        new OceanBaseTablePartInfo(
+                                tableEntry, getConnectionInfo().getVersion().isV4());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to get table partition info", e);
+            }
+        }
+        return tablePartitionInfo;
     }
 
     @Override

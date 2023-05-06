@@ -13,6 +13,8 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.partition.calculator.enums.ObServerMode;
+import com.oceanbase.partition.calculator.model.TableEntryKey;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -57,13 +59,21 @@ public class OceanBaseConnectionInfo implements Serializable {
         }
     }
 
-    private final String clusterName;
-    private final String tenantName;
     private final OceanBaseDialect dialect;
     private final Version version;
+    private final String tableName;
+    private final TableEntryKey tableEntryKey;
 
-    public OceanBaseConnectionInfo(String username, OceanBaseDialect dialect, Version version) {
-        String clusterName = "", tenantName = "sys";
+    public OceanBaseConnectionInfo(
+            OceanBaseConnectionOptions options,
+            CompatibleMode compatibleMode,
+            OceanBaseDialect dialect,
+            String version) {
+        this.dialect = dialect;
+        this.version = Version.fromString(version);
+        String username = options.getUsername();
+        String clusterName = "";
+        String tenantName = "sys";
         try {
             if (username.contains("@")) {
                 int i = username.indexOf("@");
@@ -85,18 +95,16 @@ public class OceanBaseConnectionInfo implements Serializable {
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to parse username", e);
         }
-        this.clusterName = clusterName;
-        this.tenantName = tenantName;
-        this.dialect = dialect;
-        this.version = version;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public String getTenantName() {
-        return tenantName;
+        this.tableName = options.getTableName();
+        this.tableEntryKey =
+                new TableEntryKey(
+                        clusterName,
+                        tenantName,
+                        options.getSchemaName(),
+                        options.getTableName(),
+                        compatibleMode.isMySqlMode()
+                                ? ObServerMode.fromMySql(version)
+                                : ObServerMode.fromOracle(version));
     }
 
     public OceanBaseDialect getDialect() {
@@ -105,5 +113,13 @@ public class OceanBaseConnectionInfo implements Serializable {
 
     public Version getVersion() {
         return version;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public TableEntryKey getTableEntryKey() {
+        return tableEntryKey;
     }
 }

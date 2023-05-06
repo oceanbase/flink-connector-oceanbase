@@ -17,7 +17,6 @@ import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
 
 public interface OceanBaseConnectionProvider extends AutoCloseable {
@@ -38,17 +37,24 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
     OceanBaseConnectionInfo getConnectionInfo();
 
     /**
+     * Get table partition info
+     *
+     * @return table partition info
+     */
+    OceanBaseTablePartInfo getTablePartInfo();
+
+    /**
      * Attempts to get the compatible mode of OceanBase
      *
      * @return compatible mode
      * @throws SQLException if a database access error occurs
      */
-    default OceanBaseConnectionInfo.CompatibleMode getCompatibleMode() throws SQLException {
+    default String getCompatibleMode() throws SQLException {
         try (Connection conn = getConnection();
                 Statement statement = conn.createStatement()) {
             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'ob_compatibility_mode'");
             if (rs.next()) {
-                return OceanBaseConnectionInfo.CompatibleMode.fromString(rs.getString("Value"));
+                return rs.getString("Value");
             }
             return null;
         }
@@ -60,20 +66,14 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
      * @return version
      * @throws SQLException if a database access error occurs
      */
-    default OceanBaseConnectionInfo.Version getVersion(OceanBaseDialect dialect)
-            throws SQLException {
+    default String getVersion(OceanBaseDialect dialect) throws SQLException {
         try (Connection conn = getConnection();
                 Statement statement = conn.createStatement()) {
             ResultSet rs = statement.executeQuery(dialect.getSelectOBVersionStatement());
             if (rs.next()) {
-                return OceanBaseConnectionInfo.Version.fromString(rs.getString(1));
+                return rs.getString(1);
             }
-            return OceanBaseConnectionInfo.Version.LEGACY;
-        } catch (SQLSyntaxErrorException e) {
-            if (e.getMessage().contains("not exist")) {
-                return OceanBaseConnectionInfo.Version.LEGACY;
-            }
-            throw e;
+            return null;
         }
     }
 }

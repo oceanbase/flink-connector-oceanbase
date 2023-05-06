@@ -35,6 +35,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("The JDBC database URL.");
 
+    public static final ConfigOption<String> SCHEMA_NAME =
+            ConfigOptions.key("schema-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The schema name.");
+
     public static final ConfigOption<String> TABLE_NAME =
             ConfigOptions.key("table-name")
                     .stringType()
@@ -121,6 +127,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .withDescription(
                             "The check interval mills, over this time, the writer will check if memstore reaches threshold.");
 
+    public static final ConfigOption<Boolean> PARTITION_ENABLED =
+            ConfigOptions.key("partition.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether enable partition calculation.");
+
     private final ReadableConfig allConfig;
 
     public OceanBaseConnectorOptions(Map<String, String> allOptions) {
@@ -130,6 +142,8 @@ public class OceanBaseConnectorOptions implements Serializable {
     public OceanBaseConnectionOptions getConnectionOptions() {
         return new OceanBaseConnectionOptions(
                 allConfig.get(URL),
+                allConfig.get(SCHEMA_NAME),
+                allConfig.get(TABLE_NAME),
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
                 allConfig.get(DRIVER_CLASS_NAME),
@@ -139,7 +153,6 @@ public class OceanBaseConnectorOptions implements Serializable {
 
     public OceanBaseWriterOptions getWriterOptions() {
         return new OceanBaseWriterOptions(
-                allConfig.get(TABLE_NAME),
                 allConfig.get(UPSERT_MODE),
                 allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis(),
                 allConfig.get(BUFFER_SIZE),
@@ -147,7 +160,8 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(MAX_RETRIES),
                 allConfig.get(MEMSTORE_CHECK_ENABLED),
                 allConfig.get(MEMSTORE_THRESHOLD),
-                allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis());
+                allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis(),
+                allConfig.get(PARTITION_ENABLED));
     }
 
     private Properties parseProperties(String propsStr) {
