@@ -87,8 +87,9 @@ See the Mulan PSL v2 for more details.
                   <include>com.alibaba:druid</include>
                   <include>com.zaxxer:HikariCP</include>
                   <include>mysql:mysql-connector-java</include>
-                  <include>org.apache.commons:*</include>
-                  <include>com.google.guava:*</include>
+                  <include>commons-collections:commons-collections</include>
+                  <include>org.apache.commons:commons-lang3</include>
+                  <include>com.google.guava:guava</include>
                 </includes>
               </artifactSet>
               <relocations>
@@ -99,9 +100,9 @@ See the Mulan PSL v2 for more details.
                   </shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>com.google.guava</pattern>
+                  <pattern>com.google</pattern>
                   <shadedPattern>
-                    com.oceanbase.connector.flink.shaded.com.google.guava
+                    com.oceanbase.connector.flink.shaded.com.google
                   </shadedPattern>
                 </relocation>
               </relocations>
