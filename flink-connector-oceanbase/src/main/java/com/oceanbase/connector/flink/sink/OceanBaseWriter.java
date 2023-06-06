@@ -16,6 +16,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
+import com.oceanbase.connector.flink.sink.statement.OceanBaseStatementExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

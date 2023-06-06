@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-package com.oceanbase.connector.flink.table;
+package com.oceanbase.connector.flink.connection;
 
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.UniqueConstraint;

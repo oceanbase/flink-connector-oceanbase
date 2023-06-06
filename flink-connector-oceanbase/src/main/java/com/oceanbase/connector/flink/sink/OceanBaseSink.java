@@ -18,7 +18,9 @@ import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.table.data.RowData;
 
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.sink.statement.OceanBaseRowDataStatementExecutor;
+import com.oceanbase.connector.flink.sink.statement.OceanBaseStatementExecutor;
 
 import java.io.IOException;
 
