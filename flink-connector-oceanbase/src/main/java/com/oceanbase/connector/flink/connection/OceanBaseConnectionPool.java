@@ -16,9 +16,11 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
+import com.oceanbase.partition.calculator.model.TableEntryKey;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
@@ -26,7 +28,6 @@ import javax.sql.DataSource;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLSyntaxErrorException;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
 
@@ -90,27 +91,30 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     @Override
     public OceanBaseConnectionInfo getConnectionInfo() {
         if (connectionInfo == null) {
+            OceanBaseConnectionInfo.CompatibleMode compatibleMode =
+                    OceanBaseConnectionInfo.CompatibleMode.fromString(options.getCompatibleMode());
+            OceanBaseDialect dialect =
+                    compatibleMode.isMySqlMode()
+                            ? new OceanBaseMySQLDialect()
+                            : new OceanBaseOracleDialect();
+            String versionString;
             try {
-                OceanBaseConnectionInfo.CompatibleMode compatibleMode =
-                        OceanBaseConnectionInfo.CompatibleMode.fromString(
-                                OceanBaseConnectionProvider.super.getCompatibleMode());
-                OceanBaseDialect dialect =
-                        compatibleMode.isMySqlMode()
-                                ? new OceanBaseMySQLDialect()
-                                : new OceanBaseOracleDialect();
-                String version = null;
-                try {
-                    version = OceanBaseConnectionProvider.super.getVersion(dialect);
-                } catch (SQLSyntaxErrorException e) {
-                    if (!e.getMessage().contains("not exist")) {
-                        throw e;
-                    }
-                }
-                connectionInfo =
-                        new OceanBaseConnectionInfo(options, compatibleMode, dialect, version);
+                versionString = getVersion(dialect);
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to get connection info", e);
+                throw new RuntimeException("Failed to query version of OceanBase", e);
             }
+            OceanBaseConnectionInfo.Version version =
+                    OceanBaseConnectionInfo.Version.fromString(versionString);
+            TableEntryKey tableEntryKey =
+                    new TableEntryKey(
+                            options.getClusterName(),
+                            options.getTenantName(),
+                            options.getSchemaName(),
+                            options.getTableName(),
+                            compatibleMode.isMySqlMode()
+                                    ? ObServerMode.fromMySql(versionString)
+                                    : ObServerMode.fromOracle(versionString));
+            connectionInfo = new OceanBaseConnectionInfo(dialect, version, tableEntryKey);
         }
         return connectionInfo;
     }

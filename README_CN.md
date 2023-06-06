@@ -132,10 +132,13 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'cluster-name' = 'obcluster',
+      'tenant-name' = 'test',
       'schema-name' = 'test',
       'table-name' = 't_sink',
-      'username' = 'root@test',
+      'username' = 'root@test#obcluster',
       'password' = 'pswd',
+      'compatible-mode' = 'mysql',
       'driver-class' = 'com.mysql.jdbc.Driver',
       'connection-pool' = 'druid',
       'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
@@ -163,10 +166,13 @@ VALUES (1, 'Tom', 99),
 | 参数名                        | 是否必需 | 默认值   | 类型       | 描述                                   |
 |----------------------------|------|-------|----------|--------------------------------------|
 | url                        | 是    |       | String   | 数据库的 JDBC url，需要包含 Schema 名或库名       |
+| cluster-name               | 是    |       | String   | 集群名                                  |
+| tenant-name                | 是    |       | String   | 租户名                                  |
 | schema-name                | 是    |       | String   | 连接的 Schema 名或库名                      |
 | table-name                 | 是    |       | String   | 表名                                   |
 | username                   | 是    |       | String   | 连接用户名                                |
 | password                   | 是    |       | String   | 连接密码                                 |
+| compatible-mode            | 是    |       | String   | 兼容模式，可以是 'mysql' 或 'oracle'          |
 | driver-class               | 是    |       | String   | JDBC 驱动的类名，如 'com.mysql.jdbc.Driver' |
 | connection-pool            | 是    |       | String   | 连接池类型，可以是 'druid' 或 'hikari'         |
 | connection-pool-properties | 否    |       | String   | 连接池属性，需要根据连接池类型进行配置，多个值用分号分隔         |

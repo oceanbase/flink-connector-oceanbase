@@ -35,6 +35,18 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("The JDBC database URL.");
 
+    public static final ConfigOption<String> CLUSTER_NAME =
+            ConfigOptions.key("cluster-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The cluster name.");
+
+    public static final ConfigOption<String> TENANT_NAME =
+            ConfigOptions.key("tenant-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The tenant name.");
+
     public static final ConfigOption<String> SCHEMA_NAME =
             ConfigOptions.key("schema-name")
                     .stringType()
@@ -58,6 +70,13 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("The password.");
+
+    public static final ConfigOption<String> COMPATIBLE_MODE =
+            ConfigOptions.key("compatible-mode")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The compatible mode of OceanBase, can be 'mysql' or 'oracle'.");
 
     public static final ConfigOption<String> DRIVER_CLASS_NAME =
             ConfigOptions.key("driver-class")
@@ -142,10 +161,13 @@ public class OceanBaseConnectorOptions implements Serializable {
     public OceanBaseConnectionOptions getConnectionOptions() {
         return new OceanBaseConnectionOptions(
                 allConfig.get(URL),
+                allConfig.get(CLUSTER_NAME),
+                allConfig.get(TENANT_NAME),
                 allConfig.get(SCHEMA_NAME),
                 allConfig.get(TABLE_NAME),
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
+                allConfig.get(COMPATIBLE_MODE),
                 allConfig.get(DRIVER_CLASS_NAME),
                 allConfig.get(CONNECTION_POOL),
                 parseProperties(allConfig.get(CONNECTION_POOL_PROPERTIES)));

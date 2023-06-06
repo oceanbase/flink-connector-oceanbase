@@ -131,10 +131,13 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'cluster-name' = 'obcluster',
+      'tenant-name' = 'test',
       'schema-name' = 'test',
       'table-name' = 't_sink',
-      'username' = 'root@test',
+      'username' = 'root@test#obcluster',
       'password' = 'pswd',
+      'compatible-mode' = 'mysql',
       'driver-class' = 'com.mysql.jdbc.Driver',
       'connection-pool' = 'druid',
       'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
@@ -162,10 +165,13 @@ Once executed, the records should have been written to OceanBase.
 | Option                     | Required | Default | Type     | Description                                                                                                           |
 |----------------------------|----------|---------|----------|-----------------------------------------------------------------------------------------------------------------------|
 | url                        | Yes      |         | String   | JDBC url, schema name or database name is also required here                                                          |
+| cluster-name               | Yes      |         | String   | The cluster name of OceanBase                                                                                         |
+| tenant-name                | Yes      |         | String   | The tenant name of OceanBase                                                                                          |
 | schema-name                | Yes      |         | String   | Schema name or database name                                                                                          |
 | table-name                 | Yes      |         | String   | Table name                                                                                                            |
 | username                   | Yes      |         | String   | User name                                                                                                             |
 | password                   | Yes      |         | String   | Password                                                                                                              |
+| compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                          |
 | driver-class               | Yes      |         | String   | JDBC driver class name, like 'com.mysql.jdbc.Driver'                                                                  |
 | connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                             |
 | connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons |

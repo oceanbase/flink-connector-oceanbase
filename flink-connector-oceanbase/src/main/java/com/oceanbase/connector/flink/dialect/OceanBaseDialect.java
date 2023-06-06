@@ -151,4 +151,13 @@ public interface OceanBaseDialect {
      * @return the select statement for OB_VERSION() function
      */
     String getSelectOBVersionStatement();
+
+    /**
+     * Get the statement to query 'version_comment'
+     *
+     * @return the statement to query 'version_comment'
+     */
+    default String getQueryVersionCommentStatement() {
+        return "SHOW VARIABLES LIKE 'version_comment'";
+    }
 }

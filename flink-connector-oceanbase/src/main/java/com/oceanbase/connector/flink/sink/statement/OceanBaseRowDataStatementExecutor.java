@@ -22,6 +22,7 @@ import com.oceanbase.connector.flink.connection.OceanBaseConnectionInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,44 +75,27 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         this.options = options;
         this.tableSchema = tableSchema;
         this.connectionProvider = connectionProvider;
+
         OceanBaseConnectionInfo connectionInfo = connectionProvider.getConnectionInfo();
+        OceanBaseDialect dialect = connectionInfo.getDialect();
+        String tableName = connectionInfo.getTableEntryKey().getTableName();
+
         this.existStatementSql =
-                connectionInfo
-                        .getDialect()
-                        .getExistStatement(
-                                connectionInfo.getTableName(), tableSchema.getKeyFieldNames());
+                dialect.getExistStatement(tableName, tableSchema.getKeyFieldNames());
         this.insertStatementSql =
-                connectionInfo
-                        .getDialect()
-                        .getInsertIntoStatement(
-                                connectionInfo.getTableName(), tableSchema.getFieldNames());
+                dialect.getInsertIntoStatement(tableName, tableSchema.getFieldNames());
         this.updateStatementSql =
-                connectionInfo
-                        .getDialect()
-                        .getUpdateStatement(
-                                connectionInfo.getTableName(),
-                                tableSchema.getFieldNames(),
-                                tableSchema.getKeyFieldNames());
+                dialect.getUpdateStatement(
+                        tableName, tableSchema.getFieldNames(), tableSchema.getKeyFieldNames());
         this.deleteStatementSql =
-                connectionInfo
-                        .getDialect()
-                        .getDeleteStatement(
-                                connectionInfo.getTableName(), tableSchema.getKeyFieldNames());
+                dialect.getDeleteStatement(tableName, tableSchema.getKeyFieldNames());
         this.upsertStatementSql =
-                connectionInfo
-                        .getDialect()
-                        .getUpsertStatement(
-                                connectionInfo.getTableName(),
-                                tableSchema.getFieldNames(),
-                                tableSchema.getKeyFieldNames());
+                dialect.getUpsertStatement(
+                        tableName, tableSchema.getFieldNames(), tableSchema.getKeyFieldNames());
         this.queryMemStoreSql =
                 connectionInfo.getVersion().isV4()
-                        ? connectionInfo
-                                .getDialect()
-                                .getMemStoreExistStatement(options.getMemStoreThreshold())
-                        : connectionInfo
-                                .getDialect()
-                                .getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
+                        ? dialect.getMemStoreExistStatement(options.getMemStoreThreshold())
+                        : dialect.getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
         this.tablePartInfo =
                 options.isPartitionEnabled() ? connectionProvider.getTablePartInfo() : null;
         this.partColumnIndexes =
