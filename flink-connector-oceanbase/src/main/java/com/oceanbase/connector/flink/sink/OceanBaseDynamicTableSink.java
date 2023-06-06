@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-package com.oceanbase.connector.flink.table.sink;
+package com.oceanbase.connector.flink.sink;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.Sink;
@@ -24,12 +24,10 @@ import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 
+import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionPool;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.sink.OceanBaseSink;
-import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
-import com.oceanbase.connector.flink.table.OceanBaseConnectorOptions;
-import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
 
 import static org.apache.flink.util.Preconditions.checkState;
 

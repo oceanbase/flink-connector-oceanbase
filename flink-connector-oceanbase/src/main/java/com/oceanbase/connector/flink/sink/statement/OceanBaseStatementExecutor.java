@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-package com.oceanbase.connector.flink.sink;
+package com.oceanbase.connector.flink.sink.statement;
 
 import java.io.Serializable;
 import java.sql.SQLException;
