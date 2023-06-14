@@ -22,6 +22,8 @@ import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
@@ -30,6 +32,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseConnectionPool.class);
 
     private static final long serialVersionUID = 1L;
 
@@ -122,6 +126,14 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Ser
     @Override
     public OceanBaseTablePartInfo getTablePartInfo() {
         if (tablePartitionInfo == null) {
+            OceanBaseConnectionInfo.Version version = getConnectionInfo().getVersion();
+            if ((version.isV4() && "sys".equalsIgnoreCase(options.getTenantName()))
+                    || (!version.isV4() && !"sys".equalsIgnoreCase(options.getTenantName()))) {
+                LOG.warn(
+                        "Can't query table entry on tenant {} for current version of OceanBase",
+                        options.getTenantName());
+                return null;
+            }
             TableEntry tableEntry;
             try (Connection connection = getConnection()) {
                 if (getConnectionInfo().getVersion().isV4()) {
