@@ -156,6 +156,13 @@ public class OceanBaseConnectorOptions implements Serializable {
 
     public OceanBaseConnectorOptions(Map<String, String> allOptions) {
         this.allConfig = Configuration.fromMap(allOptions);
+        if (allConfig.get(PARTITION_ENABLED)
+                && (allConfig.get(CLUSTER_NAME) == null
+                        || allConfig.get(TENANT_NAME) == null
+                        || allConfig.get(SCHEMA_NAME) == null)) {
+            throw new IllegalArgumentException(
+                    "'cluster-name', 'tenant-name' and 'schema-name' are required when 'partition.enabled' is true.");
+        }
     }
 
     public OceanBaseConnectionOptions getConnectionOptions() {
