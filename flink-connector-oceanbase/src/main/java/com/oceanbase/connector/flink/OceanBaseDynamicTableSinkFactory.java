@@ -56,7 +56,6 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OceanBaseConnectorOptions.URL);
-        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
         options.add(OceanBaseConnectorOptions.TABLE_NAME);
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);
@@ -68,6 +67,10 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(OceanBaseConnectorOptions.CLUSTER_NAME);
+        options.add(OceanBaseConnectorOptions.TENANT_NAME);
+        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
+        options.add(OceanBaseConnectorOptions.COMPATIBLE_MODE);
         options.add(OceanBaseConnectorOptions.CONNECTION_POOL_PROPERTIES);
         options.add(OceanBaseConnectorOptions.UPSERT_MODE);
         options.add(OceanBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);

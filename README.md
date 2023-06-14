@@ -131,10 +131,13 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'cluster-name' = 'obcluster',
+      'tenant-name' = 'test',
       'schema-name' = 'test',
       'table-name' = 't_sink',
-      'username' = 'root@test',
+      'username' = 'root@test#obcluster',
       'password' = 'pswd',
+      'compatible-mode' = 'mysql',
       'driver-class' = 'com.mysql.jdbc.Driver',
       'connection-pool' = 'druid',
       'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
@@ -162,12 +165,15 @@ Once executed, the records should have been written to OceanBase.
 | Option                     | Required | Default | Type     | Description                                                                                                           |
 |----------------------------|----------|---------|----------|-----------------------------------------------------------------------------------------------------------------------|
 | url                        | Yes      |         | String   | JDBC url, schema name or database name is also required here                                                          |
-| schema-name                | Yes      |         | String   | Schema name or database name                                                                                          |
 | table-name                 | Yes      |         | String   | Table name                                                                                                            |
 | username                   | Yes      |         | String   | User name                                                                                                             |
 | password                   | Yes      |         | String   | Password                                                                                                              |
+| compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                          |
 | driver-class               | Yes      |         | String   | JDBC driver class name, like 'com.mysql.jdbc.Driver'                                                                  |
 | connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                             |
+| cluster-name               | No       |         | String   | The cluster name of OceanBase                                                                                         |
+| tenant-name                | No       |         | String   | The tenant name of OceanBase                                                                                          |
+| schema-name                | No       |         | String   | Schema name or database name                                                                                          |
 | connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons |
 | upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                            |
 | buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                 |

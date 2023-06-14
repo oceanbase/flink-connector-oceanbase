@@ -13,6 +13,7 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -44,23 +45,6 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
     OceanBaseTablePartInfo getTablePartInfo();
 
     /**
-     * Attempts to get the compatible mode of OceanBase
-     *
-     * @return compatible mode
-     * @throws SQLException if a database access error occurs
-     */
-    default String getCompatibleMode() throws SQLException {
-        try (Connection conn = getConnection();
-                Statement statement = conn.createStatement()) {
-            ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'ob_compatibility_mode'");
-            if (rs.next()) {
-                return rs.getString("Value");
-            }
-            return null;
-        }
-    }
-
-    /**
      * Attempts to get the version of OceanBase
      *
      * @return version
@@ -69,9 +53,24 @@ public interface OceanBaseConnectionProvider extends AutoCloseable {
     default String getVersion(OceanBaseDialect dialect) throws SQLException {
         try (Connection conn = getConnection();
                 Statement statement = conn.createStatement()) {
-            ResultSet rs = statement.executeQuery(dialect.getSelectOBVersionStatement());
+            try {
+                ResultSet rs = statement.executeQuery(dialect.getSelectOBVersionStatement());
+                if (rs.next()) {
+                    return rs.getString(1);
+                }
+            } catch (SQLException e) {
+                if (!e.getMessage().contains("not exist")) {
+                    throw e;
+                }
+            }
+
+            ResultSet rs = statement.executeQuery(dialect.getQueryVersionCommentStatement());
             if (rs.next()) {
-                return rs.getString(1);
+                String versionComment = rs.getString("VALUE");
+                String[] parts = StringUtils.split(versionComment, " ");
+                if (parts != null && parts.length > 1) {
+                    return parts[1];
+                }
             }
             return null;
         }

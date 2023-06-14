@@ -19,28 +19,37 @@ public class OceanBaseConnectionOptions implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String url;
+    private final String clusterName;
+    private final String tenantName;
     private final String schemaName;
     private final String tableName;
     private final String username;
     private final String password;
+    private final String compatibleMode;
     private final String driverClass;
     private final String connectionPool;
     private final Properties connectionPoolProperties;
 
     public OceanBaseConnectionOptions(
             String url,
+            String clusterName,
+            String tenantName,
             String schemaName,
             String tableName,
             String username,
             String password,
+            String compatibleMode,
             String driverClass,
             String connectionPool,
             Properties connectionPoolProperties) {
         this.url = url;
+        this.clusterName = clusterName;
+        this.tenantName = tenantName;
         this.schemaName = schemaName;
         this.tableName = tableName;
         this.username = username;
         this.password = password;
+        this.compatibleMode = compatibleMode;
         this.driverClass = driverClass;
         this.connectionPool = connectionPool;
         this.connectionPoolProperties = connectionPoolProperties;
@@ -48,6 +57,14 @@ public class OceanBaseConnectionOptions implements Serializable {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getTenantName() {
+        return tenantName;
     }
 
     public String getSchemaName() {
@@ -64,6 +81,10 @@ public class OceanBaseConnectionOptions implements Serializable {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getCompatibleMode() {
+        return compatibleMode;
     }
 
     public String getDriverClass() {
