@@ -173,8 +173,8 @@ VALUES (1, 'Tom', 99),
 | compatible-mode            | 是    |       | String   | 兼容模式，可以是 'mysql' 或 'oracle'          |
 | driver-class               | 是    |       | String   | JDBC 驱动的类名，如 'com.mysql.jdbc.Driver' |
 | connection-pool            | 是    |       | String   | 连接池类型，可以是 'druid' 或 'hikari'         |
-| cluster-name               | 否    |       | String   | 集群名                                  |
-| tenant-name                | 否    |       | String   | 租户名                                  |
+| cluster-name               | 否    |       | String   | 集群名，开启分区计算功能时为必填                     |
+| tenant-name                | 否    |       | String   | 租户名，开启分区计算功能时为必填                     |
 | connection-pool-properties | 否    |       | String   | 连接池属性，需要根据连接池类型进行配置，多个值用分号分隔         |
 | upsert-mode                | 否    | true  | Boolean  | 是否使用 upsert 模式                       |
 | buffer-flush.interval      | 否    | 1s    | Duration | 缓冲区刷新周期                              |
