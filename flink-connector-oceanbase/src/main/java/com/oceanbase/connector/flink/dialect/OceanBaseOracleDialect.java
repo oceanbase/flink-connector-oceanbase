@@ -26,6 +26,7 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
 
     @Override
     public String getUpsertStatement(
+            @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields) {
@@ -54,7 +55,7 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
                         .collect(Collectors.joining(", "));
 
         return "MERGE INTO "
-                + tableName
+                + getFullTableName(schemaName, tableName)
                 + " t "
                 + " USING (SELECT "
                 + sourceFields

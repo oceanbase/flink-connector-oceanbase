@@ -164,7 +164,8 @@ Once executed, the records should have been written to OceanBase.
 
 | Option                     | Required | Default | Type     | Description                                                                                                           |
 |----------------------------|----------|---------|----------|-----------------------------------------------------------------------------------------------------------------------|
-| url                        | Yes      |         | String   | JDBC url, schema name or database name is also required here                                                          |
+| url                        | Yes      |         | String   | JDBC url                                                                                                              |
+| schema-name                | Yes      |         | String   | Schema name or database name                                                                                          |
 | table-name                 | Yes      |         | String   | Table name                                                                                                            |
 | username                   | Yes      |         | String   | User name                                                                                                             |
 | password                   | Yes      |         | String   | Password                                                                                                              |
@@ -173,7 +174,6 @@ Once executed, the records should have been written to OceanBase.
 | connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                             |
 | cluster-name               | No       |         | String   | The cluster name of OceanBase                                                                                         |
 | tenant-name                | No       |         | String   | The tenant name of OceanBase                                                                                          |
-| schema-name                | No       |         | String   | Schema name or database name                                                                                          |
 | connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons |
 | upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                            |
 | buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                 |

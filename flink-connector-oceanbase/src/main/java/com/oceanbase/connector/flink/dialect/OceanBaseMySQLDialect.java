@@ -26,6 +26,7 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
 
     @Override
     public String getUpsertStatement(
+            @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields) {
@@ -34,7 +35,7 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
                         .filter(f -> !uniqueKeyFields.contains(f))
                         .map(f -> quoteIdentifier(f) + "=VALUES(" + quoteIdentifier(f) + ")")
                         .collect(Collectors.joining(", "));
-        return getInsertIntoStatement(tableName, fieldNames)
+        return getInsertIntoStatement(schemaName, tableName, fieldNames)
                 + " ON DUPLICATE KEY UPDATE "
                 + updateClause;
     }
