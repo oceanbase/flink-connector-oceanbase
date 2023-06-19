@@ -20,6 +20,8 @@ import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,6 +31,7 @@ import java.sql.Statement;
 
 @Ignore
 public class OceanBaseSinkTest {
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseSinkTest.class);
 
     private static final OceanBaseDialect DIALECT = new OceanBaseMySQLDialect();
 
@@ -57,10 +60,7 @@ public class OceanBaseSinkTest {
                         + "height double,"
                         + "birthday date)";
 
-        String fullTableName =
-                String.format(
-                        "%s.%s",
-                        DIALECT.quoteIdentifier(schemaName), DIALECT.quoteIdentifier(tableName));
+        String fullTableName = DIALECT.getFullTableName(schemaName, tableName);
 
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
                 Statement statement = connection.createStatement()) {
@@ -110,10 +110,18 @@ public class OceanBaseSinkTest {
                 Statement statement = connection.createStatement()) {
             ResultSet rs = statement.executeQuery(String.format("SELECT * FROM %s", fullTableName));
             ResultSetMetaData metaData = rs.getMetaData();
+            int count = 0;
             while (rs.next()) {
+                StringBuilder sb = new StringBuilder("Row ").append(count++).append(": { ");
                 for (int i = 0; i < metaData.getColumnCount(); i++) {
-                    System.out.printf("%s: %s", metaData.getColumnName(i + 1), rs.getObject(i + 1));
+                    if (i != 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(metaData.getColumnName(i + 1))
+                            .append(": ")
+                            .append(rs.getObject(i + 1));
                 }
+                LOG.info(sb.append("}").toString());
             }
         }
     }

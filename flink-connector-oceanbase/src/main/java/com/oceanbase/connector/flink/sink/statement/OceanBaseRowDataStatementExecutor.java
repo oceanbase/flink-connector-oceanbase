@@ -78,20 +78,27 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
         OceanBaseConnectionInfo connectionInfo = connectionProvider.getConnectionInfo();
         OceanBaseDialect dialect = connectionInfo.getDialect();
+        String schemaName = connectionInfo.getTableEntryKey().getSchemaName();
         String tableName = connectionInfo.getTableEntryKey().getTableName();
 
         this.existStatementSql =
-                dialect.getExistStatement(tableName, tableSchema.getKeyFieldNames());
+                dialect.getExistStatement(schemaName, tableName, tableSchema.getKeyFieldNames());
         this.insertStatementSql =
-                dialect.getInsertIntoStatement(tableName, tableSchema.getFieldNames());
+                dialect.getInsertIntoStatement(schemaName, tableName, tableSchema.getFieldNames());
         this.updateStatementSql =
                 dialect.getUpdateStatement(
-                        tableName, tableSchema.getFieldNames(), tableSchema.getKeyFieldNames());
+                        schemaName,
+                        tableName,
+                        tableSchema.getFieldNames(),
+                        tableSchema.getKeyFieldNames());
         this.deleteStatementSql =
-                dialect.getDeleteStatement(tableName, tableSchema.getKeyFieldNames());
+                dialect.getDeleteStatement(schemaName, tableName, tableSchema.getKeyFieldNames());
         this.upsertStatementSql =
                 dialect.getUpsertStatement(
-                        tableName, tableSchema.getFieldNames(), tableSchema.getKeyFieldNames());
+                        schemaName,
+                        tableName,
+                        tableSchema.getFieldNames(),
+                        tableSchema.getKeyFieldNames());
         this.queryMemStoreSql =
                 connectionInfo.getVersion().isV4()
                         ? dialect.getMemStoreExistStatement(options.getMemStoreThreshold())

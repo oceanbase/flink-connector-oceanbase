@@ -29,14 +29,27 @@ public interface OceanBaseDialect {
     String quoteIdentifier(@Nonnull String identifier);
 
     /**
+     * Get the full table name
+     *
+     * @param schemaName schema name
+     * @param tableName table name
+     * @return full table name
+     */
+    default String getFullTableName(@Nonnull String schemaName, @Nonnull String tableName) {
+        return String.format("%s.%s", quoteIdentifier(schemaName), quoteIdentifier(tableName));
+    }
+
+    /**
      * Gets the upsert statement
      *
+     * @param schemaName schema name
      * @param tableName table name
      * @param fieldNames field names list
      * @param uniqueKeyFields unique key field names list
      * @return the statement string
      */
     String getUpsertStatement(
+            @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields);
@@ -44,33 +57,42 @@ public interface OceanBaseDialect {
     /**
      * Gets the exist statement
      *
+     * @param schemaName schema name
      * @param tableName table name
      * @param uniqueKeyFields unique key field names list
      * @return the statement string
      */
     default String getExistStatement(
-            @Nonnull String tableName, @Nonnull List<String> uniqueKeyFields) {
+            @Nonnull String schemaName,
+            @Nonnull String tableName,
+            @Nonnull List<String> uniqueKeyFields) {
         String conditionClause =
                 uniqueKeyFields.stream()
                         .map(f -> String.format("%s = ?", quoteIdentifier(f)))
                         .collect(Collectors.joining(" AND "));
-        return "SELECT 1 FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
+        return "SELECT 1 FROM "
+                + getFullTableName(schemaName, tableName)
+                + " WHERE "
+                + conditionClause;
     }
 
     /**
      * Gets the insert statement
      *
+     * @param schemaName schema name
      * @param tableName table name
      * @param fieldNames field names list
      * @return the statement string
      */
     default String getInsertIntoStatement(
-            @Nonnull String tableName, @Nonnull List<String> fieldNames) {
+            @Nonnull String schemaName,
+            @Nonnull String tableName,
+            @Nonnull List<String> fieldNames) {
         String columns =
                 fieldNames.stream().map(this::quoteIdentifier).collect(Collectors.joining(", "));
         String placeholders = String.join(", ", Collections.nCopies(fieldNames.size(), "?"));
         return "INSERT INTO "
-                + quoteIdentifier(tableName)
+                + getFullTableName(schemaName, tableName)
                 + "("
                 + columns
                 + ")"
@@ -82,12 +104,14 @@ public interface OceanBaseDialect {
     /**
      * Gets the update statement
      *
+     * @param schemaName schema name
      * @param tableName table name
      * @param fieldNames field names list
      * @param uniqueKeyFields unique key field names list
      * @return the statement string
      */
     default String getUpdateStatement(
+            @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields) {
@@ -101,7 +125,7 @@ public interface OceanBaseDialect {
                         .map(f -> String.format("%s = ?", quoteIdentifier(f)))
                         .collect(Collectors.joining(" AND "));
         return "UPDATE "
-                + quoteIdentifier(tableName)
+                + getFullTableName(schemaName, tableName)
                 + " SET "
                 + setClause
                 + " WHERE "
@@ -111,17 +135,23 @@ public interface OceanBaseDialect {
     /**
      * Gets the delete statement
      *
+     * @param schemaName schema name
      * @param tableName table name
      * @param uniqueKeyFields unique key field names list
      * @return the statement string
      */
     default String getDeleteStatement(
-            @Nonnull String tableName, @Nonnull List<String> uniqueKeyFields) {
+            @Nonnull String schemaName,
+            @Nonnull String tableName,
+            @Nonnull List<String> uniqueKeyFields) {
         String conditionClause =
                 uniqueKeyFields.stream()
                         .map(f -> String.format("%s = ?", quoteIdentifier(f)))
                         .collect(Collectors.joining(" AND "));
-        return "DELETE FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
+        return "DELETE FROM "
+                + getFullTableName(schemaName, tableName)
+                + " WHERE "
+                + conditionClause;
     }
 
     /**
