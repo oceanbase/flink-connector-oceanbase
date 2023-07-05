@@ -16,6 +16,8 @@ import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.data.RowData;
 
+import com.oceanbase.connector.flink.converter.OceanBaseRowConverter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +44,7 @@ public class OceanBaseTableSchema implements Serializable {
         int k = 0, n = 0;
         for (int i = 0; i < this.fieldNames.size(); i++) {
             RowData.FieldGetter fieldGetter =
-                    RowData.createFieldGetter(
+                    OceanBaseRowConverter.createFieldGetter(
                             schema.getColumnDataTypes().get(i).getLogicalType(), i);
             this.fieldGetters[i] = fieldGetter;
             if (this.keyFieldNames.contains(this.fieldNames.get(i))) {
