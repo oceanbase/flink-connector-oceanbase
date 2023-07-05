@@ -336,12 +336,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
             int index = 1;
             for (RowData.FieldGetter[] fieldGetter : fieldGetters) {
                 for (RowData.FieldGetter getter : fieldGetter) {
-                    Object obj = getter.getFieldOrNull(row);
-                    if (obj == null) {
-                        statement.setObject(index++, null);
-                    } else {
-                        statement.setString(index++, obj.toString());
-                    }
+                    statement.setObject(index++, getter.getFieldOrNull(row));
                 }
             }
         }

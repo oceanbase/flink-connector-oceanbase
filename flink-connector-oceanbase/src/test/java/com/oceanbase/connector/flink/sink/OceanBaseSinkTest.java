@@ -75,7 +75,7 @@ public class OceanBaseSinkTest {
                                 + "    name STRING,"
                                 + "    age  INT,"
                                 + "    height  DOUBLE,"
-                                + "    birthday  STRING,"
+                                + "    birthday  DATE,"
                                 + "    PRIMARY KEY (id) NOT ENFORCED"
                                 + ") with ("
                                 + "  'connector'='oceanbase',"
@@ -102,8 +102,8 @@ public class OceanBaseSinkTest {
 
         tEnv.executeSql(
                         "insert into target values "
-                                + "(1, 'Tom', 30, 1.84, '1993-04-10'),"
-                                + "(2, 'Jerry', 25, 1.65, '1997-10-29')")
+                                + "(1, 'Tom', 30, 1.84, DATE '1993-04-10'),"
+                                + "(2, 'Jerry', 25, 1.65, DATE '1997-10-29')")
                 .await();
 
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
