@@ -9,7 +9,9 @@ pom.xml.next
 release.properties
 
 ### IntelliJ IDEA ###
-.idea/
+.idea/*
+!.idea/vcs.xml
+!.idea/icon.png
 *.iml
 *.ipr
 *.iws
