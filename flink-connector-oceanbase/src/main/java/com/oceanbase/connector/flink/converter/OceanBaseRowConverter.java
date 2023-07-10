@@ -16,10 +16,8 @@ import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.TimestampType;
 
-import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
@@ -27,34 +25,12 @@ import java.time.LocalTime;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class OceanBaseRowConverter implements Serializable {
+public class OceanBaseRowConverter extends AbstractRowConverter {
 
-    public static RowData.FieldGetter createFieldGetter(LogicalType type, int fieldIndex) {
-        return row -> createNullableExternalConverter(type).toExternal(row, fieldIndex);
-    }
+    private static final long serialVersionUID = 1L;
 
-    public interface FieldConverter extends Serializable {
-        Object toExternal(RowData rowData, int fieldIndex);
-    }
-
-    public static FieldConverter createNullableExternalConverter(LogicalType type) {
-        return wrapIntoNullableExternalConverter(createExternalConverter(type), type);
-    }
-
-    public static FieldConverter wrapIntoNullableExternalConverter(
-            FieldConverter fieldConverter, LogicalType type) {
-        return (val, fieldIndex) -> {
-            if (val == null
-                    || val.isNullAt(fieldIndex)
-                    || LogicalTypeRoot.NULL.equals(type.getTypeRoot())) {
-                return null;
-            } else {
-                return fieldConverter.toExternal(val, fieldIndex);
-            }
-        };
-    }
-
-    public static FieldConverter createExternalConverter(LogicalType type) {
+    @Override
+    protected FieldConverter createExternalConverter(LogicalType type) {
         switch (type.getTypeRoot()) {
             case BOOLEAN:
                 return RowData::getBoolean;

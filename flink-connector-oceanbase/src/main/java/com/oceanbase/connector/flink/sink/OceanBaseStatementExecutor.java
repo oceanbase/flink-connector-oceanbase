@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-package com.oceanbase.connector.flink.sink.statement;
+package com.oceanbase.connector.flink.sink;
 
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -23,7 +23,6 @@ import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
-import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +41,12 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExecutor<RowData> {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(OceanBaseRowDataStatementExecutor.class);
+public class OceanBaseStatementExecutor implements StatementExecutor<RowData> {
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseStatementExecutor.class);
 
     private static final long serialVersionUID = 1L;
 
-    private final SinkWriterMetricGroup metricGroup;
-    private final OceanBaseWriterOptions options;
+    private final OceanBaseStatementOptions options;
     private final OceanBaseTableSchema tableSchema;
     private final OceanBaseConnectionProvider connectionProvider;
     private final String existStatementSql;
@@ -69,13 +66,12 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
     private transient volatile boolean closed = false;
     private volatile long lastCheckMemStoreTime;
     private volatile SQLException statementException;
+    private SinkWriterMetricGroup metricGroup;
 
-    public OceanBaseRowDataStatementExecutor(
-            Sink.InitContext context,
-            OceanBaseWriterOptions options,
+    public OceanBaseStatementExecutor(
+            OceanBaseStatementOptions options,
             OceanBaseTableSchema tableSchema,
             OceanBaseConnectionProvider connectionProvider) {
-        this.metricGroup = context.metricGroup();
         this.options = options;
         this.tableSchema = tableSchema;
         this.connectionProvider = connectionProvider;
@@ -141,6 +137,11 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
             this.statementExecutorService = null;
             LOG.info("No table partition info loaded, will flush records directly");
         }
+    }
+
+    @Override
+    public void setContext(Sink.InitContext context) {
+        this.metricGroup = context.metricGroup();
     }
 
     @Override

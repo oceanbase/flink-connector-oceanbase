@@ -16,12 +16,10 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
-import com.oceanbase.connector.flink.sink.statement.OceanBaseStatementExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -33,7 +31,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
 
     private final TypeSerializer<T> serializer;
     private final OceanBaseWriterOptions writerOptions;
-    private final OceanBaseStatementExecutor<T> statementExecutor;
+    private final StatementExecutor<T> statementExecutor;
 
     private final transient ScheduledExecutorService scheduler;
     private final transient ScheduledFuture<?> scheduledFuture;
@@ -43,11 +41,11 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
     private transient volatile boolean closed = false;
 
     public OceanBaseWriter(
-            TypeSerializer<T> serializer,
             OceanBaseWriterOptions writerOptions,
-            OceanBaseStatementExecutor<T> statementExecutor) {
-        this.serializer = serializer;
+            TypeSerializer<T> serializer,
+            StatementExecutor<T> statementExecutor) {
         this.writerOptions = writerOptions;
+        this.serializer = serializer;
         this.statementExecutor = statementExecutor;
 
         this.scheduler =
@@ -103,7 +101,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                 statementExecutor.executeBatch();
                 bufferCount = 0;
                 break;
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 LOG.error("OceanBaseWriter flush error, retry times = {}", i, e);
                 if (i >= writerOptions.getMaxRetries()) {
                     throw new IOException(e);
