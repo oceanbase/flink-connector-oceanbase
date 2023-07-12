@@ -126,6 +126,13 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                 !partColumnIndexes.isEmpty() && options.getPartitionNumber() > 1
                         ? Executors.newFixedThreadPool(options.getPartitionNumber())
                         : null;
+        if (statementExecutorService == null) {
+            LOG.info("No statement executor service set, will execute statement in main thread");
+        } else {
+            LOG.info(
+                    "Set statement executor service with {} threads, will execute statement in parallel",
+                    options.getPartitionNumber());
+        }
     }
 
     @Override
