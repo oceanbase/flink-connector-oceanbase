@@ -185,6 +185,7 @@ VALUES (1, 'Tom', 99),
 | memstore-check.threshold   | 否    | 0.9   | Double   | 内存使用的阈值相对最大限制值的比例                    |
 | memstore-check.interval    | 否    | 30s   | Duration | 内存使用检查周期                             |
 | partition.enabled          | 否    | false | Boolean  | 是否启用分区计算功能                           |
+| partition.number           | 否    | 1     | Integer  | 该表的分区数                               |
 
 ## 社区
 

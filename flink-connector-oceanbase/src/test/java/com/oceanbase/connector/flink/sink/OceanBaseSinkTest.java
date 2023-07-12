@@ -28,6 +28,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Ignore
 public class OceanBaseSinkTest {
@@ -58,7 +59,9 @@ public class OceanBaseSinkTest {
                         + "name varchar(20),"
                         + "age int(10),"
                         + "height double,"
-                        + "birthday date)";
+                        + "birthday date)"
+                        + "PARTITION BY HASH(id) "
+                        + "PARTITIONS 4";
 
         String fullTableName = DIALECT.getFullTableName(schemaName, tableName);
 
@@ -90,7 +93,8 @@ public class OceanBaseSinkTest {
                                 + "  'driver-class'='com.mysql.jdbc.Driver',"
                                 + "  'connection-pool'='druid',"
                                 + "  'connection-pool-properties'='druid.initialSize=4;druid.maxActive=20;',"
-                                + "  'partition.enabled'='true'"
+                                + "  'partition.enabled'='true',"
+                                + "  'partition.number'='4'"
                                 + ");",
                         JDBC_URL,
                         CLUSTER_NAME,
@@ -100,11 +104,22 @@ public class OceanBaseSinkTest {
                         USERNAME,
                         PASSWORD));
 
-        tEnv.executeSql(
-                        "insert into target values "
-                                + "(1, 'Tom', 30, 1.84, DATE '1993-04-10'),"
-                                + "(2, 'Jerry', 25, 1.65, DATE '1997-10-29')")
-                .await();
+        StringBuilder sb = new StringBuilder("insert into target values ");
+        for (int i = 0; i < 100; i++) {
+            if (i != 0) {
+                sb.append(",");
+            }
+            sb.append(
+                    String.format(
+                            "(%d, '%s', %d, %f, DATE '2023-%02d-%02d')",
+                            i,
+                            "name" + i,
+                            ThreadLocalRandom.current().nextInt(18, 60),
+                            ThreadLocalRandom.current().nextDouble(1.5, 2.0),
+                            ThreadLocalRandom.current().nextInt(1, 6),
+                            ThreadLocalRandom.current().nextInt(1, 28)));
+        }
+        tEnv.executeSql(sb.toString()).await();
 
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
                 Statement statement = connection.createStatement()) {
@@ -112,7 +127,7 @@ public class OceanBaseSinkTest {
             ResultSetMetaData metaData = rs.getMetaData();
             int count = 0;
             while (rs.next()) {
-                StringBuilder sb = new StringBuilder("Row ").append(count++).append(": { ");
+                sb = new StringBuilder("Row ").append(count++).append(": { ");
                 for (int i = 0; i < metaData.getColumnCount(); i++) {
                     if (i != 0) {
                         sb.append(", ");

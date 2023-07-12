@@ -113,7 +113,7 @@ public class OceanBaseConnectorOptions implements Serializable {
             ConfigOptions.key("buffer-flush.buffer-size")
                     .intType()
                     .defaultValue(1000)
-                    .withDescription("The flush batch size of records buffer.");
+                    .withDescription("The maximum size of records buffer.");
 
     public static final ConfigOption<Integer> BUFFER_BATCH_SIZE =
             ConfigOptions.key("buffer-flush.batch-size")
@@ -152,6 +152,12 @@ public class OceanBaseConnectorOptions implements Serializable {
                     .defaultValue(false)
                     .withDescription("Whether enable partition calculation.");
 
+    public static final ConfigOption<Integer> PARTITION_NUMBER =
+            ConfigOptions.key("partition.number")
+                    .intType()
+                    .defaultValue(1)
+                    .withDescription("The partition number.");
+
     private final ReadableConfig allConfig;
 
     public OceanBaseConnectorOptions(Map<String, String> allOptions) {
@@ -188,7 +194,8 @@ public class OceanBaseConnectorOptions implements Serializable {
                 allConfig.get(MEMSTORE_CHECK_ENABLED),
                 allConfig.get(MEMSTORE_THRESHOLD),
                 allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis(),
-                allConfig.get(PARTITION_ENABLED));
+                allConfig.get(PARTITION_ENABLED),
+                allConfig.get(PARTITION_NUMBER));
     }
 
     private Properties parseProperties(String propsStr) {

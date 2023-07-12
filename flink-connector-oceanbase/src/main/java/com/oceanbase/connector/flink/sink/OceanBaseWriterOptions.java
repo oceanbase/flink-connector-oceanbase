@@ -27,6 +27,7 @@ public class OceanBaseWriterOptions implements Serializable {
     private final double memStoreThreshold;
     private final long memStoreCheckInterval;
     private final boolean partitionEnabled;
+    private final int partitionNumber;
 
     public OceanBaseWriterOptions(
             boolean upsertMode,
@@ -37,7 +38,8 @@ public class OceanBaseWriterOptions implements Serializable {
             boolean memStoreCheckEnabled,
             double memStoreThreshold,
             long memStoreCheckInterval,
-            boolean partitionEnabled) {
+            boolean partitionEnabled,
+            int partitionNumber) {
         this.upsertMode = upsertMode;
         this.batchIntervalMs = batchIntervalMs;
         this.bufferSize = bufferSize;
@@ -47,6 +49,7 @@ public class OceanBaseWriterOptions implements Serializable {
         this.memStoreThreshold = memStoreThreshold;
         this.memStoreCheckInterval = memStoreCheckInterval;
         this.partitionEnabled = partitionEnabled;
+        this.partitionNumber = partitionNumber;
     }
 
     public boolean isUpsertMode() {
@@ -83,5 +86,9 @@ public class OceanBaseWriterOptions implements Serializable {
 
     public boolean isPartitionEnabled() {
         return partitionEnabled;
+    }
+
+    public int getPartitionNumber() {
+        return partitionNumber;
     }
 }
