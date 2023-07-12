@@ -37,6 +37,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -59,12 +62,14 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
     private final OceanBaseTablePartInfo tablePartInfo;
     private final List<Integer> partColumnIndexes;
+    private final ExecutorService statementExecutorService;
 
     private final List<RowData> buffer = new ArrayList<>();
     private final Map<String, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
 
     private transient volatile boolean closed = false;
     private volatile long lastCheckMemStoreTime;
+    private volatile Exception statementException;
 
     public OceanBaseRowDataStatementExecutor(
             Sink.InitContext context,
@@ -117,6 +122,10 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                                 .boxed()
                                 .collect(Collectors.toList())
                         : Collections.emptyList();
+        this.statementExecutorService =
+                !partColumnIndexes.isEmpty() && options.getPartitionNumber() > 1
+                        ? Executors.newFixedThreadPool(options.getPartitionNumber())
+                        : null;
     }
 
     @Override
@@ -284,7 +293,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         if (closed || rowDataList == null || rowDataList.isEmpty()) {
             return;
         }
-        if (!partColumnIndexes.isEmpty()) {
+        if (statementExecutorService != null) {
             Map<Long, List<RowData>> partRowDataMap = new HashMap<>();
             for (RowData rowData : rowDataList) {
                 Object[] record = new Object[tableSchema.getFieldNames().size()];
@@ -298,8 +307,27 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                 Long partId = tablePartInfo.getPartIdCalculator().calculatePartId(record);
                 partRowDataMap.computeIfAbsent(partId, k -> new ArrayList<>()).add(rowData);
             }
+            CountDownLatch latch = new CountDownLatch(partRowDataMap.size());
             for (List<RowData> partRowDataList : partRowDataMap.values()) {
-                execute(sql, partRowDataList, fieldGetters);
+                statementExecutorService.execute(
+                        () -> {
+                            try {
+                                execute(sql, partRowDataList, fieldGetters);
+                            } catch (SQLException e) {
+                                statementException = e;
+                            } finally {
+                                latch.countDown();
+                            }
+                        });
+            }
+            if (statementException != null) {
+                throw new RuntimeException(
+                        "Execute statement exception: " + statementException.getMessage());
+            }
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Statement executor interrupted: " + e.getMessage());
             }
         } else {
             execute(sql, rowDataList, fieldGetters);
@@ -349,6 +377,10 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
             if (connectionProvider != null) {
                 connectionProvider.close();
+            }
+
+            if (statementExecutorService != null) {
+                statementExecutorService.shutdown();
             }
         }
     }
