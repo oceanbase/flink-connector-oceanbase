@@ -184,6 +184,7 @@ Once executed, the records should have been written to OceanBase.
 | memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                            |
 | memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                               |
 | partition.enabled          | No       | false   | Boolean  | Whether enable partition calculation                                                                                  |
+| partition.number           | No       | 1       | Integer  | The partition number                                                                                                  |
 
 ## Community
 
