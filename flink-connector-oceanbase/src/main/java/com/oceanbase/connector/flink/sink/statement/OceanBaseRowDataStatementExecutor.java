@@ -69,7 +69,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
 
     private transient volatile boolean closed = false;
     private volatile long lastCheckMemStoreTime;
-    private volatile Exception statementException;
+    private volatile SQLException statementException;
 
     public OceanBaseRowDataStatementExecutor(
             Sink.InitContext context,
@@ -320,14 +320,13 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                             }
                         });
             }
-            if (statementException != null) {
-                throw new RuntimeException(
-                        "Execute statement exception: " + statementException.getMessage());
-            }
             try {
                 latch.await();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Statement executor interrupted: " + e.getMessage());
+            }
+            if (statementException != null) {
+                throw statementException;
             }
         } else {
             execute(sql, rowDataList, fieldGetters);
