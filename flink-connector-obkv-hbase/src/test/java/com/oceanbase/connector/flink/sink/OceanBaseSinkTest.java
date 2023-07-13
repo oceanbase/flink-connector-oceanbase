@@ -18,10 +18,20 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
 
 @Ignore
 public class OceanBaseSinkTest {
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseSinkTest.class);
 
+    private static final String JDBC_URL = "";
     public static String CONFIG_URL = "";
     public static String USERNAME = "";
     public static String PASSWORD = "";
@@ -35,23 +45,33 @@ public class OceanBaseSinkTest {
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
+
         String schemaName = "test";
         String tableName = "htable1";
+        String family = "family1";
 
         String url = String.format("%s&database=%s", CONFIG_URL, schemaName);
+        String fullTableName = tableName + "$" + family;
 
-        // CREATE TABLE htable1$family1 (
-        //  K varbinary(1024),
-        //  Q varbinary(256),
-        //  T bigint,
-        //  V varbinary(1048576) NOT NULL,
-        //  PRIMARY KEY(K, Q, T));
+        String createTableSql =
+                "CREATE TABLE %s ("
+                        + "  K varbinary(1024),"
+                        + "  Q varbinary(256),"
+                        + "  T bigint,"
+                        + "  V varbinary(1048576) NOT NULL,"
+                        + "  PRIMARY KEY(K, Q, T))";
+
+        try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+                Statement statement = connection.createStatement()) {
+            statement.execute(String.format("DROP TABLE IF EXISTS %s", fullTableName));
+            statement.execute(String.format(createTableSql, fullTableName));
+        }
 
         tEnv.executeSql(
                 String.format(
                         "CREATE TEMPORARY TABLE target ("
                                 + " rowkey STRING,"
-                                + " family1 ROW<column1 STRING, column2 STRING>,"
+                                + " %s ROW<column1 STRING, column2 STRING>,"
                                 + " PRIMARY KEY (rowkey) NOT ENFORCED"
                                 + ") with ("
                                 + "  'connector'='obkv-hbase',"
@@ -62,12 +82,37 @@ public class OceanBaseSinkTest {
                                 + "  'sys.username'='%s',"
                                 + "  'sys.password'='%s'"
                                 + ");",
-                        url, tableName, USERNAME, PASSWORD, SYS_USERNAME, SYS_PASSWORD));
+                        family, url, tableName, USERNAME, PASSWORD, SYS_USERNAME, SYS_PASSWORD));
 
-        tEnv.executeSql(
-                        "insert into target values "
-                                + "('row1', ROW('r1c1', 'r1c2')),"
-                                + "('row2', ROW('r2c1', 'r2c2'))")
-                .await();
+        StringBuilder sb = new StringBuilder("insert into target values ");
+        for (int i = 0; i < 100; i++) {
+            if (i != 0) {
+                sb.append(",");
+            }
+            sb.append(
+                    String.format(
+                            "(%s, ROW(%s, %s))",
+                            "row" + i, "row" + i + "_col1", "row" + i + "_col2"));
+        }
+        tEnv.executeSql(sb.toString()).await();
+
+        try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+                Statement statement = connection.createStatement()) {
+            ResultSet rs = statement.executeQuery(String.format("SELECT * FROM %s", fullTableName));
+            ResultSetMetaData metaData = rs.getMetaData();
+            int count = 0;
+            while (rs.next()) {
+                sb = new StringBuilder("Row ").append(count++).append(": { ");
+                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                    if (i != 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(metaData.getColumnName(i + 1))
+                            .append(": ")
+                            .append(rs.getObject(i + 1));
+                }
+                LOG.info(sb.append("}").toString());
+            }
+        }
     }
 }
