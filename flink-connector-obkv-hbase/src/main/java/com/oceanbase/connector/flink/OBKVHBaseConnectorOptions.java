@@ -12,6 +12,8 @@
 
 package com.oceanbase.connector.flink;
 
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.ReadableConfig;
 
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
@@ -20,6 +22,12 @@ import com.oceanbase.connector.flink.sink.OBKVHBaseStatementOptions;
 import java.util.Map;
 
 public class OBKVHBaseConnectorOptions extends AbstractOceanBaseConnectorOptions {
+
+    public static final ConfigOption<String> HBASE_PROPERTIES =
+            ConfigOptions.key("hbase.properties")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Properties to configure 'obkv-hbase-client-java'.");
 
     private static final long serialVersionUID = 1L;
 
@@ -37,7 +45,8 @@ public class OBKVHBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
                 allConfig.get(SYS_USERNAME),
-                allConfig.get(SYS_PASSWORD));
+                allConfig.get(SYS_PASSWORD),
+                parseProperties(allConfig.get(HBASE_PROPERTIES)));
     }
 
     public OBKVHBaseStatementOptions getStatementOptions() {

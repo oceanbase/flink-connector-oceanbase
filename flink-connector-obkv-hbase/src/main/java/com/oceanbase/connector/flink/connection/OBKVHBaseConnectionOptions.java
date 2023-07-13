@@ -16,6 +16,7 @@ import com.alipay.oceanbase.hbase.constants.OHConstants;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.Serializable;
+import java.util.Properties;
 
 public class OBKVHBaseConnectionOptions implements Serializable {
 
@@ -27,6 +28,7 @@ public class OBKVHBaseConnectionOptions implements Serializable {
     private final String password;
     private final String sysUsername;
     private final String sysPassword;
+    private final Properties properties;
 
     public OBKVHBaseConnectionOptions(
             String url,
@@ -34,13 +36,15 @@ public class OBKVHBaseConnectionOptions implements Serializable {
             String username,
             String password,
             String sysUsername,
-            String sysPassword) {
+            String sysPassword,
+            Properties properties) {
         this.url = url;
         this.tableName = tableName;
         this.username = username;
         this.password = password;
         this.sysUsername = sysUsername;
         this.sysPassword = sysPassword;
+        this.properties = properties;
     }
 
     public String getTableName() {
@@ -54,6 +58,9 @@ public class OBKVHBaseConnectionOptions implements Serializable {
         conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, password);
         conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, sysUsername);
         conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, sysPassword);
+        for (String name : properties.stringPropertyNames()) {
+            conf.set(name, properties.getProperty(name));
+        }
         return conf;
     }
 }
