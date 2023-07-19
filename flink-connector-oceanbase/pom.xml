@@ -68,6 +68,18 @@ See the Mulan PSL v2 for more details.
       <version>32.0.0-jre</version>
     </dependency>
 
+    <!--    <dependency>-->
+    <!--      <groupId>mysql</groupId>-->
+    <!--      <artifactId>mysql-connector-java</artifactId>-->
+    <!--      <version>5.1.47</version>-->
+    <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
+    <!--    <dependency>-->
+    <!--      <groupId>com.oceanbase</groupId>-->
+    <!--      <artifactId>oceanbase-client</artifactId>-->
+    <!--      <version>2.4.3</version>-->
+    <!--    </dependency>-->
+
   </dependencies>
 
 </project>

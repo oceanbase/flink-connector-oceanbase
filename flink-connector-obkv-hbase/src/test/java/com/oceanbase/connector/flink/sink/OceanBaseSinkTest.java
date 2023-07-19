@@ -16,6 +16,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class OceanBaseSinkTest {
         String family = "family1";
 
         String url = String.format("%s&database=%s", CONFIG_URL, schemaName);
-        String fullTableName = tableName + "$" + family;
+        String fullTableName = String.format("`%s`.`%s$%s`", schemaName, tableName, family);
 
         String createTableSql =
                 "CREATE TABLE %s ("
@@ -91,7 +92,7 @@ public class OceanBaseSinkTest {
             }
             sb.append(
                     String.format(
-                            "(%s, ROW(%s, %s))",
+                            "('%s', ROW('%s', '%s'))",
                             "row" + i, "row" + i + "_col1", "row" + i + "_col2"));
         }
         tEnv.executeSql(sb.toString()).await();
@@ -109,7 +110,7 @@ public class OceanBaseSinkTest {
                     }
                     sb.append(metaData.getColumnName(i + 1))
                             .append(": ")
-                            .append(rs.getObject(i + 1));
+                            .append(Bytes.toString(rs.getBytes(i + 1)));
                 }
                 LOG.info(sb.append("}").toString());
             }
