@@ -33,7 +33,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,28 +109,37 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                         : dialect.getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
         this.tablePartInfo =
                 options.isPartitionEnabled() ? connectionProvider.getTablePartInfo() : null;
-        this.partColumnIndexes =
-                tablePartInfo != null
-                        ? IntStream.range(0, tableSchema.getFieldNames().size())
-                                .filter(
-                                        i ->
-                                                tablePartInfo
-                                                        .getPartColumnIndexMap()
-                                                        .containsKey(
-                                                                tableSchema.getFieldNames().get(i)))
-                                .boxed()
-                                .collect(Collectors.toList())
-                        : Collections.emptyList();
-        this.statementExecutorService =
-                !partColumnIndexes.isEmpty() && options.getPartitionNumber() > 1
-                        ? Executors.newFixedThreadPool(options.getPartitionNumber())
-                        : null;
-        if (statementExecutorService == null) {
-            LOG.info("No statement executor service set, will execute statement in main thread");
-        } else {
+        if (this.tablePartInfo != null && !this.tablePartInfo.getPartColumnIndexMap().isEmpty()) {
             LOG.info(
-                    "Set statement executor service with {} threads, will execute statement in parallel",
-                    options.getPartitionNumber());
+                    "Table partition info loaded, part columns: {}",
+                    tablePartInfo.getPartColumnIndexMap().keySet());
+
+            this.partColumnIndexes =
+                    IntStream.range(0, tableSchema.getFieldNames().size())
+                            .filter(
+                                    i ->
+                                            tablePartInfo
+                                                    .getPartColumnIndexMap()
+                                                    .containsKey(
+                                                            tableSchema.getFieldNames().get(i)))
+                            .boxed()
+                            .collect(Collectors.toList());
+
+            if (options.getPartitionNumber() > 1) {
+                this.statementExecutorService =
+                        Executors.newFixedThreadPool(options.getPartitionNumber());
+                LOG.info(
+                        "ExecutorService set with {} threads, will flush records by partitions in parallel",
+                        options.getPartitionNumber());
+            } else {
+                this.statementExecutorService = null;
+                LOG.info(
+                        "ExecutorService not set, will flush records by partitions in main thread");
+            }
+        } else {
+            this.partColumnIndexes = null;
+            this.statementExecutorService = null;
+            LOG.info("No table partition info loaded, will flush records directly");
         }
     }
 
@@ -300,7 +308,7 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
         if (closed || rowDataList == null || rowDataList.isEmpty()) {
             return;
         }
-        if (statementExecutorService != null) {
+        if (partColumnIndexes != null) {
             Map<Long, List<RowData>> partRowDataMap = new HashMap<>();
             for (RowData rowData : rowDataList) {
                 Object[] record = new Object[tableSchema.getFieldNames().size()];
@@ -314,26 +322,32 @@ public class OceanBaseRowDataStatementExecutor implements OceanBaseStatementExec
                 Long partId = tablePartInfo.getPartIdCalculator().calculatePartId(record);
                 partRowDataMap.computeIfAbsent(partId, k -> new ArrayList<>()).add(rowData);
             }
-            CountDownLatch latch = new CountDownLatch(partRowDataMap.size());
-            for (List<RowData> partRowDataList : partRowDataMap.values()) {
-                statementExecutorService.execute(
-                        () -> {
-                            try {
-                                execute(sql, partRowDataList, fieldGetters);
-                            } catch (SQLException e) {
-                                statementException = e;
-                            } finally {
-                                latch.countDown();
-                            }
-                        });
-            }
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Statement executor interrupted: " + e.getMessage());
-            }
-            if (statementException != null) {
-                throw statementException;
+            if (statementExecutorService != null) {
+                CountDownLatch latch = new CountDownLatch(partRowDataMap.size());
+                for (List<RowData> partRowDataList : partRowDataMap.values()) {
+                    statementExecutorService.execute(
+                            () -> {
+                                try {
+                                    execute(sql, partRowDataList, fieldGetters);
+                                } catch (SQLException e) {
+                                    statementException = e;
+                                } finally {
+                                    latch.countDown();
+                                }
+                            });
+                }
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Statement executor interrupted: " + e.getMessage());
+                }
+                if (statementException != null) {
+                    throw statementException;
+                }
+            } else {
+                for (List<RowData> partRowDataList : partRowDataMap.values()) {
+                    execute(sql, partRowDataList, fieldGetters);
+                }
             }
         } else {
             execute(sql, rowDataList, fieldGetters);
