@@ -150,13 +150,15 @@ public class OceanBaseConnectorOptions implements Serializable {
             ConfigOptions.key("partition.enabled")
                     .booleanType()
                     .defaultValue(false)
-                    .withDescription("Whether enable partition calculation.");
+                    .withDescription(
+                            "Whether to enable partition calculation and flush records by partitions.");
 
     public static final ConfigOption<Integer> PARTITION_NUMBER =
             ConfigOptions.key("partition.number")
                     .intType()
                     .defaultValue(1)
-                    .withDescription("The partition number.");
+                    .withDescription(
+                            "The number of partitions. When the 'partition.enabled' is 'true', the same number of threads will be used to flush records in parallel.");
 
     private final ReadableConfig allConfig;
 

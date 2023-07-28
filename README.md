@@ -162,29 +162,29 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-| Option                     | Required | Default | Type     | Description                                                                                                           |
-|----------------------------|----------|---------|----------|-----------------------------------------------------------------------------------------------------------------------|
-| url                        | Yes      |         | String   | JDBC url                                                                                                              |
-| schema-name                | Yes      |         | String   | Schema name or database name                                                                                          |
-| table-name                 | Yes      |         | String   | Table name                                                                                                            |
-| username                   | Yes      |         | String   | User name                                                                                                             |
-| password                   | Yes      |         | String   | Password                                                                                                              |
-| compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                          |
-| driver-class               | Yes      |         | String   | JDBC driver class name, like 'com.mysql.jdbc.Driver'                                                                  |
-| connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                             |
-| cluster-name               | No       |         | String   | The cluster name of OceanBase, required when partition calculation is enabled                                         |
-| tenant-name                | No       |         | String   | The tenant name of OceanBase, required when partition calculation is enabled                                          |
-| connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons |
-| upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                            |
-| buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                 |
-| buffer-flush.buffer-size   | No       | 1000    | Integer  | Buffer size                                                                                                           |
-| buffer-flush.batch-size    | No       | 100     | Integer  | Buffer flush batch size                                                                                               |
-| max-retries                | No       | 3       | Integer  | Max retry times on failure                                                                                            |
-| memstore-check.enabled     | No       | true    | Boolean  | Whether enable memstore check                                                                                         |
-| memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                            |
-| memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                               |
-| partition.enabled          | No       | false   | Boolean  | Whether enable partition calculation                                                                                  |
-| partition.number           | No       | 1       | Integer  | The partition number                                                                                                  |
+| Option                     | Required | Default | Type     | Description                                                                                                                            |
+|----------------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
+| url                        | Yes      |         | String   | JDBC url                                                                                                                               |
+| schema-name                | Yes      |         | String   | Schema name or database name                                                                                                           |
+| table-name                 | Yes      |         | String   | Table name                                                                                                                             |
+| username                   | Yes      |         | String   | User name                                                                                                                              |
+| password                   | Yes      |         | String   | Password                                                                                                                               |
+| compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                                           |
+| driver-class               | Yes      |         | String   | JDBC driver class name, like 'com.mysql.jdbc.Driver'                                                                                   |
+| connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                                              |
+| cluster-name               | No       |         | String   | The cluster name of OceanBase, required when partition calculation is enabled                                                          |
+| tenant-name                | No       |         | String   | The tenant name of OceanBase, required when partition calculation is enabled                                                           |
+| connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons                  |
+| upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                                             |
+| buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                                  |
+| buffer-flush.buffer-size   | No       | 1000    | Integer  | Buffer size                                                                                                                            |
+| buffer-flush.batch-size    | No       | 100     | Integer  | Buffer flush batch size                                                                                                                |
+| max-retries                | No       | 3       | Integer  | Max retry times on failure                                                                                                             |
+| memstore-check.enabled     | No       | true    | Boolean  | Whether enable memstore check                                                                                                          |
+| memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                                             |
+| memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                                                |
+| partition.enabled          | No       | false   | Boolean  | Whether to enable partition calculation and flush records by partitions                                                                |
+| partition.number           | No       | 1       | Integer  | The number of partitions. When the 'partition.enabled' is 'true', the same number of threads will be used to flush records in parallel |
 
 ## Community
 
