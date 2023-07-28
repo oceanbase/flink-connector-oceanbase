@@ -51,12 +51,11 @@ public class OBKVHBaseTableSchema implements Serializable {
                             converter.createFieldGetter(qualifier.getType(), qualifierIndex++));
                 }
                 this.familyQualifierFieldGetterMap.put(familyName, qualifierFieldGetterMap);
-            } else if (fieldType.getChildren().size() == 0) {
+            } else if (fieldType.getChildren().isEmpty()) {
                 if (this.rowKeyFieldGetter != null) {
                     throw new IllegalArgumentException("Row key can't be set multiple times");
                 }
                 this.rowKeyFieldGetter = converter.createFieldGetter(fieldType, fieldIndex);
-
             } else {
                 throw new IllegalArgumentException(
                         "Unsupported field type '" + fieldType + "' for HBase.");
