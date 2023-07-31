@@ -22,7 +22,7 @@ See the Mulan PSL v2 for more details.
   </parent>
 
   <artifactId>flink-connector-oceanbase</artifactId>
-  <name>Flink : Connectors : OceanBase</name>
+  <name>OceanBase Flink Connector : OceanBase</name>
   <packaging>jar</packaging>
 
   <properties>
@@ -33,49 +33,39 @@ See the Mulan PSL v2 for more details.
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-api-java-bridge</artifactId>
-      <scope>provided</scope>
+      <groupId>com.oceanbase</groupId>
+      <artifactId>flink-connector-oceanbase-base</artifactId>
+      <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>druid</artifactId>
+      <version>1.2.16</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
+      <version>4.0.3</version>
       <optional>true</optional>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
+
     <dependency>
       <groupId>com.oceanbase</groupId>
       <artifactId>ob-partition-calculator</artifactId>
+      <version>1.7.0-RELEASE</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
+      <version>3.12.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-test-utils</artifactId>
-      <version>${flink.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-      <version>${flink.version}</version>
-      <scope>test</scope>
+      <version>32.0.0-jre</version>
     </dependency>
 
     <!--    <dependency>-->
@@ -83,6 +73,11 @@ See the Mulan PSL v2 for more details.
     <!--      <artifactId>mysql-connector-java</artifactId>-->
     <!--      <version>5.1.47</version>-->
     <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
+    <!--    <dependency>-->
+    <!--      <groupId>com.oceanbase</groupId>-->
+    <!--      <artifactId>oceanbase-client</artifactId>-->
+    <!--      <version>2.4.3</version>-->
     <!--    </dependency>-->
 
   </dependencies>

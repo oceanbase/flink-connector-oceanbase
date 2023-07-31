@@ -42,9 +42,10 @@ public class OceanBaseTableSchema implements Serializable {
         this.nonKeyFieldGetters =
                 new RowData.FieldGetter[this.fieldNames.size() - this.keyFieldNames.size()];
         int k = 0, n = 0;
+        OceanBaseRowConverter rowConverter = new OceanBaseRowConverter();
         for (int i = 0; i < this.fieldNames.size(); i++) {
             RowData.FieldGetter fieldGetter =
-                    OceanBaseRowConverter.createFieldGetter(
+                    rowConverter.createFieldGetter(
                             schema.getColumnDataTypes().get(i).getLogicalType(), i);
             this.fieldGetters[i] = fieldGetter;
             if (this.keyFieldNames.contains(this.fieldNames.get(i))) {

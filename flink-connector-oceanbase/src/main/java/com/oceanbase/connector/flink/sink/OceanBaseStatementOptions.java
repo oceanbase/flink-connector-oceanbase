@@ -14,37 +14,29 @@ package com.oceanbase.connector.flink.sink;
 
 import java.io.Serializable;
 
-public class OceanBaseWriterOptions implements Serializable {
+public class OceanBaseStatementOptions implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final boolean upsertMode;
-    private final long batchIntervalMs;
-    private final int bufferSize;
     private final int batchSize;
-    private final int maxRetries;
+
     private final boolean memStoreCheckEnabled;
     private final double memStoreThreshold;
     private final long memStoreCheckInterval;
     private final boolean partitionEnabled;
     private final int partitionNumber;
 
-    public OceanBaseWriterOptions(
+    public OceanBaseStatementOptions(
             boolean upsertMode,
-            long batchIntervalMs,
-            int bufferSize,
             int batchSize,
-            int maxRetries,
             boolean memStoreCheckEnabled,
             double memStoreThreshold,
             long memStoreCheckInterval,
             boolean partitionEnabled,
             int partitionNumber) {
         this.upsertMode = upsertMode;
-        this.batchIntervalMs = batchIntervalMs;
-        this.bufferSize = bufferSize;
         this.batchSize = batchSize;
-        this.maxRetries = maxRetries;
         this.memStoreCheckEnabled = memStoreCheckEnabled;
         this.memStoreThreshold = memStoreThreshold;
         this.memStoreCheckInterval = memStoreCheckInterval;
@@ -56,20 +48,8 @@ public class OceanBaseWriterOptions implements Serializable {
         return upsertMode;
     }
 
-    public long getBatchIntervalMs() {
-        return batchIntervalMs;
-    }
-
-    public int getBufferSize() {
-        return bufferSize;
-    }
-
     public int getBatchSize() {
         return batchSize;
-    }
-
-    public int getMaxRetries() {
-        return maxRetries;
     }
 
     public boolean isMemStoreCheckEnabled() {

@@ -10,24 +10,21 @@
  * See the Mulan PSL v2 for more details.
  */
 
-package com.oceanbase.connector.flink.sink.statement;
+package com.oceanbase.connector.flink.sink;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 
-public interface OceanBaseStatementExecutor<T> extends AutoCloseable, Serializable {
+public class OBKVHBaseStatementOptions implements Serializable {
 
-    /**
-     * Adds a record to batch
-     *
-     * @param record the row data record
-     */
-    void addToBatch(T record);
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Submits a batch of records to OceanBase
-     *
-     * @throws SQLException if a database access error occurs
-     */
-    void executeBatch() throws SQLException;
+    private final int batchSize;
+
+    public OBKVHBaseStatementOptions(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
 }
