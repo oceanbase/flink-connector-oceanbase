@@ -22,13 +22,13 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +41,8 @@ public class OBKVHBaseStatementExecutor implements StatementExecutor<RowData> {
     private final OBKVHBaseConnectionProvider connectionProvider;
 
     private final List<RowData> buffer = new ArrayList<>();
+
+    private transient volatile boolean closed = false;
 
     private SinkWriterMetricGroup metricGroup;
 
@@ -68,65 +70,63 @@ public class OBKVHBaseStatementExecutor implements StatementExecutor<RowData> {
 
     @Override
     public void executeBatch() throws Exception {
+        if (closed) {
+            return;
+        }
         synchronized (buffer) {
             int count = 0;
-            List<Put> putList = new LinkedList<>();
-            List<Delete> deleteList = new LinkedList<>();
+            Map<byte[], List<Put>> familyPutListMap = new HashMap<>();
+            Map<byte[], List<Delete>> familyDeleteListMap = new HashMap<>();
+
             for (RowData record : buffer) {
-                byte[] rowKey = (byte[]) getRowKey(record);
-                if (record.getRowKind() == RowKind.INSERT
-                        || record.getRowKind() == RowKind.UPDATE_AFTER) {
-                    putList.add(getPut(record, rowKey));
-                } else {
-                    deleteList.add(getDelete(record, rowKey));
+                byte[] rowKey = getRowKey(record);
+                for (String familyName : tableSchema.getFamilyQualifierFieldGetterMap().keySet()) {
+                    byte[] family = Bytes.toBytes(familyName);
+                    Map<byte[], byte[]> qualifierValueMap =
+                            getQualifierValueMap(record, familyName);
+                    if (record.getRowKind() == RowKind.INSERT
+                            || record.getRowKind() == RowKind.UPDATE_AFTER) {
+                        qualifierValueMap.forEach(
+                                (qualifier, value) ->
+                                        familyPutListMap
+                                                .computeIfAbsent(family, k -> new ArrayList<>())
+                                                .add(
+                                                        new Put(rowKey)
+                                                                .add(family, qualifier, value)));
+                    } else {
+                        qualifierValueMap.forEach(
+                                (qualifier, value) ->
+                                        familyDeleteListMap
+                                                .computeIfAbsent(family, k -> new ArrayList<>())
+                                                .add(
+                                                        new Delete(rowKey)
+                                                                .deleteColumns(family, qualifier)));
+                    }
                 }
                 count++;
-                if (count >= options.getBatchSize()) {
-                    if (!putList.isEmpty()) {
-                        connectionProvider.getTable().put(putList);
-                    }
-                    if (!deleteList.isEmpty()) {
-                        connectionProvider.getTable().delete(deleteList);
-                    }
+
+                if (!closed && count >= options.getBatchSize()) {
+                    flushToTable(familyPutListMap, familyDeleteListMap);
                     metricGroup.getIOMetricGroup().getNumRecordsOutCounter().inc(count);
                     count = 0;
                 }
             }
-            if (count > 0) {
-                connectionProvider.getTable().put(putList);
-                connectionProvider.getTable().delete(deleteList);
+            if (!closed && count > 0) {
+                flushToTable(familyPutListMap, familyDeleteListMap);
                 metricGroup.getIOMetricGroup().getNumRecordsOutCounter().inc(count);
             }
             buffer.clear();
         }
     }
 
-    private Object getRowKey(RowData rowData) throws JsonProcessingException {
+    private byte[] getRowKey(RowData rowData) throws JsonProcessingException {
         Object rowKey = tableSchema.getRowKeyFieldGetter().getFieldOrNull(rowData);
         if (rowKey == null) {
             throw new RuntimeException(
                     "Failed to get row key from row: "
                             + new ObjectMapper().writeValueAsString(rowData));
         }
-        return rowKey;
-    }
-
-    private Put getPut(RowData rowData, byte[] rowKey) {
-        Put put = new Put(rowKey);
-        for (String familyName : tableSchema.getFamilyQualifierFieldGetterMap().keySet()) {
-            Map<byte[], byte[]> qualifierValueMap = getQualifierValueMap(rowData, familyName);
-            qualifierValueMap.forEach((k, v) -> put.add(Bytes.toBytes(familyName), k, v));
-        }
-        return put;
-    }
-
-    private Delete getDelete(RowData rowData, byte[] rowKey) {
-        Delete delete = new Delete(rowKey);
-        for (String familyName : tableSchema.getFamilyQualifierFieldGetterMap().keySet()) {
-            Map<byte[], byte[]> qualifierValueMap = getQualifierValueMap(rowData, familyName);
-            qualifierValueMap.forEach((k, v) -> delete.deleteColumns(Bytes.toBytes(familyName), k));
-        }
-        return delete;
+        return (byte[]) rowKey;
     }
 
     private Map<byte[], byte[]> getQualifierValueMap(RowData rowData, String familyName) {
@@ -148,8 +148,31 @@ public class OBKVHBaseStatementExecutor implements StatementExecutor<RowData> {
         return map;
     }
 
+    private void flushToTable(
+            Map<byte[], List<Put>> familyPutListMap, Map<byte[], List<Delete>> familyDeleteListMap)
+            throws Exception {
+        for (List<Put> putList : familyPutListMap.values()) {
+            if (CollectionUtils.isNotEmpty(putList)) {
+                connectionProvider.getTable().put(putList);
+            }
+        }
+        for (List<Delete> deleteList : familyDeleteListMap.values()) {
+            if (CollectionUtils.isNotEmpty(deleteList)) {
+                connectionProvider.getTable().delete(deleteList);
+            }
+        }
+        familyPutListMap.clear();
+        familyDeleteListMap.clear();
+    }
+
     @Override
     public void close() throws Exception {
-        connectionProvider.close();
+        if (!closed) {
+            closed = true;
+
+            if (connectionProvider != null) {
+                connectionProvider.close();
+            }
+        }
     }
 }

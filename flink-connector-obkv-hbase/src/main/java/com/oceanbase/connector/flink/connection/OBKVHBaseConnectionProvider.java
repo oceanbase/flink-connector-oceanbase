@@ -41,6 +41,7 @@ public class OBKVHBaseConnectionProvider implements Serializable, AutoCloseable 
     public void close() throws Exception {
         if (tableClient != null) {
             tableClient.close();
+            tableClient = null;
         }
     }
 }
