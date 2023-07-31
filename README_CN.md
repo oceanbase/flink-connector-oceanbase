@@ -1,4 +1,4 @@
-# OceanBase Connector for Apache Flink
+# OceanBase Connectors for Apache Flink
 
 [English](README.md) | 简体中文
 
@@ -6,9 +6,14 @@
 [![Release](https://img.shields.io/github/release/oceanbase/flink-connector-oceanbase.svg)](https://github.com/oceanbase/flink-connector-oceanbase/releases)
 [![License](https://img.shields.io/badge/license-Mulan%20PSL%20v2-green.svg)](LICENSE)
 
-本仓库包含 OceanBase 的 Flink Sink Connector。
+本仓库包含 OceanBase 的 Flink Connector。
 
 ## 功能
+
+运行环境需要准备
+
+- JDK 8
+- Flink 1.15 或后续版本
 
 本仓库提供了如下 Connector：
 
