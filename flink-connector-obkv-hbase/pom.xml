@@ -83,11 +83,10 @@ See the Mulan PSL v2 for more details.
                   <include>com.alipay.sofa:bolt</include>
                   <include>com.alipay.sofa.common:sofa-common-tools</include>
                   <include>com.google.guava:guava</include>
-                  <include>com.yammer.metrics:metrics-core</include>
-                  <include>commons-codec:commons-codec</include>
+                  <include>commons-lang:commons-lang</include>
                   <include>commons-logging:commons-logging</include>
-                  <include>org.apache.hbase:hbase</include>
                   <include>org.apache.hadoop:hadoop-core</include>
+                  <include>org.apache.hbase:hbase</include>
                   <include>io.netty:*</include>
                 </includes>
               </artifactSet>
