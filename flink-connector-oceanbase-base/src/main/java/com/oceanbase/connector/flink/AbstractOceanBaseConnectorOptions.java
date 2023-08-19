@@ -90,12 +90,11 @@ public abstract class AbstractOceanBaseConnectorOptions implements Serializable 
 
     protected final ReadableConfig allConfig;
 
-    protected abstract void validate(ReadableConfig config);
+    protected void validateConfig() {}
 
     public AbstractOceanBaseConnectorOptions(Map<String, String> config) {
-        ReadableConfig readableConfig = Configuration.fromMap(config);
-        validate(readableConfig);
-        this.allConfig = readableConfig;
+        this.allConfig = Configuration.fromMap(config);
+        validateConfig();
     }
 
     public OceanBaseWriterOptions getWriterOptions() {

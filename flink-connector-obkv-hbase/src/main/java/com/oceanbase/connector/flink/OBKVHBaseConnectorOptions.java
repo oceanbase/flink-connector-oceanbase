@@ -14,7 +14,6 @@ package com.oceanbase.connector.flink;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
-import org.apache.flink.configuration.ReadableConfig;
 
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
 import com.oceanbase.connector.flink.sink.OBKVHBaseStatementOptions;
@@ -34,9 +33,6 @@ public class OBKVHBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
     public OBKVHBaseConnectorOptions(Map<String, String> config) {
         super(config);
     }
-
-    @Override
-    protected void validate(ReadableConfig config) {}
 
     public OBKVHBaseConnectionOptions getConnectionOptions() {
         return new OBKVHBaseConnectionOptions(

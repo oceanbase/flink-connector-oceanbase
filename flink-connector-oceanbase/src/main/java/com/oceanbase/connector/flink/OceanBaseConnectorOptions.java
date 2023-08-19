@@ -14,7 +14,6 @@ package com.oceanbase.connector.flink;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
-import org.apache.flink.configuration.ReadableConfig;
 
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionOptions;
 import com.oceanbase.connector.flink.sink.OceanBaseStatementOptions;
@@ -112,7 +111,7 @@ public class OceanBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
     }
 
     @Override
-    protected void validate(ReadableConfig config) {
+    protected void validateConfig() {
         if (allConfig.get(PARTITION_ENABLED)
                 && (allConfig.get(CLUSTER_NAME) == null || allConfig.get(TENANT_NAME) == null)) {
             throw new IllegalArgumentException(

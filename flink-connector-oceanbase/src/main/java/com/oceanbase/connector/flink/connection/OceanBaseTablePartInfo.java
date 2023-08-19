@@ -16,14 +16,11 @@ import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.metadata.desc.ObTablePart;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-public class OceanBaseTablePartInfo implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class OceanBaseTablePartInfo {
 
     private final ObPartIdCalculator partIdCalculator;
     private final Map<String, Integer> partColumnIndexMap;

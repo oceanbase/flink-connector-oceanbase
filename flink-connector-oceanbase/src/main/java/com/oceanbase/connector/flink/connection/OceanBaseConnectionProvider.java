@@ -15,12 +15,13 @@ package com.oceanbase.connector.flink.connection;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public interface OceanBaseConnectionProvider extends AutoCloseable {
+public interface OceanBaseConnectionProvider extends AutoCloseable, Serializable {
 
     /**
      * Attempts to establish a connection

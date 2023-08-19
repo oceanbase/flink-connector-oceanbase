@@ -23,6 +23,7 @@ import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,15 +56,14 @@ public class OceanBaseStatementExecutor implements StatementExecutor<RowData> {
     private final String deleteStatementSql;
     private final String upsertStatementSql;
     private final String queryMemStoreSql;
-
-    private final OceanBaseTablePartInfo tablePartInfo;
     private final List<Integer> partColumnIndexes;
-    private final ExecutorService statementExecutorService;
 
     private final List<RowData> buffer = new ArrayList<>();
     private final Map<String, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
 
     private transient volatile boolean closed = false;
+    private transient OceanBaseTablePartInfo tablePartInfo;
+    private transient ExecutorService statementExecutorService;
     private volatile long lastCheckMemStoreTime;
     private volatile SQLException statementException;
     private SinkWriterMetricGroup metricGroup;
@@ -103,40 +103,40 @@ public class OceanBaseStatementExecutor implements StatementExecutor<RowData> {
                 connectionInfo.getVersion().isV4()
                         ? dialect.getMemStoreExistStatement(options.getMemStoreThreshold())
                         : dialect.getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
-        this.tablePartInfo =
-                options.isPartitionEnabled() ? connectionProvider.getTablePartInfo() : null;
-        if (this.tablePartInfo != null && !this.tablePartInfo.getPartColumnIndexMap().isEmpty()) {
+        if (getTablePartInfo() != null && !getTablePartInfo().getPartColumnIndexMap().isEmpty()) {
             LOG.info(
                     "Table partition info loaded, part columns: {}",
-                    tablePartInfo.getPartColumnIndexMap().keySet());
+                    getTablePartInfo().getPartColumnIndexMap().keySet());
 
             this.partColumnIndexes =
                     IntStream.range(0, tableSchema.getFieldNames().size())
                             .filter(
                                     i ->
-                                            tablePartInfo
+                                            getTablePartInfo()
                                                     .getPartColumnIndexMap()
                                                     .containsKey(
                                                             tableSchema.getFieldNames().get(i)))
                             .boxed()
                             .collect(Collectors.toList());
-
-            if (options.getPartitionNumber() > 1) {
-                this.statementExecutorService =
-                        Executors.newFixedThreadPool(options.getPartitionNumber());
-                LOG.info(
-                        "ExecutorService set with {} threads, will flush records by partitions in parallel",
-                        options.getPartitionNumber());
-            } else {
-                this.statementExecutorService = null;
-                LOG.info(
-                        "ExecutorService not set, will flush records by partitions in main thread");
-            }
         } else {
             this.partColumnIndexes = null;
-            this.statementExecutorService = null;
-            LOG.info("No table partition info loaded, will flush records directly");
         }
+    }
+
+    private OceanBaseTablePartInfo getTablePartInfo() {
+        if (options.isPartitionEnabled() && tablePartInfo == null) {
+            tablePartInfo = connectionProvider.getTablePartInfo();
+        }
+        return tablePartInfo;
+    }
+
+    private ExecutorService getStatementExecutorService() {
+        if (CollectionUtils.isNotEmpty(partColumnIndexes)
+                && options.getPartitionNumber() > 1
+                && statementExecutorService == null) {
+            statementExecutorService = Executors.newFixedThreadPool(options.getPartitionNumber());
+        }
+        return statementExecutorService;
     }
 
     @Override
@@ -315,27 +315,28 @@ public class OceanBaseStatementExecutor implements StatementExecutor<RowData> {
                 Object[] record = new Object[tableSchema.getFieldNames().size()];
                 for (Integer i : partColumnIndexes) {
                     Integer columnIndex =
-                            tablePartInfo
+                            getTablePartInfo()
                                     .getPartColumnIndexMap()
                                     .get(tableSchema.getFieldNames().get(i));
                     record[columnIndex] = tableSchema.getFieldGetters()[i].getFieldOrNull(rowData);
                 }
-                Long partId = tablePartInfo.getPartIdCalculator().calculatePartId(record);
+                Long partId = getTablePartInfo().getPartIdCalculator().calculatePartId(record);
                 partRowDataMap.computeIfAbsent(partId, k -> new ArrayList<>()).add(rowData);
             }
-            if (statementExecutorService != null) {
+            if (getStatementExecutorService() != null) {
                 CountDownLatch latch = new CountDownLatch(partRowDataMap.size());
                 for (List<RowData> partRowDataList : partRowDataMap.values()) {
-                    statementExecutorService.execute(
-                            () -> {
-                                try {
-                                    execute(sql, partRowDataList, fieldGetters);
-                                } catch (SQLException e) {
-                                    statementException = e;
-                                } finally {
-                                    latch.countDown();
-                                }
-                            });
+                    getStatementExecutorService()
+                            .execute(
+                                    () -> {
+                                        try {
+                                            execute(sql, partRowDataList, fieldGetters);
+                                        } catch (SQLException e) {
+                                            statementException = e;
+                                        } finally {
+                                            latch.countDown();
+                                        }
+                                    });
                 }
                 try {
                     latch.await();

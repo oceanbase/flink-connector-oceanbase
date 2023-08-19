@@ -27,21 +27,20 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
-import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class OceanBaseConnectionPool implements OceanBaseConnectionProvider, Serializable {
+public class OceanBaseConnectionPool implements OceanBaseConnectionProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseConnectionPool.class);
 
     private static final long serialVersionUID = 1L;
 
     private final OceanBaseConnectionOptions options;
-    private DataSource dataSource;
-    private volatile boolean inited = false;
-    private OceanBaseConnectionInfo connectionInfo;
-    private OceanBaseTablePartInfo tablePartitionInfo;
+    private transient volatile boolean inited = false;
+    private transient OceanBaseConnectionInfo connectionInfo;
+    private transient DataSource dataSource;
+    private transient OceanBaseTablePartInfo tablePartitionInfo;
 
     public OceanBaseConnectionPool(OceanBaseConnectionOptions options) {
         this.options = options;
