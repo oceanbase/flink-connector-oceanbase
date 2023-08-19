@@ -124,14 +124,14 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 
 ## 配置项
 
-| 参数名                      | 是否必需 | 默认值  | 类型       | 描述                          |
+|           参数名            | 是否必需 | 默认值  |    类型    |             描述              |
 |--------------------------|------|------|----------|-----------------------------|
 | url                      | 是    |      | String   | 集群的 config url，需要带 database |
 | table-name               | 是    |      | String   | HBase 表名                    |
 | username                 | 是    |      | String   | 用户名                         |
 | password                 | 是    |      | String   | 密码                          |
 | sys.username             | 是    |      | String   | sys 租户的用户名                  |
-| sys.password             | 是    |      | String   | sys 租户用户的密码                 | |
+| sys.password             | 是    |      | String   | sys 租户用户的密码                 |
 | buffer-flush.interval    | 否    | 1s   | Duration | 缓冲区刷新周期                     |
 | buffer-flush.buffer-size | 否    | 1000 | Integer  | 缓冲区大小                       |
 | buffer-flush.batch-size  | 否    | 100  | Integer  | 刷新批量数据的批大小                  |
@@ -144,5 +144,4 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 [https://github.com/apache/flink-connector-hbase](https://github.com/apache/flink-connector-hbase)
 
 [https://github.com/oceanbase/obkv-hbase-client-java](https://github.com/oceanbase/obkv-hbase-client-java)
-
 

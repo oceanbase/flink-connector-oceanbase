@@ -161,7 +161,7 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-| Option                     | Required | Default | Type     | Description                                                                                                                            |
+|           Option           | Required | Default |   Type   |                                                              Description                                                               |
 |----------------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
 | url                        | Yes      |         | String   | JDBC url                                                                                                                               |
 | schema-name                | Yes      |         | String   | The schema name or database name                                                                                                       |

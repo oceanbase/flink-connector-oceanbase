@@ -10,130 +10,161 @@ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <parent>
-    <groupId>io.github.zentol.flink</groupId>
-    <artifactId>flink-connector-parent</artifactId>
-    <version>1.0</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-  <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.zentol.flink</groupId>
+        <artifactId>flink-connector-parent</artifactId>
+        <version>1.0</version>
+    </parent>
 
-  <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-oceanbase-parent</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <name>OceanBase Flink Connector : Parent</name>
-  <packaging>pom</packaging>
-  <inceptionYear>2023</inceptionYear>
+    <groupId>com.oceanbase</groupId>
+    <artifactId>flink-connector-oceanbase-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>OceanBase Flink Connector : Parent</name>
 
-  <organization>
-    <name>OceanBase</name>
-    <url>https://open.oceanbase.com</url>
-  </organization>
+    <modules>
+        <module>flink-connector-obkv-hbase</module>
+        <module>flink-connector-oceanbase</module>
+        <module>flink-connector-oceanbase-base</module>
+    </modules>
 
-  <licenses>
-    <license>
-      <name>Mulan Permissive Software License，Version 2</name>
-      <url>http://license.coscl.org.cn/MulanPSL2</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <flink.version>1.17.0</flink.version>
+        <scala.binary.version>2.12</scala.binary.version>
+    </properties>
 
-  <scm>
-    <connection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</connection>
-    <developerConnection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</developerConnection>
-    <url>https://github.com/oceanbase/flink-connector-oceanbase</url>
-    <tag>HEAD</tag>
-  </scm>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-api-java-bridge</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.4.2</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-test-utils</artifactId>
+            <version>${flink.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-  <developers>
-    <developer>
-      <name>OceanBase Developers</name>
-      <id>oceanbase</id>
-      <email>open_contact@oceanbase.com</email>
-      <roles>
-        <role>Developer</role>
-      </roles>
-      <timezone>+8</timezone>
-    </developer>
-  </developers>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <configuration>
+                    <pom>
+                        <sortPom>
+                            <encoding>UTF-8</encoding>
+                            <nrOfIndentSpace>4</nrOfIndentSpace>
+                            <keepBlankLines>true</keepBlankLines>
+                            <indentBlankLines>false</indentBlankLines>
+                            <indentSchemaLocation>true</indentSchemaLocation>
+                            <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
+                            <sortModules>false</sortModules>
+                            <sortExecutions>false</sortExecutions>
+                            <predefinedSortOrder>custom_1</predefinedSortOrder>
+                            <expandEmptyElements>false</expandEmptyElements>
+                            <sortProperties>false</sortProperties>
+                        </sortPom>
+                        <replace>
+                            <name>Leading blank line</name>
+                            <search>project</search>
+                            <replacement>project</replacement>
+                        </replace>
+                    </pom>
+                    <markdown>
+                        <includes>
+                            <include>*.md</include>
+                            <include>docs/**/*.md</include>
+                        </includes>
+                        <flexmark />
+                    </markdown>
+                    <upToDateChecking>
+                        <enabled>true</enabled>
+                    </upToDateChecking>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+    <inceptionYear>2023</inceptionYear>
 
-  <modules>
-    <module>flink-connector-obkv-hbase</module>
-    <module>flink-connector-oceanbase</module>
-    <module>flink-connector-oceanbase-base</module>
-  </modules>
+    <organization>
+        <name>OceanBase</name>
+        <url>https://open.oceanbase.com</url>
+    </organization>
 
-  <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <flink.version>1.17.0</flink.version>
-    <scala.binary.version>2.12</scala.binary.version>
-  </properties>
+    <licenses>
+        <license>
+            <name>Mulan Permissive Software License，Version 2</name>
+            <url>http://license.coscl.org.cn/MulanPSL2</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-api-java-bridge</artifactId>
-      <version>${flink.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.lmax</groupId>
-      <artifactId>disruptor</artifactId>
-      <version>3.4.2</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-test-utils</artifactId>
-      <version>${flink.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-      <version>${flink.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+    <developers>
+        <developer>
+            <id>oceanbase</id>
+            <name>OceanBase Developers</name>
+            <email>open_contact@oceanbase.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
+    <scm>
+        <connection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</connection>
+        <developerConnection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</developerConnection>
+        <url>https://github.com/oceanbase/flink-connector-oceanbase</url>
+        <tag>HEAD</tag>
+    </scm>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+    <distributionManagement>
+        <repository>
+            <id>sonatype-nexus-staging</id>
+            <name>Nexus Release Repository</name>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <snapshotRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 </project>
