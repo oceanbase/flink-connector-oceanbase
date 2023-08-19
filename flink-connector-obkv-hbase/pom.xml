@@ -10,105 +10,104 @@ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.oceanbase</groupId>
-    <artifactId>flink-connector-oceanbase-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.oceanbase</groupId>
+        <artifactId>flink-connector-oceanbase-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
 
-  <artifactId>flink-connector-obkv-hbase</artifactId>
-  <name>OceanBase Flink Connector : OBKV HBase</name>
-  <packaging>jar</packaging>
+    <artifactId>flink-connector-obkv-hbase</artifactId>
+    <packaging>jar</packaging>
+    <name>OceanBase Flink Connector : OBKV HBase</name>
 
-  <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.oceanbase</groupId>
-      <artifactId>flink-connector-oceanbase-base</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <dependencies>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>flink-connector-oceanbase-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
-    <dependency>
-      <groupId>com.oceanbase</groupId>
-      <artifactId>obkv-hbase-client</artifactId>
-      <version>0.1.2</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-nop</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>obkv-hbase-client</artifactId>
+            <version>0.1.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
-    <!--    <dependency>-->
-    <!--      <groupId>mysql</groupId>-->
-    <!--      <artifactId>mysql-connector-java</artifactId>-->
-    <!--      <version>5.1.47</version>-->
-    <!--      <scope>test</scope>-->
-    <!--    </dependency>-->
+        <!--    <dependency>-->
+        <!--      <groupId>mysql</groupId>-->
+        <!--      <artifactId>mysql-connector-java</artifactId>-->
+        <!--      <version>5.1.47</version>-->
+        <!--      <scope>test</scope>-->
+        <!--    </dependency>-->
 
-  </dependencies>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>shade-flink</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <finalName>flink-sql-connector-obkv-hbase-${project.version}</finalName>
-              <artifactSet>
-                <includes>
-                  <include>com.oceanbase:*</include>
-                  <include>com.alibaba:fastjson</include>
-                  <include>com.alipay.sofa:bolt</include>
-                  <include>com.alipay.sofa.common:sofa-common-tools</include>
-                  <include>com.google.guava:guava</include>
-                  <include>commons-lang:commons-lang</include>
-                  <include>commons-logging:commons-logging</include>
-                  <include>org.apache.hadoop:hadoop-core</include>
-                  <include>org.apache.hbase:hbase</include>
-                  <include>io.netty:*</include>
-                </includes>
-              </artifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>com.google</pattern>
-                  <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.hadoop</pattern>
-                  <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>io.netty</pattern>
-                  <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade-flink</id>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <finalName>flink-sql-connector-obkv-hbase-${project.version}</finalName>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.oceanbase:*</include>
+                                    <include>com.alibaba:fastjson</include>
+                                    <include>com.alipay.sofa:bolt</include>
+                                    <include>com.alipay.sofa.common:sofa-common-tools</include>
+                                    <include>com.google.guava:guava</include>
+                                    <include>commons-lang:commons-lang</include>
+                                    <include>commons-logging:commons-logging</include>
+                                    <include>org.apache.hadoop:hadoop-core</include>
+                                    <include>org.apache.hbase:hbase</include>
+                                    <include>io.netty:*</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.hadoop</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

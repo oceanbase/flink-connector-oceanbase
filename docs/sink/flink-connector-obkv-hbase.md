@@ -124,14 +124,14 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-| Option                   | Required | Default | Type     | Description                       |
+|          Option          | Required | Default |   Type   |            Description            |
 |--------------------------|----------|---------|----------|-----------------------------------|
 | url                      | Yes      |         | String   | The config url with database name |
 | table-name               | Yes      |         | String   | The table name of HBase           |
 | username                 | Yes      |         | String   | The username                      |
 | password                 | Yes      |         | String   | The password                      |
 | sys.username             | Yes      |         | String   | The username of sys tenant        |
-| sys.password             | Yes      |         | String   | The password of sys tenant        | |
+| sys.password             | Yes      |         | String   | The password of sys tenant        |
 | buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval             |
 | buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size                       |
 | buffer-flush.batch-size  | No       | 100     | Integer  | Buffer flush batch size           |

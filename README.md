@@ -17,7 +17,7 @@ Prerequisites
 
 This repository contains connectors as following:
 
-| Connector                   | OceanBase Compatible Mode | Supported Features                              |
+|          Connector          | OceanBase Compatible Mode |               Supported Features                |
 |-----------------------------|---------------------------|-------------------------------------------------|
 | Flink Connector: OceanBase  | MySQL, Oracle             | [Sink](docs/sink/flink-connector-oceanbase.md)  |
 | Flink Connector: OBKV HBase | OBKV HBase                | [Sink](docs/sink/flink-connector-obkv-hbase.md) |
@@ -26,7 +26,7 @@ This repository contains connectors as following:
 
 There are some community projects which can be used to work with Apache Flink and OceanBase.
 
-| Project                                                        | OceanBase Compatible Mode | Supported Features                                                                                                                                   |
+|                            Project                             | OceanBase Compatible Mode |                                                                  Supported Features                                                                  |
 |----------------------------------------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle             | [Source + CDC](https://ververica.github.io/flink-cdc-connectors/master/content/connectors/oceanbase-cdc.html)                                        |
 | [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle             | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase)<br/> [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |

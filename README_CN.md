@@ -17,7 +17,7 @@
 
 本仓库提供了如下 Connector：
 
-| Connector                   | OceanBase 兼容模式 | 支持的功能                                              |
+|          Connector          | OceanBase 兼容模式 |                       支持的功能                        |
 |-----------------------------|----------------|----------------------------------------------------|
 | Flink Connector: OceanBase  | MySQL, Oracle  | [Sink](docs/sink/flink-connector-oceanbase_cn.md)  |
 | Flink Connector: OBKV HBase | OBKV HBase     | [Sink](docs/sink/flink-connector-obkv-hbase_cn.md) |
@@ -26,7 +26,7 @@
 
 在其他的社区和组织中，也有一些项目可以用于通过 Flink 处理 OceanBase 中的数据。
 
-| Project                                                        | OceanBase 兼容模式 | 支持的功能                                                                                                                                            |
+|                            Project                             | OceanBase 兼容模式 |                                                                      支持的功能                                                                       |
 |----------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle  | [Source + CDC](https://ververica.github.io/flink-cdc-connectors/master/content/connectors/oceanbase-cdc%28ZH%29.html)                            |
 | [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle  | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase), [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
