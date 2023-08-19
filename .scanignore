@@ -1,0 +1,4 @@
+# git pre hook scan ignore configuration
+
+*.md
+pom.xml
