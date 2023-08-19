@@ -24,34 +24,15 @@ cd flink-connector-oceanbase
 mvn clean package -DskipTests
 ```
 
-### Download Dependencies
-
-Now the connector supports Alibaba Druid or HikariCP as the database connection pool, you can choose one of them to use in the application system.
-- Druid ：[https://mvnrepository.com/artifact/com.alibaba/druid](https://mvnrepository.com/artifact/com.alibaba/druid)
-- HikariCP：[https://mvnrepository.com/artifact/com.zaxxer/HikariCP](https://mvnrepository.com/artifact/com.zaxxer/HikariCP)
-
-It should be noted that HikariCP no longer supports JDK 8 starting from 5.0.x, so only 4.0.x or earlier versions is compatible here.
-
-The MySQL mode of the OceanBase database is compatible with the MySQL protocol, so the MySQL JDBC driver can be used directly. OceanBase also provides an official JDBC driver, which supports OceanBase's Oracle mode and MySQL mode.
-
-- MySQL JDBC：[https://mvnrepository.com/artifact/mysql/mysql-connector-java](https://mvnrepository.com/artifact/mysql/mysql-connector-java)
-- OceanBase JDBC：[https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client](https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client)
-
 ### Package with Dependencies
 
-The JAR file of this program does not contain the dependencies mentioned above by default. If you want to package the JAR file with dependencies, you can use [maven-shade-plugin](https://maven.apache.org/plugins/maven-shade-plugin).
-
-Here we provide an [example](../../tools/maven/shade/pom.xml), you can use the following command to generate a JAR file which contains all dependencies:
-
-```shell
-sh tools/maven/build.sh
-```
-
-After that the corresponding JAR file will be output to the `tools/maven/shade/target` directory, and the name format is `flink-sql-connector-oceanbase-${version}-shaded.jar`.
+We provide a shaded jar file as `flink-sql-connector-oceanbase-${project.version}.jar`, you can see the [pom.xml](../../flink-connector-oceanbase/pom.xml) for more details.
 
 ### Demo
 
-Prepare Alibaba Druid and MySQL JDBC driver packages, and create the destination table 't_sink' under the 'test' database of the OceanBase.
+#### Preparation
+
+Create the destination table 't_sink' under the 'test' database of the OceanBase MySQL mode.
 
 ```mysql
 USE test;
@@ -90,12 +71,11 @@ public class Main {
                         + "  PRIMARY KEY (id) NOT ENFORCED"
                         + ") with ("
                         + "    'connector' = 'oceanbase',"
-                        + "    'url' = 'jdbc:mysql://127.0.0.1:2881/test',"
+                        + "    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',"
                         + "    'table-name' = 't_sink',"
                         + "    'username' = 'root@test',"
                         + "    'password' = 'pswd',"
-                        + "    'driver-class' = 'com.mysql.jdbc.Driver',"
-                        + "    'connection-pool' = 'druid',"
+                        + "    'compatible-mode' = 'mysql',"
                         + "    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100',"
                         + "    'upsert-mode' = 'true',"
                         + "    'buffer-flush.interval' = '1s',"
@@ -129,7 +109,7 @@ CREATE TABLE t_sink
     PRIMARY KEY (id) NOT ENFORCED
 ) with (
       'connector' = 'oceanbase',
-      'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+      'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',
       'cluster-name' = 'obcluster',
       'tenant-name' = 'test',
       'schema-name' = 'test',
@@ -137,8 +117,6 @@ CREATE TABLE t_sink
       'username' = 'root@test#obcluster',
       'password' = 'pswd',
       'compatible-mode' = 'mysql',
-      'driver-class' = 'com.mysql.jdbc.Driver',
-      'connection-pool' = 'druid',
       'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
       'upsert-mode' = 'true',
       'buffer-flush.interval' = '1s',
@@ -163,17 +141,15 @@ Once executed, the records should have been written to OceanBase.
 
 |           Option           | Required | Default |   Type   |                                                              Description                                                               |
 |----------------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
-| url                        | Yes      |         | String   | JDBC url                                                                                                                               |
+| url                        | Yes      |         | String   | JDBC url, should be prefixed with 'jdbc:oceanbase://'                                                                                  |
 | schema-name                | Yes      |         | String   | The schema name or database name                                                                                                       |
 | table-name                 | Yes      |         | String   | The table name                                                                                                                         |
 | username                   | Yes      |         | String   | The username                                                                                                                           |
 | password                   | Yes      |         | String   | The password                                                                                                                           |
 | compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                                           |
-| driver-class               | Yes      |         | String   | JDBC driver class name, like 'com.mysql.jdbc.Driver'                                                                                   |
-| connection-pool            | Yes      |         | String   | Database connection pool type, can be 'druid' or 'hikari'                                                                              |
 | cluster-name               | No       |         | String   | The cluster name of OceanBase, required when partition calculation is enabled                                                          |
 | tenant-name                | No       |         | String   | The tenant name of OceanBase, required when partition calculation is enabled                                                           |
-| connection-pool-properties | No       |         | String   | Database connection pool properties, need to correspond to pool type, and multiple values are separated by semicolons                  |
+| connection-pool-properties | No       |         | String   | Druid connection pool properties, multiple values are separated by semicolons                                                          |
 | upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                                             |
 | buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                                  |
 | buffer-flush.buffer-size   | No       | 1000    | Integer  | Buffer size                                                                                                                            |

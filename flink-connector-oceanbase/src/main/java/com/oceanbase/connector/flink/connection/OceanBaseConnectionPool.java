@@ -21,7 +21,6 @@ import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,35 +49,12 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider {
         if (!inited) {
             synchronized (this) {
                 if (!inited) {
-                    String dataSourcePool = options.getConnectionPool();
-                    if (dataSourcePool == null) {
-                        throw new UnsupportedOperationException("Option 'connection-pool' is null");
-                    }
-                    switch (dataSourcePool.trim().toLowerCase()) {
-                        case "druid":
-                            DruidDataSource druidDataSource = new DruidDataSource();
-                            druidDataSource.setUrl(options.getUrl());
-                            druidDataSource.setUsername(options.getUsername());
-                            druidDataSource.setPassword(options.getPassword());
-                            druidDataSource.setDriverClassName(options.getDriverClass());
-                            druidDataSource.configFromPropety(
-                                    options.getConnectionPoolProperties());
-                            dataSource = druidDataSource;
-                            break;
-                        case "hikari":
-                            HikariDataSource hikariDataSource = new HikariDataSource();
-                            hikariDataSource.setJdbcUrl(options.getUrl());
-                            hikariDataSource.setUsername(options.getUsername());
-                            hikariDataSource.setPassword(options.getPassword());
-                            hikariDataSource.setDriverClassName(options.getDriverClass());
-                            hikariDataSource.setDataSourceProperties(
-                                    options.getConnectionPoolProperties());
-                            dataSource = hikariDataSource;
-                            break;
-                        default:
-                            throw new UnsupportedOperationException(
-                                    "Invalid connection pool: " + dataSourcePool);
-                    }
+                    DruidDataSource druidDataSource = new DruidDataSource();
+                    druidDataSource.setUrl(options.getUrl());
+                    druidDataSource.setUsername(options.getUsername());
+                    druidDataSource.setPassword(options.getPassword());
+                    druidDataSource.configFromPropety(options.getConnectionPoolProperties());
+                    dataSource = druidDataSource;
                     inited = true;
                 }
             }

@@ -26,8 +26,6 @@ public class OceanBaseConnectionOptions implements Serializable {
     private final String username;
     private final String password;
     private final String compatibleMode;
-    private final String driverClass;
-    private final String connectionPool;
     private final Properties connectionPoolProperties;
 
     public OceanBaseConnectionOptions(
@@ -39,8 +37,6 @@ public class OceanBaseConnectionOptions implements Serializable {
             String username,
             String password,
             String compatibleMode,
-            String driverClass,
-            String connectionPool,
             Properties connectionPoolProperties) {
         this.url = url;
         this.clusterName = clusterName;
@@ -50,8 +46,6 @@ public class OceanBaseConnectionOptions implements Serializable {
         this.username = username;
         this.password = password;
         this.compatibleMode = compatibleMode;
-        this.driverClass = driverClass;
-        this.connectionPool = connectionPool;
         this.connectionPoolProperties = connectionPoolProperties;
     }
 
@@ -85,14 +79,6 @@ public class OceanBaseConnectionOptions implements Serializable {
 
     public String getCompatibleMode() {
         return compatibleMode;
-    }
-
-    public String getDriverClass() {
-        return driverClass;
-    }
-
-    public String getConnectionPool() {
-        return connectionPool;
     }
 
     public Properties getConnectionPoolProperties() {

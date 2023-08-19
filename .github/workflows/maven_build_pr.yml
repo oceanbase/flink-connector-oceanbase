@@ -19,4 +19,4 @@ jobs:
           java-version: '8'
           distribution: 'zulu'
       - name: Build with Maven
-        run: sh tools/maven/build.sh
+        run: mvn clean install

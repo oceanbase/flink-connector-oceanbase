@@ -41,15 +41,12 @@ See the Mulan PSL v2 for more details.
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
             <version>1.2.16</version>
-            <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>4.0.3</version>
-            <optional>true</optional>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>oceanbase-client</artifactId>
+            <version>2.4.3</version>
         </dependency>
-
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-partition-calculator</artifactId>
@@ -66,19 +63,46 @@ See the Mulan PSL v2 for more details.
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
         </dependency>
-
-        <!--    <dependency>-->
-        <!--      <groupId>mysql</groupId>-->
-        <!--      <artifactId>mysql-connector-java</artifactId>-->
-        <!--      <version>5.1.47</version>-->
-        <!--      <scope>test</scope>-->
-        <!--    </dependency>-->
-        <!--    <dependency>-->
-        <!--      <groupId>com.oceanbase</groupId>-->
-        <!--      <artifactId>oceanbase-client</artifactId>-->
-        <!--      <version>2.4.3</version>-->
-        <!--    </dependency>-->
-
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade-flink</id>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <finalName>flink-sql-connector-oceanbase-${project.version}</finalName>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.oceanbase:*</include>
+                                    <include>com.alibaba:druid</include>
+                                    <include>commons-collections:commons-collections</include>
+                                    <include>org.apache.commons:commons-lang3</include>
+                                    <include>com.google.guava:guava</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.commons</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.commons</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
