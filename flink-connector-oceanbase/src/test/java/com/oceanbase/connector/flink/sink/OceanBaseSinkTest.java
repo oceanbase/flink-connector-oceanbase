@@ -90,8 +90,6 @@ public class OceanBaseSinkTest {
                                 + "  'username'='%s',"
                                 + "  'password'='%s',"
                                 + "  'compatible-mode'='mysql',"
-                                + "  'driver-class'='com.mysql.jdbc.Driver',"
-                                + "  'connection-pool'='druid',"
                                 + "  'connection-pool-properties'='druid.initialSize=4;druid.maxActive=20;',"
                                 + "  'partition.enabled'='true',"
                                 + "  'partition.number'='4'"

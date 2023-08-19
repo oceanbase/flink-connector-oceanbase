@@ -49,18 +49,6 @@ public class OceanBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
                     .withDescription(
                             "The compatible mode of OceanBase, can be 'mysql' or 'oracle'.");
 
-    public static final ConfigOption<String> DRIVER_CLASS_NAME =
-            ConfigOptions.key("driver-class")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("JDBC driver class name.");
-
-    public static final ConfigOption<String> CONNECTION_POOL =
-            ConfigOptions.key("connection-pool")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Connection pool type, can be 'druid' or 'hikari'.");
-
     public static final ConfigOption<String> CONNECTION_POOL_PROPERTIES =
             ConfigOptions.key("connection-pool-properties")
                     .stringType()
@@ -129,8 +117,6 @@ public class OceanBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
                 allConfig.get(USERNAME),
                 allConfig.get(PASSWORD),
                 allConfig.get(COMPATIBLE_MODE),
-                allConfig.get(DRIVER_CLASS_NAME),
-                allConfig.get(CONNECTION_POOL),
                 parseProperties(allConfig.get(CONNECTION_POOL_PROPERTIES)));
     }
 
