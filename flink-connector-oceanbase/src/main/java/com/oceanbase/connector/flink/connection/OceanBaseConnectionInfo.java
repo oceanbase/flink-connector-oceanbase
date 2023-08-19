@@ -18,11 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 
-import java.io.Serializable;
-
-public class OceanBaseConnectionInfo implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class OceanBaseConnectionInfo {
 
     public enum CompatibleMode {
         MYSQL,
