@@ -21,7 +21,6 @@ See the Mulan PSL v2 for more details.
 
     <artifactId>flink-connector-obkv-hbase</artifactId>
     <packaging>jar</packaging>
-    <name>OceanBase Flink Connector : OBKV HBase</name>
 
     <dependencies>
         <dependency>

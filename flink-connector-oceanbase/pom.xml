@@ -22,7 +22,6 @@ See the Mulan PSL v2 for more details.
 
     <artifactId>flink-connector-oceanbase</artifactId>
     <packaging>jar</packaging>
-    <name>OceanBase Flink Connector : OceanBase</name>
 
     <dependencies>
         <dependency>

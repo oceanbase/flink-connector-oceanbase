@@ -20,7 +20,6 @@ See the Mulan PSL v2 for more details.
     </parent>
 
     <artifactId>flink-sql-connector-obkv-hbase</artifactId>
-    <name>OceanBase Flink SQL Connector: OBKV HBase</name>
 
     <dependencies>
         <dependency>
