@@ -16,6 +16,27 @@ You can get the release packages at [Releases Page](https://github.com/oceanbase
 </dependency>
 ```
 
+If you'd rather use the latest snapshots of the upcoming major version, use our Maven snapshot repository and declare the appropriate dependency version.
+
+```xml
+<dependency>
+  <groupId>com.oceanbase</groupId>
+  <artifactId>flink-connector-oceanbase</artifactId>
+  <version>${project.version}</version>
+</dependency>
+
+<repositories>
+  <repository>
+    <id>sonatype-snapshots</id>
+    <name>Sonatype Snapshot Repository</name>
+    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
 You can also manually build it from the source code.
 
 ```shell
@@ -24,9 +45,11 @@ cd flink-connector-oceanbase
 mvn clean package -DskipTests
 ```
 
-### Package with Dependencies
+### SQL JAR
 
-We provide a shaded jar file as `flink-sql-connector-oceanbase-${project.version}.jar`, you can see the [pom.xml](../../flink-connector-oceanbase/pom.xml) for more details.
+To use this connector through Flink SQL directly, you need to download the shaded jar file named `flink-sql-connector-oceanbase-${project.version}.jar`:
+- Release versions: https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
+- Snapshot versions: https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
 ### Demo
 

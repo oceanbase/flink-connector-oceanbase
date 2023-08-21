@@ -22,13 +22,6 @@ See the Mulan PSL v2 for more details.
 
     <artifactId>flink-connector-oceanbase</artifactId>
     <packaging>jar</packaging>
-    <name>OceanBase Flink Connector : OceanBase</name>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -64,45 +57,5 @@ See the Mulan PSL v2 for more details.
             <version>32.0.0-jre</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>shade-flink</id>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <finalName>flink-sql-connector-oceanbase-${project.version}</finalName>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.oceanbase:*</include>
-                                    <include>com.alibaba:druid</include>
-                                    <include>commons-collections:commons-collections</include>
-                                    <include>org.apache.commons:commons-lang3</include>
-                                    <include>com.google.guava:guava</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.commons</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

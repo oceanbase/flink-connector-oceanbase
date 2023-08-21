@@ -25,12 +25,13 @@ See the Mulan PSL v2 for more details.
     <artifactId>flink-connector-oceanbase-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>OceanBase Flink Connector : Parent</name>
 
     <modules>
+        <module>flink-connector-oceanbase-base</module>
         <module>flink-connector-obkv-hbase</module>
         <module>flink-connector-oceanbase</module>
-        <module>flink-connector-oceanbase-base</module>
+        <module>flink-sql-connector-obkv-hbase</module>
+        <module>flink-sql-connector-oceanbase</module>
     </modules>
 
     <properties>
