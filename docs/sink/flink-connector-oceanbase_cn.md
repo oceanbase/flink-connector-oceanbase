@@ -16,6 +16,27 @@
 </dependency>
 ```
 
+如果你想要使用最新的快照版本，可以通过配置 Maven 快照仓库来指定：
+
+```xml
+<dependency>
+  <groupId>com.oceanbase</groupId>
+  <artifactId>flink-connector-oceanbase</artifactId>
+  <version>${project.version}</version>
+</dependency>
+
+<repositories>
+  <repository>
+    <id>sonatype-snapshots</id>
+    <name>Sonatype Snapshot Repository</name>
+    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
 您也可以通过源码构建的方式获得程序包。
 
 ```shell
@@ -24,9 +45,11 @@ cd flink-connector-oceanbase
 mvn clean package -DskipTests
 ```
 
-### 将依赖打包到 JAR 文件
+### SQL JAR
 
-这里我们提供了一个包含依赖的 jar 文件 `flink-sql-connector-oceanbase-${project.version}.jar`，详情可以查看 [pom.xml](../../flink-connector-oceanbase/pom.xml)。
+要直接通过 Flink SQL 使用此连接器，您需要下载名为`flink-sql-connector-oceanbase-${project.version}.jar`的包含所有依赖的 jar 文件：
+- 正式版本：https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
+- 快照版本：https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
 ### 示例
 
