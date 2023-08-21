@@ -23,12 +23,6 @@ See the Mulan PSL v2 for more details.
     <packaging>jar</packaging>
     <name>OceanBase Flink Connector : OBKV HBase</name>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -60,54 +54,5 @@ See the Mulan PSL v2 for more details.
         <!--    </dependency>-->
 
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>shade-flink</id>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <finalName>flink-sql-connector-obkv-hbase-${project.version}</finalName>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.oceanbase:*</include>
-                                    <include>com.alibaba:fastjson</include>
-                                    <include>com.alipay.sofa:bolt</include>
-                                    <include>com.alipay.sofa.common:sofa-common-tools</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>commons-lang:commons-lang</include>
-                                    <include>commons-logging:commons-logging</include>
-                                    <include>org.apache.hadoop:hadoop-core</include>
-                                    <include>org.apache.hbase:hbase</include>
-                                    <include>io.netty:*</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.hadoop</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>io.netty</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
