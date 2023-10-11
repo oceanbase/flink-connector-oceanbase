@@ -1,4 +1,4 @@
-name: Build
+name: Build Main
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Maven Build
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -20,7 +20,7 @@ jobs:
         run: mvn clean install -DskipTests=true
 
   test-jdbc:
-    name: Maven Test (flink-connector-oceanbase)
+    name: Test (flink-connector-oceanbase)
     needs: build
     runs-on: ubuntu-latest
     steps:
