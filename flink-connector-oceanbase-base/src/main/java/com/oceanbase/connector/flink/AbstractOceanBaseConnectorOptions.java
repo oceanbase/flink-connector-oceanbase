@@ -12,12 +12,13 @@
 
 package com.oceanbase.connector.flink;
 
+import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
+
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 
-import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;

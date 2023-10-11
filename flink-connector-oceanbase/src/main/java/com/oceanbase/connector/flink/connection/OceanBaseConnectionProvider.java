@@ -13,6 +13,7 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;

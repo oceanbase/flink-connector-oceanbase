@@ -12,6 +12,9 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
+import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
+
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.table.data.RowData;
@@ -20,8 +23,6 @@ import org.apache.flink.types.RowKind;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;

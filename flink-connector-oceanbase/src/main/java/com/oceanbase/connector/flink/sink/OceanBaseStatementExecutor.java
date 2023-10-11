@@ -12,17 +12,18 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import com.oceanbase.connector.flink.connection.OceanBaseConnectionInfo;
+import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
+import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
+import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionInfo;
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
-import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
-import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -12,14 +12,14 @@
 
 package com.oceanbase.connector.flink;
 
+import com.oceanbase.connector.flink.sink.OBKVHBaseDynamicTableSink;
+
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.FactoryUtil;
-
-import com.oceanbase.connector.flink.sink.OBKVHBaseDynamicTableSink;
 
 import java.util.HashSet;
 import java.util.Set;

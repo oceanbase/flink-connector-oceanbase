@@ -12,14 +12,14 @@
 
 package com.oceanbase.connector.flink.connection;
 
+import com.oceanbase.connector.flink.converter.OBKVHBaseRowConverter;
+
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
-
-import com.oceanbase.connector.flink.converter.OBKVHBaseRowConverter;
 
 import java.io.Serializable;
 import java.util.HashMap;

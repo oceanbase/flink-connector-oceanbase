@@ -12,15 +12,15 @@
 
 package com.oceanbase.connector.flink.sink;
 
-import org.apache.flink.table.catalog.ResolvedSchema;
-import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.types.RowKind;
-
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
+
+import org.apache.flink.table.catalog.ResolvedSchema;
+import org.apache.flink.table.connector.ChangelogMode;
+import org.apache.flink.table.connector.sink.DynamicTableSink;
+import org.apache.flink.types.RowKind;
 
 public class OBKVHBaseDynamicTableSink extends AbstractDynamicTableSink {
 

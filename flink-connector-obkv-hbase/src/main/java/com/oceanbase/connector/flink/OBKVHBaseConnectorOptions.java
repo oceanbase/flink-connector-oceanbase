@@ -12,11 +12,11 @@
 
 package com.oceanbase.connector.flink;
 
-import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.configuration.ConfigOptions;
-
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
 import com.oceanbase.connector.flink.sink.OBKVHBaseStatementOptions;
+
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 
 import java.util.Map;
 

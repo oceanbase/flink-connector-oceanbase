@@ -96,6 +96,16 @@ See the Mulan PSL v2 for more details.
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.7</version>
+                            <style>AOSP</style>
+                        </googleJavaFormat>
+                        <importOrder>
+                            <order>com.oceanbase,org.apache.flink,org.apache.flink.shaded,,javax,java,scala,\#</order>
+                        </importOrder>
+                        <removeUnusedImports />
+                    </java>
                     <pom>
                         <sortPom>
                             <encoding>UTF-8</encoding>

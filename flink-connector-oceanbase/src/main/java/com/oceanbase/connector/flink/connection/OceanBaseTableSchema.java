@@ -12,11 +12,11 @@
 
 package com.oceanbase.connector.flink.connection;
 
+import com.oceanbase.connector.flink.converter.OceanBaseRowConverter;
+
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.data.RowData;
-
-import com.oceanbase.connector.flink.converter.OceanBaseRowConverter;
 
 import java.io.Serializable;
 import java.util.ArrayList;

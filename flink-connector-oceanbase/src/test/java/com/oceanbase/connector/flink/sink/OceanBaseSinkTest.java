@@ -12,12 +12,13 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import com.oceanbase.connector.flink.OceanBaseContainer;
+
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.util.TestLogger;
 
-import com.oceanbase.connector.flink.OceanBaseContainer;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;

@@ -12,13 +12,13 @@
 
 package com.oceanbase.connector.flink.sink;
 
-import org.apache.flink.table.catalog.ResolvedSchema;
-import org.apache.flink.table.connector.sink.DynamicTableSink;
-
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionPool;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+
+import org.apache.flink.table.catalog.ResolvedSchema;
+import org.apache.flink.table.connector.sink.DynamicTableSink;
 
 public class OceanBaseDynamicTableSink extends AbstractDynamicTableSink {
 

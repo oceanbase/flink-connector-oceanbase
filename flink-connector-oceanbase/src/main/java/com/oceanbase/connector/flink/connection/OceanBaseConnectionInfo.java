@@ -14,6 +14,7 @@ package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
+
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
