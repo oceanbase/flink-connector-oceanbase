@@ -15,32 +15,47 @@ package com.oceanbase.connector.flink.sink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.util.TestLogger;
 
-import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
-import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
-import org.junit.Ignore;
+import com.oceanbase.connector.flink.OceanBaseContainer;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.lifecycle.Startables;
+import org.testcontainers.utility.MountableFile;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-@Ignore
-public class OceanBaseSinkTest {
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class OceanBaseSinkTest extends TestLogger {
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseSinkTest.class);
 
-    private static final OceanBaseDialect DIALECT = new OceanBaseMySQLDialect();
+    private OceanBaseContainer container;
 
-    private static final String JDBC_URL = "";
-    private static final String CLUSTER_NAME = "";
-    private static final String TENANT_NAME = "";
-    private static final String USERNAME = "";
-    private static final String PASSWORD = "";
+    @Before
+    public void before() {
+        container =
+                new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME)
+                        .withCopyFileToContainer(
+                                MountableFile.forClasspathResource("ddl/init.sql"),
+                                "/root/boot/init.d/init.sql")
+                        .withLogConsumer(new Slf4jLogConsumer(LOG));
+
+        Startables.deepStart(container).join();
+    }
 
     @Test
     public void testSink() throws Exception {
@@ -50,92 +65,92 @@ public class OceanBaseSinkTest {
                 StreamTableEnvironment.create(
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
 
-        String schemaName = "test";
-        String tableName = "user";
-
-        String createTableSql =
-                "CREATE TABLE %s ("
-                        + "id bigint(10) primary key,"
-                        + "name varchar(20),"
-                        + "age int(10),"
-                        + "height double,"
-                        + "birthday date)"
-                        + "PARTITION BY HASH(id) "
-                        + "PARTITIONS 4";
-
-        String fullTableName = DIALECT.getFullTableName(schemaName, tableName);
-
-        try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
-                Statement statement = connection.createStatement()) {
-            statement.execute(String.format("DROP TABLE IF EXISTS %s", fullTableName));
-            statement.execute(String.format(createTableSql, fullTableName));
-        }
+        String tableName = "products";
 
         tEnv.executeSql(
                 String.format(
                         "CREATE TEMPORARY TABLE target ("
-                                + "    id  BIGINT,"
-                                + "    name STRING,"
-                                + "    age  INT,"
-                                + "    height  DOUBLE,"
-                                + "    birthday  DATE,"
-                                + "    PRIMARY KEY (id) NOT ENFORCED"
+                                + " `id` INT NOT NULL,"
+                                + " name STRING,"
+                                + " description STRING,"
+                                + " weight DECIMAL(20, 10),"
+                                + " PRIMARY KEY (`id`) NOT ENFORCED"
                                 + ") with ("
                                 + "  'connector'='oceanbase',"
                                 + "  'url'='%s',"
-                                + "  'cluster-name'='%s',"
-                                + "  'tenant-name'='%s',"
                                 + "  'schema-name'='%s',"
                                 + "  'table-name'='%s',"
                                 + "  'username'='%s',"
                                 + "  'password'='%s',"
                                 + "  'compatible-mode'='mysql',"
-                                + "  'connection-pool-properties'='druid.initialSize=4;druid.maxActive=20;',"
-                                + "  'partition.enabled'='true',"
-                                + "  'partition.number'='4'"
+                                + "  'connection-pool-properties'='druid.initialSize=4;druid.maxActive=20;'"
                                 + ");",
-                        JDBC_URL,
-                        CLUSTER_NAME,
-                        TENANT_NAME,
-                        schemaName,
+                        container.getJdbcUrl(),
+                        container.getDatabaseName(),
                         tableName,
-                        USERNAME,
-                        PASSWORD));
+                        container.getUsername(),
+                        container.getPassword()));
 
-        StringBuilder sb = new StringBuilder("insert into target values ");
-        for (int i = 0; i < 100; i++) {
-            if (i != 0) {
-                sb.append(",");
-            }
-            sb.append(
-                    String.format(
-                            "(%d, '%s', %d, %f, DATE '2023-%02d-%02d')",
-                            i,
-                            "name" + i,
-                            ThreadLocalRandom.current().nextInt(18, 60),
-                            ThreadLocalRandom.current().nextDouble(1.5, 2.0),
-                            ThreadLocalRandom.current().nextInt(1, 6),
-                            ThreadLocalRandom.current().nextInt(1, 28)));
-        }
-        tEnv.executeSql(sb.toString()).await();
+        tEnv.executeSql(
+                        "INSERT INTO target "
+                                + "VALUES (101, 'scooter', 'Small 2-wheel scooter', 3.14),"
+                                + "       (102, 'car battery', '12V car battery', 8.1),"
+                                + "       (103, '12-pack drill bits', '12-pack of drill bits with sizes ranging from #40 to #3', 0.8),"
+                                + "       (104, 'hammer', '12oz carpenter''s hammer', 0.75),"
+                                + "       (105, 'hammer', '14oz carpenter''s hammer', 0.875),"
+                                + "       (106, 'hammer', '16oz carpenter''s hammer', 1.0),"
+                                + "       (107, 'rocks', 'box of assorted rocks', 5.3),"
+                                + "       (108, 'jacket', 'water resistent black wind breaker', 0.1),"
+                                + "       (109, 'spare tire', '24 inch spare tire', 22.2);")
+                .await();
 
-        try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+        List<String> expected =
+                Arrays.asList(
+                        "101,scooter,Small 2-wheel scooter,3.1400000000",
+                        "102,car battery,12V car battery,8.1000000000",
+                        "103,12-pack drill bits,12-pack of drill bits with sizes ranging from #40 to #3,0.8000000000",
+                        "104,hammer,12oz carpenter's hammer,0.7500000000",
+                        "105,hammer,14oz carpenter's hammer,0.8750000000",
+                        "106,hammer,16oz carpenter's hammer,1.0000000000",
+                        "107,rocks,box of assorted rocks,5.3000000000",
+                        "108,jacket,water resistent black wind breaker,0.1000000000",
+                        "109,spare tire,24 inch spare tire,22.2000000000");
+
+        List<String> actual = new ArrayList<>();
+        try (Connection connection =
+                        DriverManager.getConnection(
+                                container.getJdbcUrl(),
+                                container.getUsername(),
+                                container.getPassword());
                 Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery(String.format("SELECT * FROM %s", fullTableName));
+            ResultSet rs = statement.executeQuery("SELECT * FROM products");
             ResultSetMetaData metaData = rs.getMetaData();
-            int count = 0;
+
             while (rs.next()) {
-                sb = new StringBuilder("Row ").append(count++).append(": { ");
+                StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < metaData.getColumnCount(); i++) {
                     if (i != 0) {
-                        sb.append(", ");
+                        sb.append(",");
                     }
-                    sb.append(metaData.getColumnName(i + 1))
-                            .append(": ")
-                            .append(rs.getObject(i + 1));
+                    sb.append(rs.getObject(i + 1));
                 }
-                LOG.info(sb.append("}").toString());
+                actual.add(sb.toString());
             }
         }
+
+        assertEqualsInAnyOrder(expected, actual);
+    }
+
+    public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
+        assertTrue(expected != null && actual != null);
+        assertEqualsInOrder(
+                expected.stream().sorted().collect(Collectors.toList()),
+                actual.stream().sorted().collect(Collectors.toList()));
+    }
+
+    public static void assertEqualsInOrder(List<String> expected, List<String> actual) {
+        assertTrue(expected != null && actual != null);
+        assertEquals(expected.size(), actual.size());
+        assertArrayEquals(expected.toArray(new String[0]), actual.toArray(new String[0]));
     }
 }
