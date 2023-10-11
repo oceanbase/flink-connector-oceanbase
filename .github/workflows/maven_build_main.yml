@@ -10,11 +10,11 @@ jobs:
     name: Maven Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 8
-        uses: actions/setup-java@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
         with:
           java-version: '8'
           distribution: 'zulu'
+          cache: 'maven'
       - name: Build with Maven
         run: mvn clean install
