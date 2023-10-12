@@ -21,7 +21,7 @@ jobs:
       - name: Maven Install
         run: mvn clean install -DskipTests=true
 
-  test-jdbc:
+  test-flink-connector-oceanbase:
     name: Test (flink-connector-oceanbase)
     needs: build
     runs-on: ubuntu-latest
@@ -33,4 +33,22 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Maven Test
-        run: mvn verify -pl :flink-connector-oceanbase
+        run: |
+          cd flink-connector-oceanbase
+          mvn verify
+
+  test-flink-connector-obkv-hbase:
+    name: Test (flink-connector-obkv-hbase)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'zulu'
+          cache: 'maven'
+      - name: Maven Test
+        run: |
+          cd flink-connector-obkv-hbase
+          mvn verify

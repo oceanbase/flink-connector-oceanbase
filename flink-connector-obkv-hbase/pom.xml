@@ -48,12 +48,13 @@ under the License.
             </exclusions>
         </dependency>
 
-        <!--    <dependency>-->
-        <!--      <groupId>mysql</groupId>-->
-        <!--      <artifactId>mysql-connector-java</artifactId>-->
-        <!--      <version>5.1.47</version>-->
-        <!--      <scope>test</scope>-->
-        <!--    </dependency>-->
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>flink-connector-oceanbase-base</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
