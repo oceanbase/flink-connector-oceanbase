@@ -22,6 +22,10 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.methods.HttpGet;
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
@@ -81,10 +85,31 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
             throw new RuntimeException("Set config url failed", e);
         }
 
+        long start = System.currentTimeMillis();
+        while (true) {
+            if (isConfigUrlUpdated()) {
+                break;
+            }
+            if (System.currentTimeMillis() - start > 60_000) {
+                throw new RuntimeException("Failed to update config server");
+            }
+
+            try {
+                Thread.sleep(30_000);
+            } catch (InterruptedException e) {
+                LOG.error(e.toString());
+            }
+        }
+    }
+
+    private boolean isConfigUrlUpdated() {
         try {
-            Thread.sleep(10_000);
-        } catch (InterruptedException e) {
-            LOG.error(e.toString());
+            CloseableHttpClient httpclient = HttpClients.createDefault();
+            HttpGet httpget = new HttpGet(CONFIG_URL);
+            CloseableHttpResponse response = httpclient.execute(httpget);
+            return response.getEntity().getContentLength() > 0;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to request config url", e);
         }
     }
 
