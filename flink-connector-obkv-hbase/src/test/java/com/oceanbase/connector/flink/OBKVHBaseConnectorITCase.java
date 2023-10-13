@@ -27,12 +27,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,8 +42,9 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectorITCase.class);
 
+    public static final String CLUSTER_NAME = "obcluster";
     public static final String CONFIG_URL =
-            "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=obcluster";
+            "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=" + CLUSTER_NAME;
 
     private GenericContainer<?> configServer;
 
@@ -53,6 +56,9 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         configServer =
                 new GenericContainer<>("whhe/obconfigserver")
                         .withNetworkMode("host")
+                        .waitingFor(
+                                Wait.forLogMessage(".*boot success!.*", 1)
+                                        .withStartupTimeout(Duration.ofMinutes(1)))
                         .withLogConsumer(new Slf4jLogConsumer(LOG));
         Startables.deepStart(configServer).join();
 
@@ -114,7 +120,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                         familyB,
                         url,
                         hTable,
-                        obServer.getUsername(),
+                        obServer.getUsername() + "#" + CLUSTER_NAME,
                         obServer.getPassword(),
                         obServer.getSysUsername(),
                         obServer.getSysPassword()));
