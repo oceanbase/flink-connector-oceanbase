@@ -18,8 +18,8 @@ jobs:
           java-version: '8'
           distribution: 'zulu'
           cache: 'maven'
-      - name: Maven Install
-        run: mvn clean install -DskipTests=true
+      - name: Maven Build
+        run: mvn clean verify -DskipTests=true
 
   test-flink-connector-oceanbase:
     name: Test (flink-connector-oceanbase)
@@ -33,9 +33,7 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Maven Test
-        run: |
-          cd flink-connector-oceanbase
-          mvn verify
+        run: mvn verify -pl :flink-connector-oceanbase -am
 
   test-flink-connector-obkv-hbase:
     name: Test (flink-connector-obkv-hbase)
@@ -49,6 +47,4 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Maven Test
-        run: |
-          cd flink-connector-obkv-hbase
-          mvn verify
+        run: mvn verify -pl :flink-connector-obkv-hbase -am
