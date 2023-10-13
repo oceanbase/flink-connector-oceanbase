@@ -26,13 +26,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,35 +58,6 @@ public class OceanBaseTestBase extends TestLogger {
         if (obServer != null) {
             obServer.close();
         }
-    }
-
-    public List<String> queryTable(String tableName) throws SQLException {
-        return queryTable(tableName, "*");
-    }
-
-    public List<String> queryTable(String tableName, String fields) throws SQLException {
-        List<String> result = new ArrayList<>();
-        try (Connection connection =
-                        DriverManager.getConnection(
-                                obServer.getJdbcUrl(),
-                                obServer.getUsername(),
-                                obServer.getPassword());
-                Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery("SELECT " + fields + " FROM " + tableName);
-            ResultSetMetaData metaData = rs.getMetaData();
-
-            while (rs.next()) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < metaData.getColumnCount(); i++) {
-                    if (i != 0) {
-                        sb.append(",");
-                    }
-                    sb.append(rs.getObject(i + 1));
-                }
-                result.add(sb.toString());
-            }
-        }
-        return result;
     }
 
     public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {

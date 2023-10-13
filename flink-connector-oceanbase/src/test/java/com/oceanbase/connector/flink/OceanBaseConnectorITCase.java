@@ -22,6 +22,13 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -89,5 +96,30 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
         List<String> actual = queryTable(tableName);
 
         assertEqualsInAnyOrder(expected, actual);
+    }
+
+    public List<String> queryTable(String tableName) throws SQLException {
+        List<String> result = new ArrayList<>();
+        try (Connection connection =
+                        DriverManager.getConnection(
+                                obServer.getJdbcUrl(),
+                                obServer.getUsername(),
+                                obServer.getPassword());
+                Statement statement = connection.createStatement()) {
+            ResultSet rs = statement.executeQuery("SELECT * FROM " + tableName);
+            ResultSetMetaData metaData = rs.getMetaData();
+
+            while (rs.next()) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                    if (i != 0) {
+                        sb.append(",");
+                    }
+                    sb.append(rs.getObject(i + 1));
+                }
+                result.add(sb.toString());
+            }
+        }
+        return result;
     }
 }

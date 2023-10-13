@@ -20,6 +20,12 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import com.alipay.oceanbase.hbase.OHTableClient;
+import com.alipay.oceanbase.hbase.constants.OHConstants;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,11 +36,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -97,8 +105,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         String familyB = "family2";
 
         String url = String.format("%s&database=%s", CONFIG_URL, obServer.getDatabaseName());
-        String tableA = String.format("`%s`.`%s$%s`", obServer.getDatabaseName(), hTable, familyA);
-        String tableB = String.format("`%s`.`%s$%s`", obServer.getDatabaseName(), hTable, familyB);
+        String fullUsername = obServer.getUsername() + "#" + CLUSTER_NAME;
 
         tEnv.executeSql(
                 String.format(
@@ -137,13 +144,38 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         List<String> expectedA = Arrays.asList("1,q1,1", "3,q1,3", "4,q1,4");
         List<String> expectedB = Arrays.asList("1,q2,1", "2,q2,2", "4,q2,4", "1,q3,1");
 
-        List<String> resultA = queryTable(tableA, "K,Q,V");
+        Configuration conf = new Configuration();
+        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, url);
+        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, fullUsername);
+        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, obServer.getPassword());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, obServer.getSysUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, obServer.getSysPassword());
+
+        OHTableClient client = new OHTableClient(hTable, conf);
+        client.init();
+
+        List<String> resultA = queryHTable(client, familyA);
+        List<String> resultB = queryHTable(client, familyB);
 
         assertEqualsInAnyOrder(expectedA, resultA);
-
-        List<String> resultB = queryTable(tableB, "K,Q,V");
-
         assertEqualsInAnyOrder(expectedB, resultB);
+
+        client.close();
+    }
+
+    private List<String> queryHTable(OHTableClient client, String family) throws IOException {
+        List<String> result = new ArrayList<>();
+        Get get = new Get();
+        get.addFamily(Bytes.toBytes(family));
+        for (KeyValue kv : client.get(get).list()) {
+            result.add(
+                    String.format(
+                            "%s,%s,%s",
+                            Bytes.toString(kv.getRow()),
+                            Bytes.toString(kv.getQualifier()),
+                            Bytes.toString(kv.getValue())));
+        }
+        return result;
     }
 
     private String row(String key, Integer q1, String q2, Integer q3) {
