@@ -26,6 +26,7 @@ import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.m
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.HttpClients;
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
@@ -85,13 +86,27 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
             throw new RuntimeException("Set config url failed", e);
         }
 
+        waitUntilConfigServerUpdated();
+    }
+
+    private void waitUntilConfigServerUpdated() {
         long start = System.currentTimeMillis();
         while (true) {
-            if (isConfigUrlUpdated()) {
-                break;
+            try {
+                CloseableHttpClient httpclient = HttpClients.createDefault();
+                HttpGet httpget = new HttpGet(CONFIG_URL);
+                CloseableHttpResponse response = httpclient.execute(httpget);
+                if (response.getEntity().getContentLength() > 0) {
+                    LOG.info(
+                            "ConfigUrl response: {}",
+                            EntityUtils.toString(response.getEntity(), "UTF-8"));
+                    break;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to request config url", e);
             }
             if (System.currentTimeMillis() - start > 60_000) {
-                throw new RuntimeException("Failed to update config server");
+                throw new RuntimeException("Timeout to update config server");
             }
 
             try {
@@ -99,17 +114,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
             } catch (InterruptedException e) {
                 LOG.error(e.toString());
             }
-        }
-    }
-
-    private boolean isConfigUrlUpdated() {
-        try {
-            CloseableHttpClient httpclient = HttpClients.createDefault();
-            HttpGet httpget = new HttpGet(CONFIG_URL);
-            CloseableHttpResponse response = httpclient.execute(httpget);
-            return response.getEntity().getContentLength() > 0;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to request config url", e);
         }
     }
 
@@ -132,8 +136,8 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
 
         String hTable = "htable";
-        String familyA = "family1";
-        String familyB = "family2";
+        String family1 = "family1";
+        String family2 = "family2";
 
         String url = String.format("%s&database=%s", CONFIG_URL, obServer.getDatabaseName());
         String fullUsername = obServer.getUsername() + "#" + CLUSTER_NAME;
@@ -154,11 +158,11 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 + "  'sys.username'='%s',"
                                 + "  'sys.password'='%s'"
                                 + ");",
-                        familyA,
-                        familyB,
+                        family1,
+                        family2,
                         url,
                         hTable,
-                        obServer.getUsername() + "#" + CLUSTER_NAME,
+                        fullUsername,
                         obServer.getPassword(),
                         obServer.getSysUsername(),
                         obServer.getSysPassword()));
@@ -172,8 +176,9 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 row("4", 4, "4", null)))
                 .await();
 
-        List<String> expectedA = Arrays.asList("1,q1,1", "3,q1,3", "4,q1,4");
-        List<String> expectedB = Arrays.asList("1,q2,1", "2,q2,2", "4,q2,4", "1,q3,1");
+        List<String> expected1 = Arrays.asList("1,q1,1", "3,q1,3", "4,q1,4");
+        List<String> expected2 = Arrays.asList("1,q2,1", "2,q2,2", "4,q2,4");
+        List<String> expected3 = Arrays.asList("1,q3,1");
 
         Configuration conf = new Configuration();
         conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, url);
@@ -185,19 +190,22 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         OHTableClient client = new OHTableClient(hTable, conf);
         client.init();
 
-        List<String> resultA = queryHTable(client, familyA);
-        List<String> resultB = queryHTable(client, familyB);
+        List<String> result1 = queryHTable(client, family1, "q1");
+        List<String> result2 = queryHTable(client, family2, "q2");
+        List<String> result3 = queryHTable(client, family2, "q3");
 
-        assertEqualsInAnyOrder(expectedA, resultA);
-        assertEqualsInAnyOrder(expectedB, resultB);
+        assertEqualsInAnyOrder(expected1, result1);
+        assertEqualsInAnyOrder(expected2, result2);
+        assertEqualsInAnyOrder(expected3, result3);
 
         client.close();
     }
 
-    private List<String> queryHTable(OHTableClient client, String family) throws IOException {
+    private List<String> queryHTable(OHTableClient client, String family, String column)
+            throws IOException {
         List<String> result = new ArrayList<>();
         Get get = new Get();
-        get.addFamily(Bytes.toBytes(family));
+        get.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
         for (KeyValue kv : client.get(get).list()) {
             result.add(
                     String.format(
