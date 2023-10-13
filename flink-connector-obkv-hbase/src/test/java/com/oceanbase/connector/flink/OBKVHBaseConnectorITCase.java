@@ -20,6 +20,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -92,20 +94,10 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     private void waitUntilConfigServerUpdated() {
         long start = System.currentTimeMillis();
         while (true) {
-            try {
-                CloseableHttpClient httpclient = HttpClients.createDefault();
-                HttpGet httpget = new HttpGet(CONFIG_URL);
-                CloseableHttpResponse response = httpclient.execute(httpget);
-                if (response.getEntity().getContentLength() > 0) {
-                    LOG.info(
-                            "ConfigUrl response: {}",
-                            EntityUtils.toString(response.getEntity(), "UTF-8"));
-                    break;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to request config url", e);
+            if (isConfigServerUpdated()) {
+                break;
             }
-            if (System.currentTimeMillis() - start > 60_000) {
+            if (System.currentTimeMillis() - start > 300_000) {
                 throw new RuntimeException("Timeout to update config server");
             }
 
@@ -115,6 +107,23 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 LOG.error(e.toString());
             }
         }
+    }
+
+    private boolean isConfigServerUpdated() {
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        HttpGet httpget = new HttpGet(CONFIG_URL);
+        try {
+            CloseableHttpResponse response = httpclient.execute(httpget);
+            if (response.getEntity().getContentLength() > 0) {
+                String resp = EntityUtils.toString(response.getEntity(), "UTF-8");
+                LOG.info("Config url response: {}", resp);
+                ObjectMapper objectMapper = new ObjectMapper();
+                return 200 == objectMapper.readTree(resp).get("Code").asInt();
+            }
+        } catch (Exception e) {
+            LOG.warn("Request config url failed", e);
+        }
+        return false;
     }
 
     @After
