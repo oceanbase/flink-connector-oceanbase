@@ -80,6 +80,12 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         } catch (SQLException e) {
             throw new RuntimeException("Set config url failed", e);
         }
+
+        try {
+            Thread.sleep(10_000);
+        } catch (InterruptedException e) {
+            LOG.error(e.toString());
+        }
     }
 
     @After
