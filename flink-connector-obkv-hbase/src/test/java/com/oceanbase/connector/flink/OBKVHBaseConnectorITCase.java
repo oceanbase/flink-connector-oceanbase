@@ -32,6 +32,7 @@ import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.io.entity.E
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
 import org.junit.Before;
@@ -53,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertTrue;
 
@@ -197,39 +199,55 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         OHTableClient client = new OHTableClient(hTable, conf);
         client.init();
 
-        assertEqualsInAnyOrder(
-                Collections.singletonList("1,q1,1"), queryHTable(client, family1, "1"));
-        assertTrue(queryHTable(client, family1, "2").isEmpty());
-        assertEqualsInAnyOrder(
-                Collections.singletonList("3,q1,3"), queryHTable(client, family1, "3"));
-        assertEqualsInAnyOrder(
-                Collections.singletonList("4,q1,4"), queryHTable(client, family1, "4"));
+        Function<KeyValue, String> valueFunc =
+                kv -> {
+                    String column = Bytes.toString(kv.getQualifier());
+                    if ("q2".equals(column)) {
+                        return Bytes.toString(kv.getValue());
+                    } else {
+                        return String.valueOf(Bytes.toInt(kv.getValue()));
+                    }
+                };
 
         assertEqualsInAnyOrder(
-                Arrays.asList("1,q2,1", "1,q3,1"), queryHTable(client, family2, "1"));
+                Collections.singletonList("1,q1,1"), queryHTable(client, family1, "1", valueFunc));
+        assertTrue(queryHTable(client, family1, "2", valueFunc).isEmpty());
         assertEqualsInAnyOrder(
-                Collections.singletonList("2,q2,2"), queryHTable(client, family2, "2"));
-        assertTrue(queryHTable(client, family2, "3").isEmpty());
+                Collections.singletonList("3,q1,3"), queryHTable(client, family1, "3", valueFunc));
         assertEqualsInAnyOrder(
-                Collections.singletonList("4,q2,4"), queryHTable(client, family2, "4"));
+                Collections.singletonList("4,q1,4"), queryHTable(client, family1, "4", valueFunc));
+
+        assertEqualsInAnyOrder(
+                Arrays.asList("1,q2,1", "1,q3,1"), queryHTable(client, family2, "1", valueFunc));
+        assertEqualsInAnyOrder(
+                Collections.singletonList("2,q2,2"), queryHTable(client, family2, "2", valueFunc));
+        assertTrue(queryHTable(client, family2, "3", valueFunc).isEmpty());
+        assertEqualsInAnyOrder(
+                Collections.singletonList("4,q2,4"), queryHTable(client, family2, "4", valueFunc));
 
         client.close();
     }
 
-    private List<String> queryHTable(OHTableClient client, String family, String rowKey)
+    private List<String> queryHTable(
+            OHTableClient client,
+            String family,
+            String rowKey,
+            Function<KeyValue, String> valueStringFunction)
             throws IOException {
         List<String> result = new ArrayList<>();
         Get get = new Get(Bytes.toBytes(rowKey));
         get.addFamily(Bytes.toBytes(family));
-        for (KeyValue kv : client.get(get).list()) {
-            String column = Bytes.toString(kv.getQualifier());
-            String value;
-            if ("q2".equals(column)) {
-                value = Bytes.toString(kv.getValue());
-            } else {
-                value = String.valueOf(Bytes.toInt(kv.getValue()));
-            }
-            result.add(String.format("%s,%s,%s", rowKey, column, value));
+        Result r = client.get(get);
+        if (r == null || r.isEmpty()) {
+            return result;
+        }
+        for (KeyValue kv : r.list()) {
+            result.add(
+                    String.format(
+                            "%s,%s,%s",
+                            rowKey,
+                            Bytes.toString(kv.getQualifier()),
+                            valueStringFunction.apply(kv)));
         }
         return result;
     }
@@ -239,7 +257,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 "(%s, ROW(%s), ROW(%s, %s))", string(key), integer(q1), string(q2), integer(q3));
     }
 
-    private String integer(Number n) {
+    private String integer(Integer n) {
         if (n == null) {
             return "CAST(NULL AS INT)";
         }
