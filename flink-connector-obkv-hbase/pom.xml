@@ -45,15 +45,32 @@ under the License.
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-nop</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.oceanbase</groupId>
+                    <artifactId>obkv-table-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
-        <!--    <dependency>-->
-        <!--      <groupId>mysql</groupId>-->
-        <!--      <artifactId>mysql-connector-java</artifactId>-->
-        <!--      <version>5.1.47</version>-->
-        <!--      <scope>test</scope>-->
-        <!--    </dependency>-->
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>obkv-table-client</artifactId>
+            <version>1.2.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>flink-connector-oceanbase-base</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

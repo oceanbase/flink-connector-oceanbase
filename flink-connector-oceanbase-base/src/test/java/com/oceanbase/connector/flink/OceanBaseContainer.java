@@ -37,7 +37,7 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
     private static final String DEFAULT_TENANT_NAME = "test";
     private static final String DEFAULT_DATABASE_NAME = "test";
 
-    private String tenantName = DEFAULT_TENANT_NAME;
+    private String sysPassword = DEFAULT_PASSWORD;
 
     public OceanBaseContainer(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
@@ -83,13 +83,17 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
                 + additionalUrlParams;
     }
 
-    public OceanBaseContainer withTenant(String tenantName) {
-        this.tenantName = tenantName;
+    public OceanBaseContainer withSysPassword(String sysPassword) {
+        this.sysPassword = sysPassword;
         return this;
     }
 
-    public String getTenantName() {
-        return tenantName;
+    public String getSysUsername() {
+        return DEFAULT_USERNAME;
+    }
+
+    public String getSysPassword() {
+        return sysPassword;
     }
 
     @Override
@@ -99,7 +103,7 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
 
     @Override
     public String getUsername() {
-        return DEFAULT_USERNAME + "@" + tenantName;
+        return DEFAULT_USERNAME + "@" + DEFAULT_TENANT_NAME;
     }
 
     @Override
@@ -120,6 +124,6 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
     @Override
     protected void configure() {
         withEnv("MODE", "slim");
-        withEnv("OB_TENANT_NAME", tenantName);
+        withEnv("OB_ROOT_PASSWORD", sysPassword);
     }
 }

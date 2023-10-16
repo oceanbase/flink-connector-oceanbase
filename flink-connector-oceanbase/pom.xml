@@ -59,6 +59,14 @@ under the License.
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>flink-connector-oceanbase-base</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
