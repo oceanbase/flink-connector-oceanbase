@@ -222,12 +222,14 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         Get get = new Get(Bytes.toBytes(rowKey));
         get.addFamily(Bytes.toBytes(family));
         for (KeyValue kv : client.get(get).list()) {
-            result.add(
-                    String.format(
-                            "%s,%s,%s",
-                            Bytes.toString(kv.getRow()),
-                            Bytes.toString(kv.getQualifier()),
-                            Bytes.toString(kv.getValue())));
+            String column = Bytes.toString(kv.getQualifier());
+            String value;
+            if ("q2".equals(column)) {
+                value = Bytes.toString(kv.getValue());
+            } else {
+                value = String.valueOf(Bytes.toInt(kv.getValue()));
+            }
+            result.add(String.format("%s,%s,%s", rowKey, column, value));
         }
         return result;
     }
