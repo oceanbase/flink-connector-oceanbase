@@ -26,7 +26,7 @@ under the License.
 
     <groupId>com.oceanbase</groupId>
     <artifactId>flink-connector-oceanbase-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -236,7 +236,7 @@ under the License.
         <connection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</connection>
         <developerConnection>scm:git:https://github.com/oceanbase/flink-connector-oceanbase.git</developerConnection>
         <url>https://github.com/oceanbase/flink-connector-oceanbase</url>
-        <tag>HEAD</tag>
+        <tag>flink-connector-oceanbase-parent-1.0</tag>
     </scm>
 
     <distributionManagement>
