@@ -51,7 +51,10 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
 
@@ -184,10 +187,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 row("4", 4, "4", null)))
                 .await();
 
-        List<String> expected1 = Arrays.asList("1,q1,1", "3,q1,3", "4,q1,4");
-        List<String> expected2 = Arrays.asList("1,q2,1", "2,q2,2", "4,q2,4");
-        List<String> expected3 = Arrays.asList("1,q3,1");
-
         Configuration conf = new Configuration();
         conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, url);
         conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, fullUsername);
@@ -198,22 +197,30 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         OHTableClient client = new OHTableClient(hTable, conf);
         client.init();
 
-        List<String> result1 = queryHTable(client, family1, "q1");
-        List<String> result2 = queryHTable(client, family2, "q2");
-        List<String> result3 = queryHTable(client, family2, "q3");
+        assertEqualsInAnyOrder(
+                Collections.singletonList("1,q1,1"), queryHTable(client, family1, "1"));
+        assertTrue(queryHTable(client, family1, "2").isEmpty());
+        assertEqualsInAnyOrder(
+                Collections.singletonList("3,q1,3"), queryHTable(client, family1, "3"));
+        assertEqualsInAnyOrder(
+                Collections.singletonList("4,q1,4"), queryHTable(client, family1, "4"));
 
-        assertEqualsInAnyOrder(expected1, result1);
-        assertEqualsInAnyOrder(expected2, result2);
-        assertEqualsInAnyOrder(expected3, result3);
+        assertEqualsInAnyOrder(
+                Arrays.asList("1,q2,1", "1,q3,1"), queryHTable(client, family2, "1"));
+        assertEqualsInAnyOrder(
+                Collections.singletonList("2,q2,2"), queryHTable(client, family2, "2"));
+        assertTrue(queryHTable(client, family2, "3").isEmpty());
+        assertEqualsInAnyOrder(
+                Collections.singletonList("4,q2,4"), queryHTable(client, family2, "4"));
 
         client.close();
     }
 
-    private List<String> queryHTable(OHTableClient client, String family, String column)
+    private List<String> queryHTable(OHTableClient client, String family, String rowKey)
             throws IOException {
         List<String> result = new ArrayList<>();
-        Get get = new Get();
-        get.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
+        Get get = new Get(Bytes.toBytes(rowKey));
+        get.addFamily(Bytes.toBytes(family));
         for (KeyValue kv : client.get(get).list()) {
             result.add(
                     String.format(
