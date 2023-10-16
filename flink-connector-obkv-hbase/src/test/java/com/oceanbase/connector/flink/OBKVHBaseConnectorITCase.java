@@ -97,12 +97,12 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
             if (isConfigServerUpdated()) {
                 break;
             }
-            if (System.currentTimeMillis() - start > 300_000) {
+            if (System.currentTimeMillis() - start > 60_000) {
                 throw new RuntimeException("Timeout to update config server");
             }
 
             try {
-                Thread.sleep(30_000);
+                Thread.sleep(10_000);
             } catch (InterruptedException e) {
                 LOG.error(e.toString());
             }
@@ -110,9 +110,8 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     private boolean isConfigServerUpdated() {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpGet httpget = new HttpGet(CONFIG_URL);
-        try {
+        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+            HttpGet httpget = new HttpGet(CONFIG_URL);
             CloseableHttpResponse response = httpclient.execute(httpget);
             if (response.getEntity().getContentLength() > 0) {
                 String resp = EntityUtils.toString(response.getEntity(), "UTF-8");
