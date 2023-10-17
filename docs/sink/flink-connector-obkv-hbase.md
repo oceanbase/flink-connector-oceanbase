@@ -6,7 +6,7 @@ This is the Flink connector for OBKV HBase mode, which can be used to sink data 
 
 ## Getting Started
 
-You can get the release packages at [Releases Page](https://github.com/oceanbase/flink-connector-oceanbase/releases) or [Maven Central](https://mvnrepository.com/artifact/com.oceanbase/flink-connector-obkv-hbase).
+You can get the release packages at [Releases Page](https://github.com/oceanbase/flink-connector-oceanbase/releases) or [Maven Central](https://central.sonatype.com/artifact/com.oceanbase/flink-connector-obkv-hbase).
 
 ```xml
 <dependency>
@@ -125,7 +125,8 @@ CREATE TABLE t_sink
     column2 STRING >,
     PRIMARY KEY (rowkey) NOT ENFORCED
 )
-with ( 'connector'='obkv-hbase',
+with (
+    'connector'='obkv-hbase',
     'url'='http://127.0.0.1:8080/services?...&database=test',
     'table-name'='htable1',
     'username'='root@test',

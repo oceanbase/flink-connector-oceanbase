@@ -6,7 +6,7 @@ This is the Flink connector for OceanBase, which can be used to sink data to Oce
 
 ## Getting Started
 
-You can get the release packages at [Releases Page](https://github.com/oceanbase/flink-connector-oceanbase/releases) or [Maven Central](https://mvnrepository.com/artifact/com.oceanbase/flink-connector-oceanbase).
+You can get the release packages at [Releases Page](https://github.com/oceanbase/flink-connector-oceanbase/releases) or [Maven Central](https://central.sonatype.com/artifact/com.oceanbase/flink-connector-oceanbase).
 
 ```xml
 <dependency>

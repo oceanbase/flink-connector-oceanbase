@@ -6,7 +6,7 @@
 
 ## 开始上手
 
-您可以在 [Releases 页面](https://github.com/oceanbase/flink-connector-oceanbase/releases) 或者 [Maven 中央仓库](https://mvnrepository.com/artifact/com.oceanbase/flink-connector-oceanbase) 找到正式的发布版本。
+您可以在 [Releases 页面](https://github.com/oceanbase/flink-connector-oceanbase/releases) 或者 [Maven 中央仓库](https://central.sonatype.com/artifact/com.oceanbase/flink-connector-oceanbase) 找到正式的发布版本。
 
 ```xml
 <dependency>
