@@ -21,7 +21,6 @@ import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
-import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 
@@ -116,17 +115,12 @@ public class OceanBaseConnectionPool implements OceanBaseConnectionProvider {
             }
             TableEntry tableEntry;
             try (Connection connection = getConnection()) {
-                if (getConnectionInfo().getVersion().isV4()) {
-                    tableEntry =
-                            new TableEntryExtractorV4()
-                                    .queryTableEntry(
-                                            connection, getConnectionInfo().getTableEntryKey());
-                } else {
-                    tableEntry =
-                            new TableEntryExtractor()
-                                    .queryTableEntry(
-                                            connection, getConnectionInfo().getTableEntryKey());
-                }
+                tableEntry =
+                        new TableEntryExtractor()
+                                .queryTableEntry(
+                                        connection,
+                                        getConnectionInfo().getTableEntryKey(),
+                                        getConnectionInfo().getVersion().isV4());
                 if (tableEntry == null) {
                     throw new RuntimeException(
                             "Failed to get table entry with key: "

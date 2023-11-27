@@ -44,7 +44,7 @@ under the License.
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-partition-calculator</artifactId>
-            <version>1.7.0-RELEASE</version>
+            <version>1.8.0-RELEASE</version>
         </dependency>
 
         <dependency>
