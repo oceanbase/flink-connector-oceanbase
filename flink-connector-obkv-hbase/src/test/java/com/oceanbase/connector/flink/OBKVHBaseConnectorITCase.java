@@ -20,36 +20,16 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.methods.HttpGet;
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.HttpClients;
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.lifecycle.Startables;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,85 +40,9 @@ import static org.junit.Assert.assertTrue;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectorITCase.class);
-
     public static final String CLUSTER_NAME = "obcluster";
     public static final String CONFIG_URL =
             "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=" + CLUSTER_NAME;
-
-    private GenericContainer<?> configServer;
-
-    @Before
-    @Override
-    public void before() {
-        super.before();
-
-        configServer =
-                new GenericContainer<>("whhe/obconfigserver")
-                        .withNetworkMode("host")
-                        .waitingFor(
-                                Wait.forLogMessage(".*boot success!.*", 1)
-                                        .withStartupTimeout(Duration.ofMinutes(1)))
-                        .withLogConsumer(new Slf4jLogConsumer(LOG));
-        Startables.deepStart(configServer).join();
-
-        try (Connection connection =
-                        DriverManager.getConnection(
-                                obServer.getJdbcUrl(),
-                                obServer.getSysUsername(),
-                                obServer.getSysPassword());
-                Statement statement = connection.createStatement()) {
-            statement.execute(String.format("alter system set obconfig_url = '%s'", CONFIG_URL));
-        } catch (SQLException e) {
-            throw new RuntimeException("Set config url failed", e);
-        }
-
-        waitUntilConfigServerUpdated();
-    }
-
-    private void waitUntilConfigServerUpdated() {
-        long start = System.currentTimeMillis();
-        while (true) {
-            if (isConfigServerUpdated()) {
-                break;
-            }
-            if (System.currentTimeMillis() - start > 60_000) {
-                throw new RuntimeException("Timeout to update config server");
-            }
-
-            try {
-                Thread.sleep(10_000);
-            } catch (InterruptedException e) {
-                LOG.error(e.toString());
-            }
-        }
-    }
-
-    private boolean isConfigServerUpdated() {
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-            HttpGet httpget = new HttpGet(CONFIG_URL);
-            CloseableHttpResponse response = httpclient.execute(httpget);
-            if (response.getEntity().getContentLength() > 0) {
-                String resp = EntityUtils.toString(response.getEntity(), "UTF-8");
-                LOG.info("Config url response: {}", resp);
-                ObjectMapper objectMapper = new ObjectMapper();
-                return 200 == objectMapper.readTree(resp).get("Code").asInt();
-            }
-        } catch (Exception e) {
-            LOG.warn("Request config url failed", e);
-        }
-        return false;
-    }
-
-    @After
-    @Override
-    public void after() {
-        super.after();
-
-        if (configServer != null) {
-            configServer.close();
-        }
-    }
 
     @Test
     public void testSink() throws Exception {

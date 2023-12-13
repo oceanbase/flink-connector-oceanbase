@@ -38,11 +38,12 @@ public class OceanBaseTestBase extends TestLogger {
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseTestBase.class);
 
     protected OceanBaseContainer obServer;
+    protected String imageTag = "4.2.1_bp2";
 
     @Before
     public void before() {
         obServer =
-                new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME)
+                new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME + ":" + imageTag)
                         .withNetworkMode("host")
                         .withSysPassword("123456")
                         .withCopyFileToContainer(
