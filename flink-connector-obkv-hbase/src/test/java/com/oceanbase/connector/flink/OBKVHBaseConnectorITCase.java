@@ -44,6 +44,21 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     public static final String CONFIG_URL =
             "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=" + CLUSTER_NAME;
 
+    @Override
+    protected String getUrl() {
+        return String.format("%s&database=%s", CONFIG_URL, OB_SERVER.getDatabaseName());
+    }
+
+    @Override
+    protected String getUsername() {
+        return OB_SERVER.getUsername() + "#" + CLUSTER_NAME;
+    }
+
+    @Override
+    protected String getTestTable() {
+        return "htable";
+    }
+
     @Test
     public void testSink() throws Exception {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -52,12 +67,8 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 StreamTableEnvironment.create(
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
 
-        String hTable = "htable";
         String family1 = "family1";
         String family2 = "family2";
-
-        String url = String.format("%s&database=%s", CONFIG_URL, obServer.getDatabaseName());
-        String fullUsername = obServer.getUsername() + "#" + CLUSTER_NAME;
 
         tEnv.executeSql(
                 String.format(
@@ -68,21 +79,14 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 + " PRIMARY KEY (rowkey) NOT ENFORCED"
                                 + ") with ("
                                 + "  'connector'='obkv-hbase',"
-                                + "  'url'='%s',"
-                                + "  'table-name'='%s',"
-                                + "  'username'='%s',"
-                                + "  'password'='%s',"
                                 + "  'sys.username'='%s',"
-                                + "  'sys.password'='%s'"
+                                + "  'sys.password'='%s',"
+                                + getCommonOptionsString()
                                 + ");",
                         family1,
                         family2,
-                        url,
-                        hTable,
-                        fullUsername,
-                        obServer.getPassword(),
-                        obServer.getSysUsername(),
-                        obServer.getSysPassword()));
+                        OB_SERVER.getSysUsername(),
+                        OB_SERVER.getSysPassword()));
 
         tEnv.executeSql(
                         String.format(
@@ -94,13 +98,13 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 .await();
 
         Configuration conf = new Configuration();
-        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, url);
-        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, fullUsername);
-        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, obServer.getPassword());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, obServer.getSysUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, obServer.getSysPassword());
+        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, getUrl());
+        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, getUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, getPassword());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, OB_SERVER.getSysUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, OB_SERVER.getSysPassword());
 
-        OHTableClient client = new OHTableClient(hTable, conf);
+        OHTableClient client = new OHTableClient(getTestTable(), conf);
         client.init();
 
         Function<KeyValue, String> valueFunc =

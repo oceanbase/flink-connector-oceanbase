@@ -18,54 +18,71 @@ package com.oceanbase.connector.flink;
 
 import org.apache.flink.util.TestLogger;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class OceanBaseTestBase extends TestLogger {
+public abstract class OceanBaseTestBase extends TestLogger {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseTestBase.class);
 
-    protected OceanBaseContainer obServer;
-    protected String imageTag = "4.2.1_bp2";
+    public static final String IMAGE_TAG = "4.2.1_bp2";
 
-    @Before
-    public void before() {
-        obServer =
-                new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME + ":" + imageTag)
-                        .withNetworkMode("host")
-                        .withSysPassword("123456")
-                        .withCopyFileToContainer(
-                                MountableFile.forClasspathResource("sql/init.sql"),
-                                "/root/boot/init.d/init.sql")
-                        .withLogConsumer(new Slf4jLogConsumer(LOG));
-
-        Startables.deepStart(obServer).join();
-    }
-
-    @After
-    public void after() {
-        if (obServer != null) {
-            obServer.close();
-        }
-    }
+    @ClassRule
+    public static final OceanBaseContainer OB_SERVER =
+            new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME + ":" + IMAGE_TAG)
+                    .withNetworkMode("host")
+                    .withSysPassword("123456")
+                    .withCopyFileToContainer(
+                            MountableFile.forClasspathResource("sql/init.sql"),
+                            "/root/boot/init.d/init.sql")
+                    .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
         assertTrue(expected != null && actual != null);
         assertEqualsInOrder(
                 expected.stream().sorted().collect(Collectors.toList()),
                 actual.stream().sorted().collect(Collectors.toList()));
+    }
+
+    protected String getUrl() {
+        return OB_SERVER.getJdbcUrl();
+    }
+
+    protected abstract String getTestTable();
+
+    protected String getUsername() {
+        return OB_SERVER.getUsername();
+    }
+
+    protected String getPassword() {
+        return OB_SERVER.getPassword();
+    }
+
+    protected Map<String, String> getCommonOptions() {
+        Map<String, String> options = new HashMap<>();
+        options.put("url", getUrl());
+        options.put("table-name", getTestTable());
+        options.put("username", getUsername());
+        options.put("password", getPassword());
+        return options;
+    }
+
+    protected String getCommonOptionsString() {
+        return getCommonOptions().entrySet().stream()
+                .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
+                .collect(Collectors.joining(","));
     }
 
     public static void assertEqualsInOrder(List<String> expected, List<String> actual) {

@@ -11,7 +11,8 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-use test;
+CREATE DATABASE IF NOT EXISTS test;
+USE test;
 
 CREATE TABLE products
 (
