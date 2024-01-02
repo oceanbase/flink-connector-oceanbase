@@ -96,8 +96,9 @@ public class Main {
                         + ") with ("
                         + "    'connector' = 'oceanbase',"
                         + "    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',"
+                        + "    'schema-name'= 'test',"
                         + "    'table-name' = 't_sink',"
-                        + "    'username' = 'root@test',"
+                        + "    'username' = 'root@test#obcluster',"
                         + "    'password' = 'pswd',"
                         + "    'compatible-mode' = 'mysql',"
                         + "    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100',"
@@ -116,6 +117,7 @@ public class Main {
                 .await();
     }
 }
+
 ```
 
 执行完成后，即可在 OceanBase 中检索验证。
@@ -135,8 +137,6 @@ CREATE TABLE t_sink
 with (
     'connector' = 'oceanbase',
     'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',
-    'cluster-name' = 'obcluster',
-    'tenant-name' = 'test',
     'schema-name' = 'test',
     'table-name' = 't_sink',
     'username' = 'root@test#obcluster',
