@@ -122,6 +122,8 @@ public class Main {
 
 执行完成后，即可在 OceanBase 中检索验证。
 
+更多信息请参考 [OceanBaseConnectorITCase.java](../../flink-connector-oceanbase/src/test/java/com/oceanbase/connector/flink/OceanBaseConnectorITCase.java)。
+
 #### Flink SQL 示例
 
 将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
