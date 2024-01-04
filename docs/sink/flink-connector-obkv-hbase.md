@@ -113,6 +113,8 @@ public class Main {
 
 Once executed, the records should have been written to OceanBase.
 
+For more information please refer to [OBKVHBaseConnectorITCase.java](../../flink-connector-obkv-hbase/src/test/java/com/oceanbase/connector/flink/OBKVHBaseConnectorITCase.java).
+
 #### Flink SQL Demo
 
 Put the JAR files of dependencies to the 'lib' directory of Flink, and then create the destination table with Flink SQL through the sql client.

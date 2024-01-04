@@ -95,8 +95,9 @@ public class Main {
                         + ") with ("
                         + "    'connector' = 'oceanbase',"
                         + "    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',"
+                        + "    'schema-name'= 'test',"
                         + "    'table-name' = 't_sink',"
-                        + "    'username' = 'root@test',"
+                        + "    'username' = 'root@test#obcluster',"
                         + "    'password' = 'pswd',"
                         + "    'compatible-mode' = 'mysql',"
                         + "    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100',"
@@ -115,9 +116,12 @@ public class Main {
                 .await();
     }
 }
+
 ```
 
 Once executed, the records should have been written to OceanBase.
+
+For more information please refer to [OceanBaseConnectorITCase.java](../../flink-connector-oceanbase/src/test/java/com/oceanbase/connector/flink/OceanBaseConnectorITCase.java).
 
 #### Flink SQL Demo
 
@@ -133,8 +137,6 @@ CREATE TABLE t_sink
 ) with (
       'connector' = 'oceanbase',
       'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',
-      'cluster-name' = 'obcluster',
-      'tenant-name' = 'test',
       'schema-name' = 'test',
       'table-name' = 't_sink',
       'username' = 'root@test#obcluster',
