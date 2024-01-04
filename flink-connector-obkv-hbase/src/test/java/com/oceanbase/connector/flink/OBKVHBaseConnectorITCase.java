@@ -165,7 +165,10 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     private RowData rowData(String rowKey, Integer q1, String q2, Integer q3) {
-        return GenericRowData.of(StringData.fromString(rowKey), q1, StringData.fromString(q2), q3);
+        return GenericRowData.of(
+                StringData.fromString(rowKey),
+                GenericRowData.of(q1),
+                GenericRowData.of(StringData.fromString(q2), q3));
     }
 
     @Test
