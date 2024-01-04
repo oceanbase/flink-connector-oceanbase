@@ -63,7 +63,7 @@ public abstract class OceanBaseTestBase extends TestLogger {
         return OB_SERVER.getPassword();
     }
 
-    protected Map<String, String> getCommonOptions() {
+    protected Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
         options.put("url", getUrl());
         options.put("table-name", getTestTable());
@@ -72,8 +72,8 @@ public abstract class OceanBaseTestBase extends TestLogger {
         return options;
     }
 
-    protected String getCommonOptionsString() {
-        return getCommonOptions().entrySet().stream()
+    protected String getOptionsString() {
+        return getOptions().entrySet().stream()
                 .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
                 .collect(Collectors.joining(","));
     }

@@ -16,9 +16,21 @@
 
 package com.oceanbase.connector.flink;
 
+import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
+import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
+import com.oceanbase.connector.flink.sink.OBKVHBaseStatementExecutor;
+import com.oceanbase.connector.flink.sink.OceanBaseSink;
+
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.catalog.ResolvedSchema;
+import org.apache.flink.table.catalog.UniqueConstraint;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
 
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
@@ -37,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
@@ -45,6 +58,11 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     public static final String CLUSTER_NAME = "obcluster";
     public static final String CONFIG_URL =
             "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=" + CLUSTER_NAME;
+
+    @Override
+    protected String getTestTable() {
+        return "htable";
+    }
 
     @Override
     protected String getUrl() {
@@ -57,8 +75,11 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Override
-    protected String getTestTable() {
-        return "htable";
+    protected Map<String, String> getOptions() {
+        Map<String, String> options = super.getOptions();
+        options.put("sys.username", OB_SERVER.getSysUsername());
+        options.put("sys.password", OB_SERVER.getSysPassword());
+        return options;
     }
 
     private OHTableClient client;
@@ -94,6 +115,60 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Test
+    public void testDataStreamSink() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        ResolvedSchema physicalSchema =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("rowkey", DataTypes.STRING().notNull()),
+                                Column.physical(
+                                        "family1",
+                                        DataTypes.ROW(
+                                                        DataTypes.FIELD(
+                                                                "q1", DataTypes.INT().nullable()))
+                                                .notNull()),
+                                Column.physical(
+                                        "family2",
+                                        DataTypes.ROW(
+                                                        DataTypes.FIELD(
+                                                                "q2",
+                                                                DataTypes.STRING().nullable()),
+                                                        DataTypes.FIELD(
+                                                                "q3", DataTypes.INT().nullable()))
+                                                .notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("rowkey")));
+
+        List<RowData> dataSet =
+                Arrays.asList(
+                        rowData("1", 1, "1", 1),
+                        rowData("2", null, "2", null),
+                        rowData("3", 3, null, null),
+                        rowData("4", 4, "4", null));
+
+        OBKVHBaseConnectorOptions connectorOptions = new OBKVHBaseConnectorOptions(getOptions());
+        OBKVHBaseConnectionProvider connectionProvider =
+                new OBKVHBaseConnectionProvider(connectorOptions.getConnectionOptions());
+        OBKVHBaseStatementExecutor statementExecutor =
+                new OBKVHBaseStatementExecutor(
+                        connectorOptions.getStatementOptions(),
+                        new OBKVHBaseTableSchema(physicalSchema),
+                        connectionProvider);
+        OceanBaseSink sink =
+                new OceanBaseSink(connectorOptions.getWriterOptions(), statementExecutor);
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute();
+
+        validateSinkResults();
+    }
+
+    private RowData rowData(String rowKey, Integer q1, String q2, Integer q3) {
+        return GenericRowData.of(StringData.fromString(rowKey), q1, StringData.fromString(q2), q3);
+    }
+
+    @Test
     public void testSink() throws Exception {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
         execEnv.setParallelism(1);
@@ -102,20 +177,15 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
 
         tEnv.executeSql(
-                String.format(
-                        "CREATE TEMPORARY TABLE target ("
-                                + " rowkey STRING,"
-                                + " family1 ROW<q1 INT>,"
-                                + " family2 ROW<q2 STRING, q3 INT>,"
-                                + " PRIMARY KEY (rowkey) NOT ENFORCED"
-                                + ") with ("
-                                + "  'connector'='obkv-hbase',"
-                                + "  'sys.username'='%s',"
-                                + "  'sys.password'='%s',"
-                                + getCommonOptionsString()
-                                + ");",
-                        OB_SERVER.getSysUsername(),
-                        OB_SERVER.getSysPassword()));
+                "CREATE TEMPORARY TABLE target ("
+                        + " rowkey STRING,"
+                        + " family1 ROW<q1 INT>,"
+                        + " family2 ROW<q2 STRING, q3 INT>,"
+                        + " PRIMARY KEY (rowkey) NOT ENFORCED"
+                        + ") with ("
+                        + "  'connector'='obkv-hbase',"
+                        + getOptionsString()
+                        + ");");
 
         tEnv.executeSql(
                         String.format(

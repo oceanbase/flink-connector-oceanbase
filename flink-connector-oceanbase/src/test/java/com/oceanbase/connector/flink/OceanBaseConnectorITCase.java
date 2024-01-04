@@ -58,8 +58,8 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Override
-    protected Map<String, String> getCommonOptions() {
-        Map<String, String> options = super.getCommonOptions();
+    protected Map<String, String> getOptions() {
+        Map<String, String> options = super.getOptions();
         options.put("compatible-mode", "mysql");
         options.put("schema-name", "test");
         options.put("connection-pool-properties", "druid.initialSize=4;druid.maxActive=20;");
@@ -105,15 +105,14 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         rowData(108, "jacket", "water resistent black wind breaker", 0.1),
                         rowData(109, "spare tire", "24 inch spare tire", 22.2));
 
-        OceanBaseConnectorOptions connectorOptions =
-                new OceanBaseConnectorOptions(getCommonOptions());
-
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
         OceanBaseConnectionProvider connectionProvider =
                 new OceanBaseConnectionPool(connectorOptions.getConnectionOptions());
-        OceanBaseTableSchema tableSchema = new OceanBaseTableSchema(physicalSchema);
         OceanBaseStatementExecutor statementExecutor =
                 new OceanBaseStatementExecutor(
-                        connectorOptions.getStatementOptions(), tableSchema, connectionProvider);
+                        connectorOptions.getStatementOptions(),
+                        new OceanBaseTableSchema(physicalSchema),
+                        connectionProvider);
         OceanBaseSink sink =
                 new OceanBaseSink(connectorOptions.getWriterOptions(), statementExecutor);
         env.fromCollection(dataSet).sinkTo(sink);
@@ -147,7 +146,7 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         + " PRIMARY KEY (`id`) NOT ENFORCED"
                         + ") with ("
                         + "  'connector'='oceanbase',"
-                        + getCommonOptionsString()
+                        + getOptionsString()
                         + ");");
 
         tEnv.executeSql(
