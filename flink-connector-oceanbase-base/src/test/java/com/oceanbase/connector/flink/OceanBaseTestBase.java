@@ -49,13 +49,6 @@ public abstract class OceanBaseTestBase extends TestLogger {
                             "/root/boot/init.d/init.sql")
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEqualsInOrder(
-                expected.stream().sorted().collect(Collectors.toList()),
-                actual.stream().sorted().collect(Collectors.toList()));
-    }
-
     protected String getUrl() {
         return OB_SERVER.getJdbcUrl();
     }
@@ -83,6 +76,13 @@ public abstract class OceanBaseTestBase extends TestLogger {
         return getCommonOptions().entrySet().stream()
                 .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
                 .collect(Collectors.joining(","));
+    }
+
+    public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
+        assertTrue(expected != null && actual != null);
+        assertEqualsInOrder(
+                expected.stream().sorted().collect(Collectors.toList()),
+                actual.stream().sorted().collect(Collectors.toList()));
     }
 
     public static void assertEqualsInOrder(List<String> expected, List<String> actual) {

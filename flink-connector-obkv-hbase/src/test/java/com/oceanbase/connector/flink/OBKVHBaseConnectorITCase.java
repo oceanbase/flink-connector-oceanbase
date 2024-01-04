@@ -24,9 +24,12 @@ import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -59,6 +62,32 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         return "htable";
     }
 
+    private OHTableClient client;
+
+    @Before
+    public void before() throws Exception {
+        Configuration conf = new Configuration();
+        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, getUrl());
+        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, getUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, getPassword());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, OB_SERVER.getSysUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, OB_SERVER.getSysPassword());
+        client = new OHTableClient(getTestTable(), conf);
+        client.init();
+    }
+
+    @After
+    public void after() throws Exception {
+        client.delete(
+                Arrays.asList(
+                        new Delete(Bytes.toBytes("1")),
+                        new Delete(Bytes.toBytes("2")),
+                        new Delete(Bytes.toBytes("3")),
+                        new Delete(Bytes.toBytes("4"))));
+        client.close();
+        client = null;
+    }
+
     @Test
     public void testSink() throws Exception {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -67,15 +96,12 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 StreamTableEnvironment.create(
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
 
-        String family1 = "family1";
-        String family2 = "family2";
-
         tEnv.executeSql(
                 String.format(
                         "CREATE TEMPORARY TABLE target ("
                                 + " rowkey STRING,"
-                                + " %s ROW<q1 INT>,"
-                                + " %s ROW<q2 STRING, q3 INT>,"
+                                + " family1 ROW<q1 INT>,"
+                                + " family2 ROW<q2 STRING, q3 INT>,"
                                 + " PRIMARY KEY (rowkey) NOT ENFORCED"
                                 + ") with ("
                                 + "  'connector'='obkv-hbase',"
@@ -83,8 +109,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 + "  'sys.password'='%s',"
                                 + getCommonOptionsString()
                                 + ");",
-                        family1,
-                        family2,
                         OB_SERVER.getSysUsername(),
                         OB_SERVER.getSysPassword()));
 
@@ -97,16 +121,10 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                 row("4", 4, "4", null)))
                 .await();
 
-        Configuration conf = new Configuration();
-        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, getUrl());
-        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, getUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, getPassword());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, OB_SERVER.getSysUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, OB_SERVER.getSysPassword());
+        validateSinkResults();
+    }
 
-        OHTableClient client = new OHTableClient(getTestTable(), conf);
-        client.init();
-
+    private void validateSinkResults() throws Exception {
         Function<KeyValue, String> valueFunc =
                 kv -> {
                     String column = Bytes.toString(kv.getQualifier());
@@ -118,29 +136,23 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 };
 
         assertEqualsInAnyOrder(
-                Collections.singletonList("1,q1,1"), queryHTable(client, family1, "1", valueFunc));
-        assertTrue(queryHTable(client, family1, "2", valueFunc).isEmpty());
+                Collections.singletonList("1,q1,1"), queryHTable(client, "family1", "1"));
+        assertTrue(queryHTable(client, "family1", "2").isEmpty());
         assertEqualsInAnyOrder(
-                Collections.singletonList("3,q1,3"), queryHTable(client, family1, "3", valueFunc));
+                Collections.singletonList("3,q1,3"), queryHTable(client, "family1", "3"));
         assertEqualsInAnyOrder(
-                Collections.singletonList("4,q1,4"), queryHTable(client, family1, "4", valueFunc));
+                Collections.singletonList("4,q1,4"), queryHTable(client, "family1", "4"));
 
         assertEqualsInAnyOrder(
-                Arrays.asList("1,q2,1", "1,q3,1"), queryHTable(client, family2, "1", valueFunc));
+                Arrays.asList("1,q2,1", "1,q3,1"), queryHTable(client, "family2", "1"));
         assertEqualsInAnyOrder(
-                Collections.singletonList("2,q2,2"), queryHTable(client, family2, "2", valueFunc));
-        assertTrue(queryHTable(client, family2, "3", valueFunc).isEmpty());
+                Collections.singletonList("2,q2,2"), queryHTable(client, "family2", "2"));
+        assertTrue(queryHTable(client, "family2", "3").isEmpty());
         assertEqualsInAnyOrder(
-                Collections.singletonList("4,q2,4"), queryHTable(client, family2, "4", valueFunc));
-
-        client.close();
+                Collections.singletonList("4,q2,4"), queryHTable(client, "family2", "4"));
     }
 
-    private List<String> queryHTable(
-            OHTableClient client,
-            String family,
-            String rowKey,
-            Function<KeyValue, String> valueStringFunction)
+    private List<String> queryHTable(OHTableClient client, String family, String rowKey)
             throws IOException {
         List<String> result = new ArrayList<>();
         Get get = new Get(Bytes.toBytes(rowKey));
@@ -150,12 +162,15 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
             return result;
         }
         for (KeyValue kv : r.list()) {
+            String column = Bytes.toString(kv.getQualifier());
             result.add(
                     String.format(
                             "%s,%s,%s",
                             rowKey,
-                            Bytes.toString(kv.getQualifier()),
-                            valueStringFunction.apply(kv)));
+                            column,
+                            "q2".equals(column)
+                                    ? Bytes.toString(kv.getValue())
+                                    : String.valueOf(Bytes.toInt(kv.getValue()))));
         }
         return result;
     }
