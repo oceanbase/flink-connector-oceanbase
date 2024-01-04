@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import static org.junit.Assert.assertTrue;
 
@@ -80,12 +79,18 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     public void after() throws Exception {
         client.delete(
                 Arrays.asList(
-                        new Delete(Bytes.toBytes("1")),
-                        new Delete(Bytes.toBytes("2")),
-                        new Delete(Bytes.toBytes("3")),
-                        new Delete(Bytes.toBytes("4"))));
+                        deleteFamily("1", "family1"),
+                        deleteFamily("1", "family2"),
+                        deleteFamily("2", "family2"),
+                        deleteFamily("3", "family1"),
+                        deleteFamily("4", "family1"),
+                        deleteFamily("4", "family2")));
         client.close();
         client = null;
+    }
+
+    private Delete deleteFamily(String rowKey, String family) {
+        return new Delete(Bytes.toBytes(rowKey)).deleteFamily(Bytes.toBytes(family));
     }
 
     @Test
@@ -125,16 +130,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     private void validateSinkResults() throws Exception {
-        Function<KeyValue, String> valueFunc =
-                kv -> {
-                    String column = Bytes.toString(kv.getQualifier());
-                    if ("q2".equals(column)) {
-                        return Bytes.toString(kv.getValue());
-                    } else {
-                        return String.valueOf(Bytes.toInt(kv.getValue()));
-                    }
-                };
-
         assertEqualsInAnyOrder(
                 Collections.singletonList("1,q1,1"), queryHTable(client, "family1", "1"));
         assertTrue(queryHTable(client, "family1", "2").isEmpty());
