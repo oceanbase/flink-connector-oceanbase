@@ -17,6 +17,7 @@
 package com.oceanbase.connector.flink;
 
 import com.oceanbase.connector.flink.sink.OBKVHBaseDynamicTableSink;
+import com.oceanbase.connector.flink.utils.OptionUtils;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Column;
@@ -26,6 +27,7 @@ import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,9 +48,10 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
                                 .collect(Collectors.toList()),
                         resolvedSchema.getWatermarkSpecs(),
                         resolvedSchema.getPrimaryKey().orElse(null));
-        OBKVHBaseConnectorOptions options =
-                new OBKVHBaseConnectorOptions(context.getCatalogTable().getOptions());
-        return new OBKVHBaseDynamicTableSink(physicalSchema, options);
+        Map<String, String> options = context.getCatalogTable().getOptions();
+        OptionUtils.printOptions(IDENTIFIER, options);
+        return new OBKVHBaseDynamicTableSink(
+                physicalSchema, new OBKVHBaseConnectorOptions(options));
     }
 
     @Override
@@ -60,9 +63,10 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OBKVHBaseConnectorOptions.URL);
-        options.add(OBKVHBaseConnectorOptions.TABLE_NAME);
         options.add(OBKVHBaseConnectorOptions.USERNAME);
         options.add(OBKVHBaseConnectorOptions.PASSWORD);
+        options.add(OBKVHBaseConnectorOptions.SCHEMA_NAME);
+        options.add(OBKVHBaseConnectorOptions.TABLE_NAME);
         options.add(OBKVHBaseConnectorOptions.SYS_USERNAME);
         options.add(OBKVHBaseConnectorOptions.SYS_PASSWORD);
         return options;
@@ -73,8 +77,8 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OBKVHBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OBKVHBaseConnectorOptions.BUFFER_SIZE);
-        options.add(OBKVHBaseConnectorOptions.BUFFER_BATCH_SIZE);
         options.add(OBKVHBaseConnectorOptions.MAX_RETRIES);
+        options.add(OBKVHBaseConnectorOptions.HBASE_PROPERTIES);
         return options;
     }
 }

@@ -20,20 +20,20 @@ If you'd rather use the latest snapshots of the upcoming major version, use our 
 
 ```xml
 <dependency>
-  <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-oceanbase</artifactId>
-  <version>${project.version}</version>
+    <groupId>com.oceanbase</groupId>
+    <artifactId>flink-connector-oceanbase</artifactId>
+    <version>${project.version}</version>
 </dependency>
 
 <repositories>
-  <repository>
-    <id>sonatype-snapshots</id>
-    <name>Sonatype Snapshot Repository</name>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
+    <repository>
+        <id>sonatype-snapshots</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
 </repositories>
 ```
 
@@ -48,6 +48,7 @@ mvn clean package -DskipTests
 ### SQL JAR
 
 To use this connector through Flink SQL directly, you need to download the shaded jar file named `flink-sql-connector-oceanbase-${project.version}.jar`:
+
 - Release versions: https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
 - Snapshot versions: https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
@@ -94,17 +95,14 @@ public class Main {
                         + "  PRIMARY KEY (id) NOT ENFORCED"
                         + ") with ("
                         + "    'connector' = 'oceanbase',"
-                        + "    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',"
+                        + "    'url' = 'jdbc:mysql://127.0.0.1:2881/test',"
                         + "    'schema-name'= 'test',"
                         + "    'table-name' = 't_sink',"
                         + "    'username' = 'root@test#obcluster',"
                         + "    'password' = 'pswd',"
-                        + "    'compatible-mode' = 'mysql',"
-                        + "    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100',"
-                        + "    'upsert-mode' = 'true',"
+                        + "    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100',"
                         + "    'buffer-flush.interval' = '1s',"
                         + "    'buffer-flush.buffer-size' = '5000',"
-                        + "    'buffer-flush.batch-size' = '100',"
                         + "    'max-retries' = '3'"
                         + "    );");
 
@@ -130,25 +128,21 @@ Put the JAR files of dependencies to the 'lib' directory of Flink, and then crea
 ```sql
 CREATE TABLE t_sink
 (
-    id       INT,
-    username VARCHAR,
-    score    INT,
-    PRIMARY KEY (id) NOT ENFORCED
+  id       INT,
+  username VARCHAR,
+  score    INT,
+  PRIMARY KEY (id) NOT ENFORCED
 ) with (
-      'connector' = 'oceanbase',
-      'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',
-      'schema-name' = 'test',
-      'table-name' = 't_sink',
-      'username' = 'root@test#obcluster',
-      'password' = 'pswd',
-      'compatible-mode' = 'mysql',
-      'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
-      'upsert-mode' = 'true',
-      'buffer-flush.interval' = '1s',
-      'buffer-flush.buffer-size' = '5000',
-      'buffer-flush.batch-size' = '100',
-      'max-retries' = '3'
-      );
+  'connector' = 'oceanbase',
+  'url' = 'jdbc:mysql://127.0.0.1:2881/test',
+  'schema-name' = 'test',
+  'table-name' = 't_sink',
+  'username' = 'root@test#obcluster',
+  'password' = 'pswd',
+  'druid-properties' = 'druid.initialSize=10;druid.maxActive=100;',
+  'buffer-flush.interval' = '1s',
+  'buffer-flush.buffer-size' = '5000',
+  'max-retries' = '3');
 ```
 
 Insert records by Flink SQL.
@@ -164,27 +158,25 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-|           Option           | Required | Default |   Type   |                                                              Description                                                               |
-|----------------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
-| url                        | Yes      |         | String   | JDBC url, should be prefixed with 'jdbc:oceanbase://'                                                                                  |
-| schema-name                | Yes      |         | String   | The schema name or database name                                                                                                       |
-| table-name                 | Yes      |         | String   | The table name                                                                                                                         |
-| username                   | Yes      |         | String   | The username                                                                                                                           |
-| password                   | Yes      |         | String   | The password                                                                                                                           |
-| compatible-mode            | Yes      |         | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'                                                                           |
-| cluster-name               | No       |         | String   | The cluster name of OceanBase, required when partition calculation is enabled                                                          |
-| tenant-name                | No       |         | String   | The tenant name of OceanBase, required when partition calculation is enabled                                                           |
-| connection-pool-properties | No       |         | String   | Druid connection pool properties, multiple values are separated by semicolons                                                          |
-| upsert-mode                | No       | true    | Boolean  | Whether to use upsert mode                                                                                                             |
-| buffer-flush.interval      | No       | 1s      | Duration | Buffer flush interval                                                                                                                  |
-| buffer-flush.buffer-size   | No       | 1000    | Integer  | Buffer size                                                                                                                            |
-| buffer-flush.batch-size    | No       | 100     | Integer  | Buffer flush batch size                                                                                                                |
-| max-retries                | No       | 3       | Integer  | Max retry times on failure                                                                                                             |
-| memstore-check.enabled     | No       | true    | Boolean  | Whether enable memstore check                                                                                                          |
-| memstore-check.threshold   | No       | 0.9     | Double   | Memstore usage threshold ratio relative to the limit value                                                                             |
-| memstore-check.interval    | No       | 30s     | Duration | Memstore check interval                                                                                                                |
-| partition.enabled          | No       | false   | Boolean  | Whether to enable partition calculation and flush records by partitions                                                                |
-| partition.number           | No       | 1       | Integer  | The number of partitions. When the 'partition.enabled' is 'true', the same number of threads will be used to flush records in parallel |
+|          Option          | Required |         Default          |   Type   |                                                             Description                                                             |
+|--------------------------|----------|--------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------|
+| url                      | Yes      |                          | String   | JDBC url.                                                                                                                           |
+| schema-name              | Yes      |                          | String   | The schema name or database name.                                                                                                   |
+| table-name               | Yes      |                          | String   | The table name.                                                                                                                     |
+| username                 | Yes      |                          | String   | The username.                                                                                                                       |
+| password                 | Yes      |                          | String   | The password.                                                                                                                       |
+| compatible-mode          | No       | mysql                    | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'.                                                                       |
+| driver-class-name        | No       | com.mysql.cj.jdbc.Driver | String   | The driver class name, use 'com.mysql.cj.jdbc.Driver' by default. If other value is set, you need to introduce the driver manually. |
+| cluster-name             | No       |                          | String   | The cluster name of OceanBase, required when 'partition.enabled' is 'true'.                                                         |
+| tenant-name              | No       |                          | String   | The tenant name of OceanBase, required when 'partition.enabled' is 'true'.                                                          |
+| druid-properties         | No       |                          | String   | Druid connection pool properties, multiple values are separated by semicolons.                                                      |
+| buffer-flush.interval    | No       | 1s                       | Duration | Buffer flush interval.                                                                                                              |
+| buffer-flush.buffer-size | No       | 1000                     | Integer  | Buffer size.                                                                                                                        |
+| max-retries              | No       | 3                        | Integer  | Max retry times on failure.                                                                                                         |
+| memstore-check.enabled   | No       | true                     | Boolean  | Whether enable memstore check.                                                                                                      |
+| memstore-check.threshold | No       | 0.9                      | Double   | Memstore usage threshold ratio relative to the limit value.                                                                         |
+| memstore-check.interval  | No       | 30s                      | Duration | Memstore check interval.                                                                                                            |
+| partition.enabled        | No       | false                    | Boolean  | Whether to enable partition calculation and flush records by partitions.                                                            |
 
 ## References
 

@@ -14,24 +14,10 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.sink;
+package com.oceanbase.connector.flink.table;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 
-public interface StatementExecutor<T> extends AutoCloseable, Serializable {
-
-    /**
-     * Adds a record to batch
-     *
-     * @param record the row data record
-     */
-    void addToBatch(T record);
-
-    /**
-     * Submits a batch of records to OceanBase
-     *
-     * @throws SQLException if a database access error occurs
-     */
-    void executeBatch() throws Exception;
+public interface SerializationRuntimeConverter extends Serializable {
+    Object convert(Object data);
 }

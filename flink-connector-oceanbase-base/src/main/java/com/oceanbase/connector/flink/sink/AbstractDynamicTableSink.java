@@ -17,6 +17,7 @@
 package com.oceanbase.connector.flink.sink;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -26,6 +27,9 @@ import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
+import org.apache.flink.util.function.SerializableFunction;
+
+import java.io.Serializable;
 
 import static org.apache.flink.util.Preconditions.checkState;
 
@@ -54,22 +58,27 @@ public abstract class AbstractDynamicTableSink implements DynamicTableSink {
                 "please declare primary key for sink table when query contains update/delete record.");
     }
 
-    public DataStreamSinkProvider wrapSinkProvider(OceanBaseSink sink) {
-        return new DataStreamSinkProvider() {
-            @Override
-            public DataStreamSink<RowData> consumeDataStream(
-                    ProviderContext providerContext, DataStream<RowData> dataStream) {
-                final boolean objectReuse =
-                        dataStream.getExecutionEnvironment().getConfig().isObjectReuseEnabled();
-                TypeSerializer<RowData> typeSerializer =
-                        objectReuse
-                                ? dataStream
-                                        .getType()
-                                        .createSerializer(dataStream.getExecutionConfig())
-                                : null;
-                sink.setSerializer(typeSerializer);
-                return dataStream.sinkTo(sink);
-            }
-        };
+    static class SinkProvider implements DataStreamSinkProvider, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final SerializableFunction<TypeSerializer<RowData>, Sink<RowData>> sinkSupplier;
+
+        public SinkProvider(
+                SerializableFunction<TypeSerializer<RowData>, Sink<RowData>> sinkSupplier) {
+            this.sinkSupplier = sinkSupplier;
+        }
+
+        @Override
+        public DataStreamSink<?> consumeDataStream(
+                ProviderContext providerContext, DataStream<RowData> dataStream) {
+            final boolean objectReuse =
+                    dataStream.getExecutionEnvironment().getConfig().isObjectReuseEnabled();
+            TypeSerializer<RowData> typeSerializer =
+                    objectReuse
+                            ? dataStream.getType().createSerializer(dataStream.getExecutionConfig())
+                            : null;
+            return dataStream.sinkTo(sinkSupplier.apply(typeSerializer));
+        }
     }
 }

@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 
 public class OceanBaseOracleDialect implements OceanBaseDialect {
 
+    private static final long serialVersionUID = 1L;
+
     @Override
     public String quoteIdentifier(@Nonnull String identifier) {
         return identifier;

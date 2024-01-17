@@ -63,12 +63,17 @@ public abstract class OceanBaseTestBase extends TestLogger {
         return OB_SERVER.getPassword();
     }
 
+    protected String getDatabaseName() {
+        return OB_SERVER.getDatabaseName();
+    }
+
     protected Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
         options.put("url", getUrl());
-        options.put("table-name", getTestTable());
         options.put("username", getUsername());
         options.put("password", getPassword());
+        options.put("schema-name", getDatabaseName());
+        options.put("table-name", getTestTable());
         return options;
     }
 

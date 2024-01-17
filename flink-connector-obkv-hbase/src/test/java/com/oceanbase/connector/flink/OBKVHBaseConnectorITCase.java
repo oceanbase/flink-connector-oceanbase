@@ -17,9 +17,10 @@
 package com.oceanbase.connector.flink;
 
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
-import com.oceanbase.connector.flink.sink.OBKVHBaseStatementExecutor;
+import com.oceanbase.connector.flink.sink.OBKVHBaseRecordFlusher;
 import com.oceanbase.connector.flink.sink.OceanBaseSink;
+import com.oceanbase.connector.flink.table.HTableInfo;
+import com.oceanbase.connector.flink.table.OBKVHBaseRowDataSerializationSchema;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -32,12 +33,10 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 
-import com.alipay.oceanbase.hbase.OHTableClient;
-import com.alipay.oceanbase.hbase.constants.OHConstants;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
@@ -66,7 +65,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
 
     @Override
     protected String getUrl() {
-        return String.format("%s&database=%s", CONFIG_URL, OB_SERVER.getDatabaseName());
+        return CONFIG_URL;
     }
 
     @Override
@@ -82,18 +81,13 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         return options;
     }
 
-    private OHTableClient client;
+    private HTableInterface client;
 
     @Before
     public void before() throws Exception {
-        Configuration conf = new Configuration();
-        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, getUrl());
-        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, getUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, getPassword());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, OB_SERVER.getSysUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, OB_SERVER.getSysPassword());
-        client = new OHTableClient(getTestTable(), conf);
-        client.init();
+        OBKVHBaseConnectorOptions options = new OBKVHBaseConnectorOptions(getOptions());
+        OBKVHBaseConnectionProvider connectionProvider = new OBKVHBaseConnectionProvider(options);
+        client = connectionProvider.getHTableClient(OB_SERVER.getDatabaseName(), getTestTable());
     }
 
     @After
@@ -119,6 +113,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
+        OBKVHBaseConnectorOptions connectorOptions = new OBKVHBaseConnectorOptions(getOptions());
         ResolvedSchema physicalSchema =
                 new ResolvedSchema(
                         Arrays.asList(
@@ -140,6 +135,17 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                                                 .notNull())),
                         Collections.emptyList(),
                         UniqueConstraint.primaryKey("pk", Collections.singletonList("rowkey")));
+        OceanBaseSink<RowData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OBKVHBaseRowDataSerializationSchema(
+                                new HTableInfo(
+                                        connectorOptions.getSchemaName(),
+                                        connectorOptions.getTableName(),
+                                        physicalSchema)),
+                        null,
+                        new OBKVHBaseRecordFlusher(connectorOptions));
 
         List<RowData> dataSet =
                 Arrays.asList(
@@ -148,16 +154,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                         rowData("3", 3, null, null),
                         rowData("4", 4, "4", null));
 
-        OBKVHBaseConnectorOptions connectorOptions = new OBKVHBaseConnectorOptions(getOptions());
-        OBKVHBaseConnectionProvider connectionProvider =
-                new OBKVHBaseConnectionProvider(connectorOptions.getConnectionOptions());
-        OBKVHBaseStatementExecutor statementExecutor =
-                new OBKVHBaseStatementExecutor(
-                        connectorOptions.getStatementOptions(),
-                        new OBKVHBaseTableSchema(physicalSchema),
-                        connectionProvider);
-        OceanBaseSink sink =
-                new OceanBaseSink(connectorOptions.getWriterOptions(), statementExecutor);
         env.fromCollection(dataSet).sinkTo(sink);
         env.execute();
 
@@ -220,7 +216,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                 Collections.singletonList("4,q2,4"), queryHTable(client, "family2", "4"));
     }
 
-    private List<String> queryHTable(OHTableClient client, String family, String rowKey)
+    private List<String> queryHTable(HTableInterface client, String family, String rowKey)
             throws IOException {
         List<String> result = new ArrayList<>();
         Get get = new Get(Bytes.toBytes(rowKey));

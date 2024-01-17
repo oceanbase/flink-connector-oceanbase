@@ -16,47 +16,131 @@
 
 package com.oceanbase.connector.flink.connection;
 
+import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 
+import com.alibaba.druid.pool.DruidDataSource;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
+import javax.annotation.Nonnull;
+import javax.sql.DataSource;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
-public interface OceanBaseConnectionProvider extends AutoCloseable, Serializable {
+public class OceanBaseConnectionProvider implements ConnectionProvider {
 
-    /**
-     * Attempts to establish a connection
-     *
-     * @return a connection to OceanBase
-     * @throws SQLException if a database access error occurs
-     */
-    Connection getConnection() throws SQLException;
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseConnectionProvider.class);
 
-    /**
-     * Get connection info
-     *
-     * @return connection info
-     */
-    OceanBaseConnectionInfo getConnectionInfo();
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Get table partition info
-     *
-     * @return table partition info
-     */
-    OceanBaseTablePartInfo getTablePartInfo();
+    enum CompatibleMode {
+        MYSQL,
+        ORACLE;
 
-    /**
-     * Attempts to get the version of OceanBase
-     *
-     * @return version
-     * @throws SQLException if a database access error occurs
-     */
-    default String getVersion(OceanBaseDialect dialect) throws SQLException {
+        public static CompatibleMode fromString(@Nonnull String text) {
+            switch (text.trim().toUpperCase()) {
+                case "MYSQL":
+                    return MYSQL;
+                case "ORACLE":
+                    return ORACLE;
+                default:
+                    throw new UnsupportedOperationException("Unsupported compatible mode: " + text);
+            }
+        }
+
+        public boolean isMySqlMode() {
+            return CompatibleMode.MYSQL.equals(this);
+        }
+    }
+
+    public static class Version {
+
+        private final String text;
+
+        Version(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public boolean isV4() {
+            return StringUtils.isNoneBlank(text) && text.startsWith("4.");
+        }
+    }
+
+    private final OceanBaseConnectorOptions options;
+    private final CompatibleMode compatibleMode;
+    private final OceanBaseDialect dialect;
+
+    private Version version;
+
+    private transient volatile boolean inited = false;
+    private transient DataSource dataSource;
+
+    public OceanBaseConnectionProvider(OceanBaseConnectorOptions options) {
+        this.options = options;
+        this.compatibleMode = CompatibleMode.fromString(options.getCompatibleMode());
+        this.dialect =
+                compatibleMode.isMySqlMode()
+                        ? new OceanBaseMySQLDialect()
+                        : new OceanBaseOracleDialect();
+    }
+
+    public boolean isMySqlMode() {
+        return compatibleMode.isMySqlMode();
+    }
+
+    public OceanBaseDialect getDialect() {
+        return dialect;
+    }
+
+    public void init() {
+        if (!inited) {
+            synchronized (this) {
+                if (!inited) {
+                    DruidDataSource druidDataSource = new DruidDataSource();
+                    druidDataSource.setUrl(options.getUrl());
+                    druidDataSource.setUsername(options.getUsername());
+                    druidDataSource.setPassword(options.getPassword());
+                    druidDataSource.setDriverClassName(options.getDriverClassName());
+                    Properties properties = options.getDruidProperties();
+                    if (properties != null) {
+                        druidDataSource.configFromPropety(properties);
+                    }
+                    dataSource = druidDataSource;
+                    inited = true;
+                }
+            }
+        }
+    }
+
+    public Connection getConnection() throws SQLException {
+        init();
+        return dataSource.getConnection();
+    }
+
+    public Version getVersion() {
+        if (version == null) {
+            try {
+                version = new Version(queryVersion());
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to query version of OceanBase", e);
+            }
+        }
+        return version;
+    }
+
+    private String queryVersion() throws SQLException {
         try (Connection conn = getConnection();
                 Statement statement = conn.createStatement()) {
             try {
@@ -77,8 +161,20 @@ public interface OceanBaseConnectionProvider extends AutoCloseable, Serializable
                 if (parts != null && parts.length > 1) {
                     return parts[1];
                 }
+                throw new RuntimeException("Illegal 'version_comment': " + versionComment);
             }
-            return null;
+            throw new RuntimeException("'version_comment' not found");
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (dataSource != null) {
+            if (dataSource instanceof AutoCloseable) {
+                ((AutoCloseable) dataSource).close();
+            }
+            dataSource = null;
+        }
+        inited = false;
     }
 }

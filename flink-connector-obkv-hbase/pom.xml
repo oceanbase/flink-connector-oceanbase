@@ -24,6 +24,11 @@ under the License.
     <artifactId>flink-connector-obkv-hbase</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <obkv.table.client.version>1.2.7</obkv.table.client.version>
+        <obkv.hbase.client.version>0.1.4</obkv.hbase.client.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -34,6 +39,28 @@ under the License.
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>obkv-hbase-client</artifactId>
+            <version>${obkv.hbase.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>obkv-table-client</artifactId>
+            <version>${obkv.table.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

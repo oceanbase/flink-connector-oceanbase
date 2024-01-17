@@ -16,33 +16,22 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.sink.OceanBaseWriterOptions;
-
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Properties;
 
-public abstract class AbstractOceanBaseConnectorOptions implements Serializable {
+public abstract class ConnectorOptions implements Serializable {
 
     public static final ConfigOption<String> URL =
             ConfigOptions.key("url")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("The connection URL.");
-
-    public static final ConfigOption<String> TABLE_NAME =
-            ConfigOptions.key("table-name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The table name.");
 
     public static final ConfigOption<String> USERNAME =
             ConfigOptions.key("username")
@@ -56,74 +45,73 @@ public abstract class AbstractOceanBaseConnectorOptions implements Serializable 
                     .noDefaultValue()
                     .withDescription("The password.");
 
-    public static final ConfigOption<String> SYS_USERNAME =
-            ConfigOptions.key("sys.username")
+    public static final ConfigOption<String> SCHEMA_NAME =
+            ConfigOptions.key("schema-name")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("The username of system tenant.");
+                    .withDescription("The schema name or database name.");
 
-    public static final ConfigOption<String> SYS_PASSWORD =
-            ConfigOptions.key("sys.password")
+    public static final ConfigOption<String> TABLE_NAME =
+            ConfigOptions.key("table-name")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("The password of system tenant");
+                    .withDescription("The table name.");
 
     public static final ConfigOption<Duration> BUFFER_FLUSH_INTERVAL =
             ConfigOptions.key("buffer-flush.interval")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(1))
                     .withDescription(
-                            "The flush interval mills, over this time, asynchronous threads will flush data.");
+                            "The flush interval, over this time, asynchronous threads will flush data. Default value is '1s'.");
 
     public static final ConfigOption<Integer> BUFFER_SIZE =
             ConfigOptions.key("buffer-flush.buffer-size")
                     .intType()
                     .defaultValue(1000)
-                    .withDescription("Buffer size.");
-
-    public static final ConfigOption<Integer> BUFFER_BATCH_SIZE =
-            ConfigOptions.key("buffer-flush.batch-size")
-                    .intType()
-                    .defaultValue(100)
-                    .withDescription("The flush batch size of records buffer.");
+                    .withDescription("Buffer size. Default value is '1000'.");
 
     public static final ConfigOption<Integer> MAX_RETRIES =
             ConfigOptions.key("max-retries")
                     .intType()
                     .defaultValue(3)
-                    .withDescription("The max retry times if writing records to database failed.");
+                    .withDescription(
+                            "The max retry times if writing records to database failed. Default value is '3'.");
 
     protected final ReadableConfig allConfig;
 
-    protected void validateConfig() {}
-
-    public AbstractOceanBaseConnectorOptions(Map<String, String> config) {
+    public ConnectorOptions(Map<String, String> config) {
         this.allConfig = Configuration.fromMap(config);
-        validateConfig();
     }
 
-    public OceanBaseWriterOptions getWriterOptions() {
-        return new OceanBaseWriterOptions(
-                allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis(),
-                allConfig.get(BUFFER_SIZE),
-                allConfig.get(MAX_RETRIES));
+    public String getUrl() {
+        return allConfig.get(URL);
     }
 
-    protected Properties parseProperties(String propsStr) {
-        Properties props = new Properties();
-        if (StringUtils.isBlank(propsStr)) {
-            return props;
-        }
-        for (String propStr : propsStr.split(";")) {
-            if (StringUtils.isBlank(propStr)) {
-                continue;
-            }
-            String[] pair = propStr.trim().split("=");
-            if (pair.length != 2) {
-                throw new IllegalArgumentException("properties must have one key value pair");
-            }
-            props.put(pair[0].trim(), pair[1].trim());
-        }
-        return props;
+    public String getUsername() {
+        return allConfig.get(USERNAME);
+    }
+
+    public String getPassword() {
+        return allConfig.get(PASSWORD);
+    }
+
+    public String getSchemaName() {
+        return allConfig.get(SCHEMA_NAME);
+    }
+
+    public String getTableName() {
+        return allConfig.get(TABLE_NAME);
+    }
+
+    public long getBufferFlushInterval() {
+        return allConfig.get(BUFFER_FLUSH_INTERVAL).toMillis();
+    }
+
+    public int getBufferSize() {
+        return allConfig.get(BUFFER_SIZE);
+    }
+
+    public int getMaxRetries() {
+        return allConfig.get(MAX_RETRIES);
     }
 }

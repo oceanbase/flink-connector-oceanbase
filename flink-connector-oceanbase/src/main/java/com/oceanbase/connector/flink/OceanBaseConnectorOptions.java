@@ -16,17 +16,31 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionOptions;
-import com.oceanbase.connector.flink.sink.OceanBaseStatementOptions;
+import com.oceanbase.connector.flink.utils.OptionUtils;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Properties;
 
-public class OceanBaseConnectorOptions extends AbstractOceanBaseConnectorOptions {
+public class OceanBaseConnectorOptions extends ConnectorOptions {
     private static final long serialVersionUID = 1L;
+
+    public static final ConfigOption<String> COMPATIBLE_MODE =
+            ConfigOptions.key("compatible-mode")
+                    .stringType()
+                    .defaultValue("mysql")
+                    .withDescription(
+                            "The compatible mode of OceanBase, can be 'mysql' or 'oracle', use 'mysql' by default.");
+
+    public static final ConfigOption<String> DRIVER_CLASS_NAME =
+            ConfigOptions.key("driver-class-name")
+                    .stringType()
+                    .defaultValue("com.mysql.cj.jdbc.Driver")
+                    .withDescription(
+                            "JDBC driver class name, use 'com.mysql.cj.jdbc.Driver' by default.");
 
     public static final ConfigOption<String> CLUSTER_NAME =
             ConfigOptions.key("cluster-name")
@@ -40,98 +54,99 @@ public class OceanBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
                     .noDefaultValue()
                     .withDescription("The tenant name.");
 
-    public static final ConfigOption<String> SCHEMA_NAME =
-            ConfigOptions.key("schema-name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The schema name.");
-
-    public static final ConfigOption<String> COMPATIBLE_MODE =
-            ConfigOptions.key("compatible-mode")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription(
-                            "The compatible mode of OceanBase, can be 'mysql' or 'oracle'.");
-
-    public static final ConfigOption<String> CONNECTION_POOL_PROPERTIES =
-            ConfigOptions.key("connection-pool-properties")
+    public static final ConfigOption<String> DRUID_PROPERTIES =
+            ConfigOptions.key("druid-properties")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Properties for specific connection pool.");
-
-    public static final ConfigOption<Boolean> UPSERT_MODE =
-            ConfigOptions.key("upsert-mode")
-                    .booleanType()
-                    .defaultValue(true)
-                    .withDescription("Flag of whether to use upsert mode.");
 
     public static final ConfigOption<Boolean> MEMSTORE_CHECK_ENABLED =
             ConfigOptions.key("memstore-check.enabled")
                     .booleanType()
                     .defaultValue(true)
-                    .withDescription("Whether enable memstore check.");
+                    .withDescription("Whether enable memstore check. Default value is 'true'");
 
     public static final ConfigOption<Double> MEMSTORE_THRESHOLD =
             ConfigOptions.key("memstore-check.threshold")
                     .doubleType()
                     .defaultValue(0.9)
-                    .withDescription("Memory usage threshold ratio relative to the limit value.");
+                    .withDescription(
+                            "Memory usage threshold ratio relative to the limit value. Default value is '0.9'.");
 
     public static final ConfigOption<Duration> MEMSTORE_CHECK_INTERVAL =
             ConfigOptions.key("memstore-check.interval")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(30))
                     .withDescription(
-                            "The check interval mills, over this time, the writer will check if memstore reaches threshold.");
+                            "The check interval, over this time, the writer will check if memstore reaches threshold. Default value is '30s'.");
 
     public static final ConfigOption<Boolean> PARTITION_ENABLED =
             ConfigOptions.key("partition.enabled")
                     .booleanType()
                     .defaultValue(false)
                     .withDescription(
-                            "Whether to enable partition calculation and flush records by partitions.");
-
-    public static final ConfigOption<Integer> PARTITION_NUMBER =
-            ConfigOptions.key("partition.number")
-                    .intType()
-                    .defaultValue(1)
-                    .withDescription(
-                            "The number of partitions. When the 'partition.enabled' is 'true', the same number of threads will be used to flush records in parallel.");
+                            "Whether to enable partition calculation and flush records by partitions. Default value is 'false'.");
 
     public OceanBaseConnectorOptions(Map<String, String> config) {
         super(config);
-    }
+        if (getUrl().contains("mysql")) {
+            if (!getDriverClassName().contains("mysql")) {
+                throw new IllegalArgumentException(
+                        "Wrong 'driver-class-name', should use mysql driver for url: " + getUrl());
+            }
+            if (!getCompatibleMode().equalsIgnoreCase("mysql")) {
+                throw new IllegalArgumentException(
+                        "Wrong 'compatible-mode', the mysql driver can only be used on 'mysql' mode.");
+            }
+        } else if (getUrl().contains("oceanbase")) {
+            if (!getDriverClassName().contains("oceanbase")) {
+                throw new IllegalArgumentException(
+                        "Wrong 'driver-class-name', should use oceanbase driver for url: "
+                                + getUrl());
+            }
+        }
 
-    @Override
-    protected void validateConfig() {
-        if (allConfig.get(PARTITION_ENABLED)
-                && (allConfig.get(CLUSTER_NAME) == null || allConfig.get(TENANT_NAME) == null)) {
-            throw new IllegalArgumentException(
-                    "'cluster-name' and 'tenant-name' are required when 'partition.enabled' is true.");
+        if (getPartitionEnabled()) {
+            if (getClusterName() == null || getTenantName() == null) {
+                throw new IllegalArgumentException(
+                        "'cluster-name' and 'tenant-name' are required when 'partition.enabled' is true.");
+            }
         }
     }
 
-    public OceanBaseConnectionOptions getConnectionOptions() {
-        return new OceanBaseConnectionOptions(
-                allConfig.get(URL),
-                allConfig.get(CLUSTER_NAME),
-                allConfig.get(TENANT_NAME),
-                allConfig.get(SCHEMA_NAME),
-                allConfig.get(TABLE_NAME),
-                allConfig.get(USERNAME),
-                allConfig.get(PASSWORD),
-                allConfig.get(COMPATIBLE_MODE),
-                parseProperties(allConfig.get(CONNECTION_POOL_PROPERTIES)));
+    public String getCompatibleMode() {
+        return allConfig.get(COMPATIBLE_MODE);
     }
 
-    public OceanBaseStatementOptions getStatementOptions() {
-        return new OceanBaseStatementOptions(
-                allConfig.get(UPSERT_MODE),
-                allConfig.get(BUFFER_BATCH_SIZE),
-                allConfig.get(MEMSTORE_CHECK_ENABLED),
-                allConfig.get(MEMSTORE_THRESHOLD),
-                allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis(),
-                allConfig.get(PARTITION_ENABLED),
-                allConfig.get(PARTITION_NUMBER));
+    public String getDriverClassName() {
+        return allConfig.get(DRIVER_CLASS_NAME);
+    }
+
+    public String getClusterName() {
+        return allConfig.get(CLUSTER_NAME);
+    }
+
+    public String getTenantName() {
+        return allConfig.get(TENANT_NAME);
+    }
+
+    public Properties getDruidProperties() {
+        return OptionUtils.parseProperties(allConfig.get(DRUID_PROPERTIES));
+    }
+
+    public boolean getMemStoreCheckEnabled() {
+        return allConfig.get(MEMSTORE_CHECK_ENABLED);
+    }
+
+    public double getMemStoreThreshold() {
+        return allConfig.get(MEMSTORE_THRESHOLD);
+    }
+
+    public long getMemStoreCheckInterval() {
+        return allConfig.get(MEMSTORE_CHECK_INTERVAL).toMillis();
+    }
+
+    public boolean getPartitionEnabled() {
+        return allConfig.get(PARTITION_ENABLED);
     }
 }
