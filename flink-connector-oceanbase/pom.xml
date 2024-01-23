@@ -28,7 +28,6 @@ under the License.
     <properties>
         <druid.version>1.2.21</druid.version>
         <mysql.client.version>8.0.28</mysql.client.version>
-        <ob.client.version>2.4.8</ob.client.version>
         <ob.partition.caculator.version>1.8.0-RELEASE</ob.partition.caculator.version>
     </properties>
 
@@ -48,12 +47,6 @@ under the License.
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.client.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>oceanbase-client</artifactId>
-            <version>${ob.client.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>

@@ -65,6 +65,7 @@ under the License.
                                 <includes>
                                     <include>com.oceanbase:*</include>
                                     <include>com.alibaba:druid</include>
+                                    <include>mysql:mysql-connector-java</include>
                                     <include>commons-collections:commons-collections</include>
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>com.google.guava:guava</include>
