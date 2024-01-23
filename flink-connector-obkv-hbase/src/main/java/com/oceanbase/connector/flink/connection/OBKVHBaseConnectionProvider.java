@@ -16,36 +16,75 @@
 
 package com.oceanbase.connector.flink.connection;
 
+import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
+import com.oceanbase.connector.flink.table.TableCache;
+
 import com.alipay.oceanbase.hbase.OHTableClient;
+import com.alipay.oceanbase.hbase.constants.OHConstants;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTableInterface;
 
-import java.io.Serializable;
+import java.util.Properties;
 
-public class OBKVHBaseConnectionProvider implements Serializable, AutoCloseable {
+public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     private static final long serialVersionUID = 1L;
 
-    private final OBKVHBaseConnectionOptions options;
+    private final OBKVHBaseConnectorOptions options;
 
-    private transient OHTableClient tableClient;
+    private transient TableCache<HTableInterface> hTableCache;
 
-    public OBKVHBaseConnectionProvider(OBKVHBaseConnectionOptions options) {
+    public OBKVHBaseConnectionProvider(OBKVHBaseConnectorOptions options) {
         this.options = options;
     }
 
-    public HTableInterface getTable() throws Exception {
-        if (tableClient == null) {
-            tableClient = new OHTableClient(options.getTableName(), options.getConfig());
-            tableClient.init();
+    private TableCache<HTableInterface> getHTableCache() {
+        if (hTableCache == null) {
+            hTableCache = new TableCache<>();
         }
-        return tableClient;
+        return hTableCache;
+    }
+
+    public HTableInterface getHTableClient(String databaseName, String tableName) {
+        String tableId = databaseName + "." + tableName;
+        return getHTableCache()
+                .get(
+                        tableId,
+                        () -> {
+                            try {
+                                OHTableClient tableClient =
+                                        new OHTableClient(tableName, getConfig(databaseName));
+                                tableClient.init();
+                                return tableClient;
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to initialize OHTableClient", e);
+                            }
+                        });
+    }
+
+    private Configuration getConfig(String databaseName) {
+        org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+        conf.set(
+                OHConstants.HBASE_OCEANBASE_PARAM_URL,
+                String.format("%s&database=%s", options.getUrl(), databaseName));
+        conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, options.getUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, options.getPassword());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, options.getSysUsername());
+        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, options.getSysPassword());
+        Properties hbaseProperties = options.getHBaseProperties();
+        if (hbaseProperties != null) {
+            for (String name : hbaseProperties.stringPropertyNames()) {
+                conf.set(name, hbaseProperties.getProperty(name));
+            }
+        }
+        return conf;
     }
 
     @Override
     public void close() throws Exception {
-        if (tableClient != null) {
-            tableClient.close();
-            tableClient = null;
+        for (HTableInterface table : getHTableCache().getAll()) {
+            table.close();
         }
+        getHTableCache().clear();
     }
 }

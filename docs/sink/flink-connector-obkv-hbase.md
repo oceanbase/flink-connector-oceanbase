@@ -20,20 +20,20 @@ If you'd rather use the latest snapshots of the upcoming major version, use our 
 
 ```xml
 <dependency>
-  <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-obkv-hbase</artifactId>
-  <version>${project.version}</version>
+    <groupId>com.oceanbase</groupId>
+    <artifactId>flink-connector-obkv-hbase</artifactId>
+    <version>${project.version}</version>
 </dependency>
 
 <repositories>
-  <repository>
-    <id>sonatype-snapshots</id>
-    <name>Sonatype Snapshot Repository</name>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
+    <repository>
+        <id>sonatype-snapshots</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
 </repositories>
 ```
 
@@ -48,6 +48,7 @@ mvn clean package -DskipTests
 ### SQL JAR
 
 To use this connector through Flink SQL directly, you need to download the shaded jar file named `flink-sql-connector-obkv-hbase-${project.version}.jar`:
+
 - Release versions: https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-obkv-hbase
 - Snapshot versions: https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-obkv-hbase
 
@@ -59,11 +60,11 @@ Create a table with the name `htable1$family1`, which means the table name is `h
 use test;
 CREATE TABLE `htable1$family1`
 (
-    `K` varbinary(1024)    NOT NULL,
-    `Q` varbinary(256)     NOT NULL,
-    `T` bigint(20)         NOT NULL,
-    `V` varbinary(1048576) NOT NULL,
-    PRIMARY KEY (`K`, `Q`, `T`)
+  `K` varbinary(1024)    NOT NULL,
+  `Q` varbinary(256)     NOT NULL,
+  `T` bigint(20)         NOT NULL,
+  `V` varbinary(1048576) NOT NULL,
+  PRIMARY KEY (`K`, `Q`, `T`)
 )
 ```
 
@@ -93,7 +94,8 @@ public class Main {
                         + " PRIMARY KEY (rowkey) NOT ENFORCED"
                         + ") with ("
                         + "  'connector'='obkv-hbase',"
-                        + "  'url'='http://127.0.0.1:8080/services?...&database=test',"
+                        + "  'url'='http://127.0.0.1:8080/services?...',"
+                        + "  'schema-name'='test',"
                         + "  'table-name'='htable1',"
                         + "  'username'='root@test',"
                         + "  'password'='',"
@@ -122,19 +124,19 @@ Put the JAR files of dependencies to the 'lib' directory of Flink, and then crea
 ```sql
 CREATE TABLE t_sink
 (
-    rowkey STRING,
-    family1 ROW <column1 STRING,
-    column2 STRING >,
-    PRIMARY KEY (rowkey) NOT ENFORCED
-)
-with (
-    'connector'='obkv-hbase',
-    'url'='http://127.0.0.1:8080/services?...&database=test',
-    'table-name'='htable1',
-    'username'='root@test',
-    'password'='',
-    'sys.username'='root',
-    'sys.password'='');
+  rowkey STRING,
+  family1 ROW <column1 STRING,
+  column2 STRING >,
+  PRIMARY KEY (rowkey) NOT ENFORCED
+) with (
+  'connector'='obkv-hbase',
+  'url'='http://127.0.0.1:8080/services?...',
+  'schema-name'='test',
+  'table-name'='htable1',
+  'username'='root@test',
+  'password'='',
+  'sys.username'='root',
+  'sys.password'='');
 ```
 
 Insert records by Flink SQL.
@@ -150,18 +152,19 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-|          Option          | Required | Default |   Type   |            Description            |
-|--------------------------|----------|---------|----------|-----------------------------------|
-| url                      | Yes      |         | String   | The config url with database name |
-| table-name               | Yes      |         | String   | The table name of HBase           |
-| username                 | Yes      |         | String   | The username                      |
-| password                 | Yes      |         | String   | The password                      |
-| sys.username             | Yes      |         | String   | The username of sys tenant        |
-| sys.password             | Yes      |         | String   | The password of sys tenant        |
-| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval             |
-| buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size                       |
-| buffer-flush.batch-size  | No       | 100     | Integer  | Buffer flush batch size           |
-| max-retries              | No       | 3       | Integer  | Max retry times on failure        |
+|          Option          | Required | Default |   Type   |                                                 Description                                                  |
+|--------------------------|----------|---------|----------|--------------------------------------------------------------------------------------------------------------|
+| url                      | Yes      |         | String   | The config url, can be queried by <code>SHOW PARAMETERS LIKE 'obconfig_url'</code>.                          |
+| schema-name              | Yes      |         | String   | The database name of OceanBase.                                                                              |
+| table-name               | Yes      |         | String   | The table name of HBase, note that the table name in OceanBase is <code>hbase_table_name$family_name</code>. |
+| username                 | Yes      |         | String   | The username of non-sys tenant.                                                                              |
+| password                 | Yes      |         | String   | The password of non-sys tenant.                                                                              |
+| sys.username             | Yes      |         | String   | The username of sys tenant.                                                                                  |
+| sys.password             | Yes      |         | String   | The password of sys tenant.                                                                                  |
+| hbase.properties         | No       |         | String   | Properties to configure 'obkv-hbase-client-java', multiple values are separated by semicolons.               |
+| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval.                                                                                       |
+| buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size.                                                                                                 |
+| max-retries              | No       | 3       | Integer  | Max retry times on failure.                                                                                  |
 
 ## References
 

@@ -16,15 +16,27 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
-import com.oceanbase.connector.flink.sink.OBKVHBaseStatementOptions;
+import com.oceanbase.connector.flink.utils.OptionUtils;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
 import java.util.Map;
+import java.util.Properties;
 
-public class OBKVHBaseConnectorOptions extends AbstractOceanBaseConnectorOptions {
+public class OBKVHBaseConnectorOptions extends ConnectorOptions {
+
+    public static final ConfigOption<String> SYS_USERNAME =
+            ConfigOptions.key("sys.username")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The username of system tenant.");
+
+    public static final ConfigOption<String> SYS_PASSWORD =
+            ConfigOptions.key("sys.password")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The password of system tenant");
 
     public static final ConfigOption<String> HBASE_PROPERTIES =
             ConfigOptions.key("hbase.properties")
@@ -38,18 +50,15 @@ public class OBKVHBaseConnectorOptions extends AbstractOceanBaseConnectorOptions
         super(config);
     }
 
-    public OBKVHBaseConnectionOptions getConnectionOptions() {
-        return new OBKVHBaseConnectionOptions(
-                allConfig.get(URL),
-                allConfig.get(TABLE_NAME),
-                allConfig.get(USERNAME),
-                allConfig.get(PASSWORD),
-                allConfig.get(SYS_USERNAME),
-                allConfig.get(SYS_PASSWORD),
-                parseProperties(allConfig.get(HBASE_PROPERTIES)));
+    public String getSysUsername() {
+        return allConfig.get(SYS_USERNAME);
     }
 
-    public OBKVHBaseStatementOptions getStatementOptions() {
-        return new OBKVHBaseStatementOptions(allConfig.get(BUFFER_BATCH_SIZE));
+    public String getSysPassword() {
+        return allConfig.get(SYS_PASSWORD);
+    }
+
+    public Properties getHBaseProperties() {
+        return OptionUtils.parseProperties(allConfig.get(HBASE_PROPERTIES));
     }
 }

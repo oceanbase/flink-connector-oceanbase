@@ -16,11 +16,15 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionPool;
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+import com.oceanbase.connector.flink.sink.OceanBaseRecordFlusher;
 import com.oceanbase.connector.flink.sink.OceanBaseSink;
-import com.oceanbase.connector.flink.sink.OceanBaseStatementExecutor;
+import com.oceanbase.connector.flink.table.OceanBaseRowDataSerializationSchema;
+import com.oceanbase.connector.flink.table.OceanBaseTestData;
+import com.oceanbase.connector.flink.table.OceanBaseTestDataSerializationSchema;
+import com.oceanbase.connector.flink.table.SchemaChangeRecord;
+import com.oceanbase.connector.flink.table.TableInfo;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -34,6 +38,7 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
 import org.junit.Test;
 
@@ -49,6 +54,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertTrue;
 
 public class OceanBaseConnectorITCase extends OceanBaseTestBase {
 
@@ -60,9 +68,7 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     @Override
     protected Map<String, String> getOptions() {
         Map<String, String> options = super.getOptions();
-        options.put("compatible-mode", "mysql");
-        options.put("schema-name", "test");
-        options.put("connection-pool-properties", "druid.initialSize=4;druid.maxActive=20;");
+        options.put("druid-properties", "druid.initialSize=4;druid.maxActive=20;");
         return options;
     }
 
@@ -75,10 +81,112 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Test
+    public void testMultipleTableSink() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
+        OceanBaseSink<OceanBaseTestData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OceanBaseTestDataSerializationSchema(),
+                        record ->
+                                ((TableInfo) record.getTable())
+                                        .getPrimaryKey().stream()
+                                                .map(
+                                                        key -> {
+                                                            Object value =
+                                                                    record.getFieldValue(key);
+                                                            return value == null
+                                                                    ? "null"
+                                                                    : value.toString();
+                                                        })
+                                                .collect(Collectors.joining("#")),
+                        new OceanBaseRecordFlusher(connectorOptions));
+
+        OceanBaseDialect dialect = new OceanBaseMySQLDialect();
+        String database = getDatabaseName();
+        String tableA = getTestTable() + "A";
+        String tableB = getTestTable() + "B";
+
+        String tableFullNameA = dialect.getFullTableName(database, tableA);
+        String tableFullNameB = dialect.getFullTableName(database, tableB);
+
+        ResolvedSchema schemaA =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("a", DataTypes.INT().notNull()),
+                                Column.physical("a1", DataTypes.INT().notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("a")));
+        ResolvedSchema schemaB =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("b", DataTypes.INT().notNull()),
+                                Column.physical("b1", DataTypes.STRING().notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("b")));
+
+        // create table and insert one row
+        List<OceanBaseTestData> dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                database,
+                                tableA,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (a int(10) primary key, a1 int(10))",
+                                        tableFullNameA)),
+                        new OceanBaseTestData(
+                                database,
+                                tableA,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (b int(10) primary key, b1 varchar(20))",
+                                        tableFullNameB)),
+                        new OceanBaseTestData("test", tableA, schemaA, GenericRowData.of(1, 1)),
+                        new OceanBaseTestData(
+                                "test",
+                                tableB,
+                                schemaB,
+                                GenericRowData.of(2, StringData.fromString("2"))));
+
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute();
+
+        List<String> resultA = queryTable(tableFullNameA);
+        List<String> resultB = queryTable(tableFullNameB);
+
+        assertEqualsInAnyOrder(resultA, Collections.singletonList("1,1"));
+        assertEqualsInAnyOrder(resultB, Collections.singletonList("2,2"));
+
+        // truncate table
+        dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                database,
+                                tableA,
+                                SchemaChangeRecord.Type.TRUNCATE,
+                                String.format("TRUNCATE TABLE %s", tableFullNameA)),
+                        new OceanBaseTestData(
+                                database,
+                                tableA,
+                                SchemaChangeRecord.Type.TRUNCATE,
+                                String.format("TRUNCATE TABLE %s", tableFullNameB)));
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute();
+
+        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameA)));
+        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameB)));
+    }
+
+    @Test
     public void testDataStreamSink() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
         ResolvedSchema physicalSchema =
                 new ResolvedSchema(
                         Arrays.asList(
@@ -88,6 +196,28 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                                 Column.physical("weight", DataTypes.DECIMAL(20, 10).notNull())),
                         Collections.emptyList(),
                         UniqueConstraint.primaryKey("pk", Collections.singletonList("id")));
+        OceanBaseSink<RowData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OceanBaseRowDataSerializationSchema(
+                                new TableInfo(
+                                        connectorOptions.getSchemaName(),
+                                        connectorOptions.getTableName(),
+                                        physicalSchema)),
+                        record ->
+                                ((TableInfo) record.getTable())
+                                        .getPrimaryKey().stream()
+                                                .map(
+                                                        key -> {
+                                                            Object value =
+                                                                    record.getFieldValue(key);
+                                                            return value == null
+                                                                    ? "null"
+                                                                    : value.toString();
+                                                        })
+                                                .collect(Collectors.joining("#")),
+                        new OceanBaseRecordFlusher(connectorOptions));
 
         List<RowData> dataSet =
                 Arrays.asList(
@@ -105,16 +235,6 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         rowData(108, "jacket", "water resistent black wind breaker", 0.1),
                         rowData(109, "spare tire", "24 inch spare tire", 22.2));
 
-        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
-        OceanBaseConnectionProvider connectionProvider =
-                new OceanBaseConnectionPool(connectorOptions.getConnectionOptions());
-        OceanBaseStatementExecutor statementExecutor =
-                new OceanBaseStatementExecutor(
-                        connectorOptions.getStatementOptions(),
-                        new OceanBaseTableSchema(physicalSchema),
-                        connectionProvider);
-        OceanBaseSink sink =
-                new OceanBaseSink(connectorOptions.getWriterOptions(), statementExecutor);
         env.fromCollection(dataSet).sinkTo(sink);
         env.execute();
 
@@ -178,16 +298,16 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         "108,jacket,water resistent black wind breaker,0.1000000000",
                         "109,spare tire,24 inch spare tire,22.2000000000");
 
-        List<String> actual = queryTable();
+        List<String> actual = queryTable(getTestTable());
 
         assertEqualsInAnyOrder(expected, actual);
     }
 
-    public List<String> queryTable() throws SQLException {
+    public List<String> queryTable(String tableName) throws SQLException {
         List<String> result = new ArrayList<>();
         try (Connection connection = getConnection();
                 Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery("SELECT * FROM " + getTestTable());
+            ResultSet rs = statement.executeQuery("SELECT * FROM " + tableName);
             ResultSetMetaData metaData = rs.getMetaData();
 
             while (rs.next()) {

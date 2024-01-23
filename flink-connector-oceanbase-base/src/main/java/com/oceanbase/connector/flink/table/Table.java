@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.sink;
+package com.oceanbase.connector.flink.table;
 
 import java.io.Serializable;
 
-public class OBKVHBaseStatementOptions implements Serializable {
+public interface Table extends Serializable {
 
-    private static final long serialVersionUID = 1L;
+    String getTableId();
 
-    private final int batchSize;
-
-    public OBKVHBaseStatementOptions(int batchSize) {
-        this.batchSize = batchSize;
-    }
-
-    public int getBatchSize() {
-        return batchSize;
-    }
+    Integer getFieldIndex(String fieldName);
 }

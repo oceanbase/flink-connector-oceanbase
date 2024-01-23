@@ -20,20 +20,20 @@
 
 ```xml
 <dependency>
-  <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-oceanbase</artifactId>
-  <version>${project.version}</version>
+    <groupId>com.oceanbase</groupId>
+    <artifactId>flink-connector-oceanbase</artifactId>
+    <version>${project.version}</version>
 </dependency>
 
 <repositories>
-  <repository>
-    <id>sonatype-snapshots</id>
-    <name>Sonatype Snapshot Repository</name>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
+    <repository>
+        <id>sonatype-snapshots</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
 </repositories>
 ```
 
@@ -48,6 +48,7 @@ mvn clean package -DskipTests
 ### SQL JAR
 
 要直接通过 Flink SQL 使用此连接器，您需要下载名为`flink-sql-connector-oceanbase-${project.version}.jar`的包含所有依赖的 jar 文件：
+
 - 正式版本：https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
 - 快照版本：https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
@@ -61,10 +62,10 @@ mvn clean package -DskipTests
 USE test;
 CREATE TABLE `t_sink`
 (
-    `id`       int(10) NOT NULL,
-    `username` varchar(20) DEFAULT NULL,
-    `score`    int(10)     DEFAULT NULL,
-    PRIMARY KEY (`id`)
+  `id`       int(10) NOT NULL,
+  `username` varchar(20) DEFAULT NULL,
+  `score`    int(10)     DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 ```
 
@@ -95,17 +96,14 @@ public class Main {
                         + "  PRIMARY KEY (id) NOT ENFORCED"
                         + ") with ("
                         + "    'connector' = 'oceanbase',"
-                        + "    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',"
+                        + "    'url' = 'jdbc:mysql://127.0.0.1:2881/test',"
                         + "    'schema-name'= 'test',"
                         + "    'table-name' = 't_sink',"
                         + "    'username' = 'root@test#obcluster',"
                         + "    'password' = 'pswd',"
-                        + "    'compatible-mode' = 'mysql',"
-                        + "    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100',"
-                        + "    'upsert-mode' = 'true',"
+                        + "    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100',"
                         + "    'buffer-flush.interval' = '1s',"
                         + "    'buffer-flush.buffer-size' = '5000',"
-                        + "    'buffer-flush.batch-size' = '100',"
                         + "    'max-retries' = '3'"
                         + "    );");
 
@@ -135,20 +133,16 @@ CREATE TABLE t_sink
     username VARCHAR,
     score    INT,
     PRIMARY KEY (id) NOT ENFORCED
-)
-with (
+) with (
     'connector' = 'oceanbase',
-    'url' = 'jdbc:oceanbase://127.0.0.1:2881/test',
+    'url' = 'jdbc:mysql://127.0.0.1:2881/test',
     'schema-name' = 'test',
     'table-name' = 't_sink',
     'username' = 'root@test#obcluster',
     'password' = 'pswd',
-    'compatible-mode' = 'mysql',
-    'connection-pool-properties' = 'druid.initialSize=10;druid.maxActive=100;',
-    'upsert-mode' = 'true',
+    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100;',
     'buffer-flush.interval' = '1s',
     'buffer-flush.buffer-size' = '5000',
-    'buffer-flush.batch-size' = '100',
     'max-retries' = '3'
     );
 ```
@@ -166,27 +160,25 @@ VALUES (1, 'Tom', 99),
 
 ## 配置项
 
-|            参数名             | 是否必需 |  默认值  |    类型    |                            描述                             |
-|----------------------------|------|-------|----------|-----------------------------------------------------------|
-| url                        | 是    |       | String   | 数据库的 JDBC url, 应当以 'jdbc:oceanbase://' 作为前缀               |
-| schema-name                | 是    |       | String   | 连接的 Schema 名或库名                                           |
-| table-name                 | 是    |       | String   | 表名                                                        |
-| username                   | 是    |       | String   | 连接用户名                                                     |
-| password                   | 是    |       | String   | 连接密码                                                      |
-| compatible-mode            | 是    |       | String   | 兼容模式，可以是 'mysql' 或 'oracle'                               |
-| cluster-name               | 否    |       | String   | 集群名，开启分区计算功能时为必填                                          |
-| tenant-name                | 否    |       | String   | 租户名，开启分区计算功能时为必填                                          |
-| connection-pool-properties | 否    |       | String   | Druid 连接池属性，多个值用分号分隔                                      |
-| upsert-mode                | 否    | true  | Boolean  | 是否使用 upsert 模式                                            |
-| buffer-flush.interval      | 否    | 1s    | Duration | 缓冲区刷新周期                                                   |
-| buffer-flush.buffer-size   | 否    | 1000  | Integer  | 缓冲区大小                                                     |
-| buffer-flush.batch-size    | 否    | 100   | Integer  | 刷新批量数据的批大小                                                |
-| max-retries                | 否    | 3     | Integer  | 失败重试次数                                                    |
-| memstore-check.enabled     | 否    | true  | Boolean  | 是否开启内存检查                                                  |
-| memstore-check.threshold   | 否    | 0.9   | Double   | 内存使用的阈值相对最大限制值的比例                                         |
-| memstore-check.interval    | 否    | 30s   | Duration | 内存使用检查周期                                                  |
-| partition.enabled          | 否    | false | Boolean  | 是否启用分区计算功能,按照分区来写数据                                       |
-| partition.number           | 否    | 1     | Integer  | 该表的分区数，当 'partition.enabled' 设为 true 时，将使用该数量的线程根据分区并行写数据 |
+|           参数名            | 是否必需 |           默认值            |    类型    |                            描述                             |
+|--------------------------|------|--------------------------|----------|-----------------------------------------------------------|
+| url                      | 是    |                          | String   | 数据库的 JDBC url。                                            |
+| schema-name              | 是    |                          | String   | 连接的 schema 名或 db 名。                                       |
+| table-name               | 是    |                          | String   | 表名。                                                       |
+| username                 | 是    |                          | String   | 连接用户名。                                                    |
+| password                 | 是    |                          | String   | 连接密码。                                                     |
+| compatible-mode          | 否    | mysql                    | String   | 兼容模式，可以是 'mysql' 或 'oracle'。                              |
+| driver-class-name        | 否    | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。 |
+| cluster-name             | 否    |                          | String   | 集群名，'partition.enabled' 为 true 时为必填。                      |
+| tenant-name              | 否    |                          | String   | 租户名，'partition.enabled' 为 true 时为必填。                      |
+| druid-properties         | 否    |                          | String   | Druid 连接池属性，多个值用分号分隔。                                     |
+| buffer-flush.interval    | 否    | 1s                       | Duration | 缓冲区刷新周期。                                                  |
+| buffer-flush.buffer-size | 否    | 1000                     | Integer  | 缓冲区大小。                                                    |
+| max-retries              | 否    | 3                        | Integer  | 失败重试次数。                                                   |
+| memstore-check.enabled   | 否    | true                     | Boolean  | 是否开启内存检查。                                                 |
+| memstore-check.threshold | 否    | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                        |
+| memstore-check.interval  | 否    | 30s                      | Duration | 内存使用检查周期。                                                 |
+| partition.enabled        | 否    | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。                                      |
 
 ## 参考信息
 

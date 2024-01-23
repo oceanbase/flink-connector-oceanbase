@@ -20,20 +20,20 @@
 
 ```xml
 <dependency>
-  <groupId>com.oceanbase</groupId>
-  <artifactId>flink-connector-obkv-hbase</artifactId>
-  <version>${project.version}</version>
+    <groupId>com.oceanbase</groupId>
+    <artifactId>flink-connector-obkv-hbase</artifactId>
+    <version>${project.version}</version>
 </dependency>
 
 <repositories>
-  <repository>
-    <id>sonatype-snapshots</id>
-    <name>Sonatype Snapshot Repository</name>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
+    <repository>
+        <id>sonatype-snapshots</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
 </repositories>
 ```
 
@@ -48,6 +48,7 @@ mvn clean package -DskipTests
 ### SQL JAR
 
 要直接通过 Flink SQL 使用此连接器，您需要下载名为`flink-sql-connector-obkv-hbase-${project.version}.jar`的包含所有依赖的 jar 文件：
+
 - 正式版本：https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-obkv-hbase
 - 快照版本：https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-obkv-hbase
 
@@ -59,11 +60,11 @@ mvn clean package -DskipTests
 use test;
 CREATE TABLE `htable1$family1`
 (
-    `K` varbinary(1024)    NOT NULL,
-    `Q` varbinary(256)     NOT NULL,
-    `T` bigint(20)         NOT NULL,
-    `V` varbinary(1048576) NOT NULL,
-    PRIMARY KEY (`K`, `Q`, `T`)
+  `K` varbinary(1024)    NOT NULL,
+  `Q` varbinary(256)     NOT NULL,
+  `T` bigint(20)         NOT NULL,
+  `V` varbinary(1048576) NOT NULL,
+  PRIMARY KEY (`K`, `Q`, `T`)
 )
 ```
 
@@ -93,7 +94,8 @@ public class Main {
                         + " PRIMARY KEY (rowkey) NOT ENFORCED"
                         + ") with ("
                         + "  'connector'='obkv-hbase',"
-                        + "  'url'='http://127.0.0.1:8080/services?...&database=test',"
+                        + "  'url'='http://127.0.0.1:8080/services?...',"
+                        + "  'schema-name'='test',"
                         + "  'table-name'='htable1',"
                         + "  'username'='root@test',"
                         + "  'password'='',"
@@ -122,19 +124,19 @@ public class Main {
 ```sql
 CREATE TABLE t_sink
 (
-    rowkey STRING,
-    family1 ROW <column1 STRING,
-    column2 STRING >,
-    PRIMARY KEY (rowkey) NOT ENFORCED
-)
-with (
-    'connector'='obkv-hbase',
-    'url'='http://127.0.0.1:8080/services?...&database=test',
-    'table-name'='htable1',
-    'username'='root@test',
-    'password'='',
-    'sys.username'='root',
-    'sys.password'='');
+  rowkey STRING,
+  family1 ROW <column1 STRING,
+  column2 STRING >,
+  PRIMARY KEY (rowkey) NOT ENFORCED
+) with (
+  'connector'='obkv-hbase',
+  'url'='http://127.0.0.1:8080/services?...',
+  'schema-name'='test',
+  'table-name'='htable1',
+  'username'='root@test',
+  'password'='',
+  'sys.username'='root',
+  'sys.password'='');
 ```
 
 插入测试数据
@@ -150,18 +152,19 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 
 ## 配置项
 
-|           参数名            | 是否必需 | 默认值  |    类型    |             描述              |
-|--------------------------|------|------|----------|-----------------------------|
-| url                      | 是    |      | String   | 集群的 config url，需要带 database |
-| table-name               | 是    |      | String   | HBase 表名                    |
-| username                 | 是    |      | String   | 用户名                         |
-| password                 | 是    |      | String   | 密码                          |
-| sys.username             | 是    |      | String   | sys 租户的用户名                  |
-| sys.password             | 是    |      | String   | sys 租户用户的密码                 |
-| buffer-flush.interval    | 否    | 1s   | Duration | 缓冲区刷新周期                     |
-| buffer-flush.buffer-size | 否    | 1000 | Integer  | 缓冲区大小                       |
-| buffer-flush.batch-size  | 否    | 100  | Integer  | 刷新批量数据的批大小                  |
-| max-retries              | 否    | 3    | Integer  | 失败重试次数                      |
+|           参数名            | 是否必需 | 默认值  |    类型    |                                    描述                                     |
+|--------------------------|------|------|----------|---------------------------------------------------------------------------|
+| url                      | 是    |      | String   | 集群的 config url，可以通过 <code>SHOW PARAMETERS LIKE 'obconfig_url'</code> 查询。  |
+| schema-name              | 是    |      | String   | OceanBase 的 db 名。                                                         |
+| table-name               | 是    |      | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。 |
+| username                 | 是    |      | String   | 非 sys 租户的用户名。                                                             |
+| password                 | 是    |      | String   | 非 sys 租户的密码。                                                              |
+| sys.username             | 是    |      | String   | sys 租户的用户名。                                                               |
+| sys.password             | 是    |      | String   | sys 租户用户的密码。                                                              |
+| hbase.properties         | 否    |      | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                 |
+| buffer-flush.interval    | 否    | 1s   | Duration | 缓冲区刷新周期。                                                                  |
+| buffer-flush.buffer-size | 否    | 1000 | Integer  | 缓冲区大小。                                                                    |
+| max-retries              | 否    | 3    | Integer  | 失败重试次数。                                                                   |
 
 ## 参考信息
 

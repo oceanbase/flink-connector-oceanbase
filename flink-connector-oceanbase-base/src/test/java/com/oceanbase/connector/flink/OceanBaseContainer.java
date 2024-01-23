@@ -74,7 +74,7 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
 
     public String getJdbcUrl(String databaseName) {
         String additionalUrlParams = constructUrlParameters("?", "&");
-        return "jdbc:oceanbase://"
+        return "jdbc:mysql://"
                 + getHost()
                 + ":"
                 + getSqlPort()

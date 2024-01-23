@@ -16,22 +16,15 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import com.oceanbase.connector.flink.table.DataChangeRecord;
+import com.oceanbase.connector.flink.table.SchemaChangeRecord;
+
 import java.io.Serializable;
-import java.sql.SQLException;
+import java.util.List;
 
-public interface StatementExecutor<T> extends AutoCloseable, Serializable {
+public interface RecordFlusher extends AutoCloseable, Serializable {
 
-    /**
-     * Adds a record to batch
-     *
-     * @param record the row data record
-     */
-    void addToBatch(T record);
+    void flush(SchemaChangeRecord record) throws Exception;
 
-    /**
-     * Submits a batch of records to OceanBase
-     *
-     * @throws SQLException if a database access error occurs
-     */
-    void executeBatch() throws Exception;
+    void flush(List<DataChangeRecord> records) throws Exception;
 }

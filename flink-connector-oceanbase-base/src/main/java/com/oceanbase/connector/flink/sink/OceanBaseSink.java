@@ -16,31 +16,41 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import com.oceanbase.connector.flink.ConnectorOptions;
+import com.oceanbase.connector.flink.table.DataChangeRecord;
+import com.oceanbase.connector.flink.table.RecordSerializationSchema;
+
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
-import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.function.SerializableFunction;
 
-public class OceanBaseSink implements Sink<RowData> {
+public class OceanBaseSink<T> implements Sink<T> {
 
-    private final OceanBaseWriterOptions writerOptions;
-    private final StatementExecutor<RowData> statementExecutor;
+    private static final long serialVersionUID = 1L;
 
-    private TypeSerializer<RowData> serializer;
+    private final ConnectorOptions options;
+    private final TypeSerializer<T> typeSerializer;
+    private final RecordSerializationSchema<T> recordSerializer;
+    private final SerializableFunction<DataChangeRecord, String> keyExtractor;
+    private final RecordFlusher recordFlusher;
 
     public OceanBaseSink(
-            OceanBaseWriterOptions writerOptions, StatementExecutor<RowData> statementExecutor) {
-        this.writerOptions = writerOptions;
-        this.statementExecutor = statementExecutor;
-    }
-
-    public void setSerializer(TypeSerializer<RowData> serializer) {
-        this.serializer = serializer;
+            ConnectorOptions options,
+            TypeSerializer<T> typeSerializer,
+            RecordSerializationSchema<T> recordSerializer,
+            SerializableFunction<DataChangeRecord, String> keyExtractor,
+            RecordFlusher recordFlusher) {
+        this.options = options;
+        this.typeSerializer = typeSerializer;
+        this.recordSerializer = recordSerializer;
+        this.keyExtractor = keyExtractor;
+        this.recordFlusher = recordFlusher;
     }
 
     @Override
-    public SinkWriter<RowData> createWriter(InitContext context) {
-        statementExecutor.setContext(context);
-        return new OceanBaseWriter<>(writerOptions, serializer, statementExecutor);
+    public SinkWriter<T> createWriter(InitContext context) {
+        return new OceanBaseWriter<>(
+                options, context, typeSerializer, recordSerializer, keyExtractor, recordFlusher);
     }
 }

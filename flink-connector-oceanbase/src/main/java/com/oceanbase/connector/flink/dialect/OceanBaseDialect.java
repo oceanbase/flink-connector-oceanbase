@@ -18,11 +18,12 @@ package com.oceanbase.connector.flink.dialect;
 
 import javax.annotation.Nonnull;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public interface OceanBaseDialect {
+public interface OceanBaseDialect extends Serializable {
 
     /**
      * Quotes the identifier
@@ -59,28 +60,6 @@ public interface OceanBaseDialect {
             @Nonnull List<String> uniqueKeyFields);
 
     /**
-     * Gets the exist statement
-     *
-     * @param schemaName schema name
-     * @param tableName table name
-     * @param uniqueKeyFields unique key field names list
-     * @return the statement string
-     */
-    default String getExistStatement(
-            @Nonnull String schemaName,
-            @Nonnull String tableName,
-            @Nonnull List<String> uniqueKeyFields) {
-        String conditionClause =
-                uniqueKeyFields.stream()
-                        .map(f -> String.format("%s = ?", quoteIdentifier(f)))
-                        .collect(Collectors.joining(" AND "));
-        return "SELECT 1 FROM "
-                + getFullTableName(schemaName, tableName)
-                + " WHERE "
-                + conditionClause;
-    }
-
-    /**
      * Gets the insert statement
      *
      * @param schemaName schema name
@@ -103,37 +82,6 @@ public interface OceanBaseDialect {
                 + " VALUES ("
                 + placeholders
                 + ")";
-    }
-
-    /**
-     * Gets the update statement
-     *
-     * @param schemaName schema name
-     * @param tableName table name
-     * @param fieldNames field names list
-     * @param uniqueKeyFields unique key field names list
-     * @return the statement string
-     */
-    default String getUpdateStatement(
-            @Nonnull String schemaName,
-            @Nonnull String tableName,
-            @Nonnull List<String> fieldNames,
-            @Nonnull List<String> uniqueKeyFields) {
-        String setClause =
-                fieldNames.stream()
-                        .filter(f -> !uniqueKeyFields.contains(f))
-                        .map(f -> String.format("%s = ?", quoteIdentifier(f)))
-                        .collect(Collectors.joining(", "));
-        String conditionClause =
-                uniqueKeyFields.stream()
-                        .map(f -> String.format("%s = ?", quoteIdentifier(f)))
-                        .collect(Collectors.joining(" AND "));
-        return "UPDATE "
-                + getFullTableName(schemaName, tableName)
-                + " SET "
-                + setClause
-                + " WHERE "
-                + conditionClause;
     }
 
     /**

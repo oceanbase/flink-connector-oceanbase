@@ -17,12 +17,13 @@
 package com.oceanbase.connector.flink.sink;
 
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionPool;
-import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OceanBaseTableSchema;
+import com.oceanbase.connector.flink.table.OceanBaseRowDataSerializationSchema;
+import com.oceanbase.connector.flink.table.TableInfo;
 
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
+
+import java.util.stream.Collectors;
 
 public class OceanBaseDynamicTableSink extends AbstractDynamicTableSink {
 
@@ -36,14 +37,30 @@ public class OceanBaseDynamicTableSink extends AbstractDynamicTableSink {
 
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
-        OceanBaseWriterOptions writerOptions = connectorOptions.getWriterOptions();
-        OceanBaseStatementOptions statementOptions = connectorOptions.getStatementOptions();
-        OceanBaseTableSchema tableSchema = new OceanBaseTableSchema(physicalSchema);
-        OceanBaseConnectionProvider connectionProvider =
-                new OceanBaseConnectionPool(connectorOptions.getConnectionOptions());
-        OceanBaseStatementExecutor statementExecutor =
-                new OceanBaseStatementExecutor(statementOptions, tableSchema, connectionProvider);
-        return wrapSinkProvider(new OceanBaseSink(writerOptions, statementExecutor));
+        return new SinkProvider(
+                typeSerializer ->
+                        new OceanBaseSink<>(
+                                connectorOptions,
+                                typeSerializer,
+                                new OceanBaseRowDataSerializationSchema(
+                                        new TableInfo(
+                                                connectorOptions.getSchemaName(),
+                                                connectorOptions.getTableName(),
+                                                physicalSchema)),
+                                record ->
+                                        ((TableInfo) record.getTable())
+                                                .getPrimaryKey().stream()
+                                                        .map(
+                                                                key -> {
+                                                                    Object value =
+                                                                            record.getFieldValue(
+                                                                                    key);
+                                                                    return value == null
+                                                                            ? "null"
+                                                                            : value.toString();
+                                                                })
+                                                        .collect(Collectors.joining("#")),
+                                new OceanBaseRecordFlusher(connectorOptions)));
     }
 
     @Override

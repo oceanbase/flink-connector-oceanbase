@@ -17,14 +17,11 @@
 package com.oceanbase.connector.flink.sink;
 
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
-import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionOptions;
-import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
-import com.oceanbase.connector.flink.connection.OBKVHBaseTableSchema;
+import com.oceanbase.connector.flink.table.HTableInfo;
+import com.oceanbase.connector.flink.table.OBKVHBaseRowDataSerializationSchema;
 
 import org.apache.flink.table.catalog.ResolvedSchema;
-import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.types.RowKind;
 
 public class OBKVHBaseDynamicTableSink extends AbstractDynamicTableSink {
 
@@ -38,26 +35,18 @@ public class OBKVHBaseDynamicTableSink extends AbstractDynamicTableSink {
 
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
-        OceanBaseWriterOptions writerOptions = connectorOptions.getWriterOptions();
-        OBKVHBaseConnectionOptions connectionOptions = connectorOptions.getConnectionOptions();
-        OBKVHBaseConnectionProvider connectionProvider =
-                new OBKVHBaseConnectionProvider(connectionOptions);
-        OBKVHBaseStatementOptions statementOptions = connectorOptions.getStatementOptions();
-        OBKVHBaseTableSchema tableSchema = new OBKVHBaseTableSchema(physicalSchema);
-        OBKVHBaseStatementExecutor statementExecutor =
-                new OBKVHBaseStatementExecutor(statementOptions, tableSchema, connectionProvider);
-        return wrapSinkProvider(new OceanBaseSink(writerOptions, statementExecutor));
-    }
-
-    @Override
-    public ChangelogMode getChangelogMode(ChangelogMode requestedMode) {
-        ChangelogMode.Builder builder = ChangelogMode.newBuilder();
-        for (RowKind kind : requestedMode.getContainedKinds()) {
-            if (kind != RowKind.UPDATE_BEFORE) {
-                builder.addContainedKind(kind);
-            }
-        }
-        return builder.build();
+        return new SinkProvider(
+                typeSerializer ->
+                        new OceanBaseSink<>(
+                                connectorOptions,
+                                typeSerializer,
+                                new OBKVHBaseRowDataSerializationSchema(
+                                        new HTableInfo(
+                                                connectorOptions.getSchemaName(),
+                                                connectorOptions.getTableName(),
+                                                physicalSchema)),
+                                null,
+                                new OBKVHBaseRecordFlusher(connectorOptions)));
     }
 
     @Override

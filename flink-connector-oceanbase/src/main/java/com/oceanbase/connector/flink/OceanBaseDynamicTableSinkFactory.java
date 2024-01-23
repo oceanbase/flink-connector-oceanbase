@@ -17,6 +17,7 @@
 package com.oceanbase.connector.flink;
 
 import com.oceanbase.connector.flink.sink.OceanBaseDynamicTableSink;
+import com.oceanbase.connector.flink.utils.OptionUtils;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Column;
@@ -26,6 +27,7 @@ import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,9 +48,10 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
                                 .collect(Collectors.toList()),
                         resolvedSchema.getWatermarkSpecs(),
                         resolvedSchema.getPrimaryKey().orElse(null));
-        OceanBaseConnectorOptions options =
-                new OceanBaseConnectorOptions(context.getCatalogTable().getOptions());
-        return new OceanBaseDynamicTableSink(physicalSchema, options);
+        Map<String, String> options = context.getCatalogTable().getOptions();
+        OptionUtils.printOptions(IDENTIFIER, options);
+        return new OceanBaseDynamicTableSink(
+                physicalSchema, new OceanBaseConnectorOptions(options));
     }
 
     @Override
@@ -60,30 +63,28 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OceanBaseConnectorOptions.URL);
-        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
-        options.add(OceanBaseConnectorOptions.TABLE_NAME);
         options.add(OceanBaseConnectorOptions.USERNAME);
         options.add(OceanBaseConnectorOptions.PASSWORD);
-        options.add(OceanBaseConnectorOptions.COMPATIBLE_MODE);
+        options.add(OceanBaseConnectorOptions.SCHEMA_NAME);
+        options.add(OceanBaseConnectorOptions.TABLE_NAME);
         return options;
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(OceanBaseConnectorOptions.CLUSTER_NAME);
-        options.add(OceanBaseConnectorOptions.TENANT_NAME);
-        options.add(OceanBaseConnectorOptions.CONNECTION_POOL_PROPERTIES);
-        options.add(OceanBaseConnectorOptions.UPSERT_MODE);
         options.add(OceanBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OceanBaseConnectorOptions.BUFFER_SIZE);
-        options.add(OceanBaseConnectorOptions.BUFFER_BATCH_SIZE);
         options.add(OceanBaseConnectorOptions.MAX_RETRIES);
+        options.add(OceanBaseConnectorOptions.COMPATIBLE_MODE);
+        options.add(OceanBaseConnectorOptions.DRIVER_CLASS_NAME);
+        options.add(OceanBaseConnectorOptions.CLUSTER_NAME);
+        options.add(OceanBaseConnectorOptions.TENANT_NAME);
+        options.add(OceanBaseConnectorOptions.DRUID_PROPERTIES);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_ENABLED);
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
         options.add(OceanBaseConnectorOptions.PARTITION_ENABLED);
-        options.add(OceanBaseConnectorOptions.PARTITION_NUMBER);
         return options;
     }
 }
