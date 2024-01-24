@@ -38,11 +38,10 @@ public class OceanBaseTablePartInfo {
                             tablePart.getPartColumns().stream(),
                             tablePart.getSubPartColumns().stream())
                     .forEach(
-                            obPartColumn -> {
-                                this.partColumnIndexMap.put(
-                                        obPartColumn.getColumnName(),
-                                        obPartColumn.getColumnIndex());
-                            });
+                            obPartColumn ->
+                                    this.partColumnIndexMap.put(
+                                            obPartColumn.getColumnName(),
+                                            obPartColumn.getColumnIndex()));
         }
     }
 

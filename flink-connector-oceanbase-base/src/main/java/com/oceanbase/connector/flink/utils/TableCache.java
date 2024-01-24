@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.table;
+package com.oceanbase.connector.flink.utils;
 
 import java.util.Collection;
 import java.util.Map;
