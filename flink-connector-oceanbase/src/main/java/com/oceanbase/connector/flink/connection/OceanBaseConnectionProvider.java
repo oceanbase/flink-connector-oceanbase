@@ -45,7 +45,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         MYSQL,
         ORACLE;
 
-        public static CompatibleMode fromString(@Nonnull String text) {
+        public static CompatibleMode parse(@Nonnull String text) {
             switch (text.trim().toUpperCase()) {
                 case "MYSQL":
                     return MYSQL;
@@ -57,7 +57,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         }
 
         public boolean isMySqlMode() {
-            return CompatibleMode.MYSQL.equals(this);
+            return this == MYSQL;
         }
     }
 
@@ -94,7 +94,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
 
     public OceanBaseConnectionProvider(OceanBaseConnectorOptions options) {
         this.options = options;
-        this.compatibleMode = CompatibleMode.fromString(options.getCompatibleMode());
+        this.compatibleMode = CompatibleMode.parse(options.getCompatibleMode());
         this.dialect =
                 compatibleMode.isMySqlMode()
                         ? new OceanBaseMySQLDialect()

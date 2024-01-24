@@ -27,7 +27,7 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
 
     @Override
     public String quoteIdentifier(@Nonnull String identifier) {
-        return identifier;
+        return "\"" + identifier + "\"";
     }
 
     @Override

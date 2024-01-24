@@ -16,6 +16,9 @@
 
 package com.oceanbase.connector.flink.table;
 
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.TimestampData;
@@ -31,16 +34,16 @@ import java.util.stream.IntStream;
 public class OceanBaseTestDataSerializationSchema
         extends AbstractRecordSerializationSchema<OceanBaseTestData> {
 
+    private final OceanBaseDialect dialect = new OceanBaseMySQLDialect();
+
     @Override
     public Record serialize(OceanBaseTestData data) {
+        TableId tableId =
+                new TableId(dialect::getFullTableName, data.getSchemaName(), data.getTableName());
         if (data.getSql() != null) {
-            return new SchemaChangeRecord(
-                    data.getSchemaName() + "." + data.getTableName(),
-                    data.getSql(),
-                    data.getSqlType());
+            return new SchemaChangeRecord(tableId, data.getSql(), data.getSqlType());
         }
-        TableInfo tableInfo =
-                new TableInfo(data.getSchemaName(), data.getTableName(), data.getResolvedSchema());
+        TableInfo tableInfo = new TableInfo(tableId, data.getResolvedSchema());
         OceanBaseRowDataSerializationSchema serializationSchema =
                 new OceanBaseRowDataSerializationSchema(tableInfo);
         return serializationSchema.serialize(data.getRowData());

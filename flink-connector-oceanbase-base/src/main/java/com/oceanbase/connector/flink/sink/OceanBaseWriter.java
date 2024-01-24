@@ -27,13 +27,13 @@ import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
-import org.apache.flink.util.function.SerializableFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class OceanBaseWriter<T> implements SinkWriter<T> {
 
@@ -50,13 +51,13 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
     private final SinkWriterMetricGroup metricGroup;
     private final TypeSerializer<T> typeSerializer;
     private final RecordSerializationSchema<T> recordSerializer;
-    private final SerializableFunction<DataChangeRecord, String> keyExtractor;
+    private final DataChangeRecord.KeyExtractor keyExtractor;
     private final RecordFlusher recordFlusher;
 
-    private final List<SchemaChangeRecord> schemaChangeRecords = new ArrayList<>(1);
-    private final Map<String, List<DataChangeRecord>> dataChangeRecordBuffer = new HashMap<>();
-    private final Map<String, Map<String, DataChangeRecord>> dataChangeRecordReducedBuffer =
-            new HashMap<>();
+    private final AtomicReference<Record> currentRecord = new AtomicReference<>();
+
+    private final Map<String, List<DataChangeRecord>> buffer = new HashMap<>();
+    private final Map<String, Map<Object, DataChangeRecord>> reducedBuffer = new HashMap<>();
 
     private final transient ScheduledExecutorService scheduler;
     private final transient ScheduledFuture<?> scheduledFuture;
@@ -70,7 +71,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
             Sink.InitContext initContext,
             TypeSerializer<T> typeSerializer,
             RecordSerializationSchema<T> recordSerializer,
-            SerializableFunction<DataChangeRecord, String> keyExtractor,
+            DataChangeRecord.KeyExtractor keyExtractor,
             RecordFlusher recordFlusher) {
         this.options = options;
         this.metricGroup = initContext.metricGroup();
@@ -79,24 +80,33 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
         this.keyExtractor = keyExtractor;
         this.recordFlusher = recordFlusher;
         this.scheduler =
-                new ScheduledThreadPoolExecutor(
-                        1, new ExecutorThreadFactory("OceanBaseWriter.scheduler"));
+                options.getSyncWrite()
+                        ? null
+                        : new ScheduledThreadPoolExecutor(
+                                1, new ExecutorThreadFactory("OceanBaseWriter.scheduler"));
         this.scheduledFuture =
-                this.scheduler.scheduleWithFixedDelay(
-                        () -> {
-                            if (!closed) {
-                                try {
-                                    synchronized (this) {
-                                        flush(false);
+                scheduler == null
+                        ? null
+                        : this.scheduler.scheduleWithFixedDelay(
+                                () -> {
+                                    if (!closed) {
+                                        try {
+                                            synchronized (this) {
+                                                flush(false);
+                                            }
+                                        } catch (Exception e) {
+                                            flushException = e;
+                                        }
                                     }
-                                } catch (Exception e) {
-                                    flushException = e;
-                                }
-                            }
-                        },
-                        options.getBufferFlushInterval(),
-                        options.getBufferFlushInterval(),
-                        TimeUnit.MILLISECONDS);
+                                },
+                                options.getBufferFlushInterval(),
+                                options.getBufferFlushInterval(),
+                                TimeUnit.MILLISECONDS);
+
+        if (!options.getSyncWrite() && keyExtractor == null) {
+            throw new IllegalArgumentException(
+                    "When 'sync-write' is not enabled, keyExtractor is required to construct the buffer key.");
+        }
     }
 
     @Override
@@ -106,45 +116,41 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
 
         T copy = copyIfNecessary(data);
         Record record = recordSerializer.serialize(copy);
-        addToBuffer(record);
-        if (record instanceof SchemaChangeRecord || bufferCount >= options.getBufferSize()) {
-            flush(false);
+        if (record == null) {
+            return;
         }
-    }
+        if (!(record instanceof SchemaChangeRecord) && !(record instanceof DataChangeRecord)) {
+            LOG.info("Discard unsupported record: {}", record);
+            return;
+        }
 
-    private void addToBuffer(Record record) {
-        if (record instanceof SchemaChangeRecord) {
-            synchronized (schemaChangeRecords) {
-                schemaChangeRecords.add((SchemaChangeRecord) record);
-                bufferCount++;
-                metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
+        if (options.getSyncWrite() || record instanceof SchemaChangeRecord) {
+            // redundant check, currentRecord should always be null here
+            while (!currentRecord.compareAndSet(null, record)) {
+                flush(false);
             }
-        } else if (record instanceof DataChangeRecord) {
+            metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
+            flush(false);
+        } else {
             DataChangeRecord dataChangeRecord = (DataChangeRecord) record;
-            String key = keyExtractor == null ? null : keyExtractor.apply(dataChangeRecord);
+            Object key = keyExtractor.extract(dataChangeRecord);
             if (key == null) {
-                synchronized (dataChangeRecordBuffer) {
-                    dataChangeRecordBuffer
-                            .computeIfAbsent(dataChangeRecord.getTableId(), k -> new ArrayList<>())
+                synchronized (buffer) {
+                    buffer.computeIfAbsent(record.getTableId().identifier(), k -> new ArrayList<>())
                             .add(dataChangeRecord);
-                    bufferCount++;
-                    metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
                 }
             } else {
-                synchronized (dataChangeRecordReducedBuffer) {
-                    dataChangeRecordReducedBuffer
-                            .computeIfAbsent(dataChangeRecord.getTableId(), k -> new HashMap<>())
+                synchronized (reducedBuffer) {
+                    reducedBuffer
+                            .computeIfAbsent(record.getTableId().identifier(), k -> new HashMap<>())
                             .put(key, dataChangeRecord);
-                    bufferCount++;
-                    metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
                 }
             }
-        } else {
-            throw new IllegalArgumentException(
-                    "Unsupported record, class: "
-                            + record.getClass().getCanonicalName()
-                            + ", data: "
-                            + record);
+            bufferCount++;
+            metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
+            if (bufferCount >= options.getBufferSize()) {
+                flush(false);
+            }
         }
     }
 
@@ -164,10 +170,10 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
 
         for (int i = 0; i <= options.getMaxRetries(); i++) {
             try {
-                if (!dataChangeRecordBuffer.isEmpty()) {
-                    synchronized (dataChangeRecordBuffer) {
-                        for (Map.Entry<String, List<DataChangeRecord>> entry :
-                                dataChangeRecordBuffer.entrySet()) {
+                // async write buffer
+                if (!buffer.isEmpty()) {
+                    synchronized (buffer) {
+                        for (Map.Entry<String, List<DataChangeRecord>> entry : buffer.entrySet()) {
                             List<DataChangeRecord> recordList = entry.getValue();
                             recordFlusher.flush(recordList);
                             metricGroup
@@ -175,36 +181,36 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                                     .getNumRecordsOutCounter()
                                     .inc(recordList.size());
                         }
-                        dataChangeRecordBuffer.clear();
+                        buffer.clear();
                     }
                 }
-                if (!dataChangeRecordReducedBuffer.isEmpty()) {
-                    synchronized (dataChangeRecordReducedBuffer) {
-                        for (Map.Entry<String, Map<String, DataChangeRecord>> entry :
-                                dataChangeRecordReducedBuffer.entrySet()) {
-                            Map<String, DataChangeRecord> recordMap = entry.getValue();
+                if (!reducedBuffer.isEmpty()) {
+                    synchronized (reducedBuffer) {
+                        for (Map.Entry<String, Map<Object, DataChangeRecord>> entry :
+                                reducedBuffer.entrySet()) {
+                            Map<Object, DataChangeRecord> recordMap = entry.getValue();
                             recordFlusher.flush(new ArrayList<>(recordMap.values()));
                             metricGroup
                                     .getIOMetricGroup()
                                     .getNumRecordsOutCounter()
                                     .inc(recordMap.size());
                         }
-                        dataChangeRecordReducedBuffer.clear();
-                    }
-                }
-                if (!schemaChangeRecords.isEmpty()) {
-                    synchronized (schemaChangeRecords) {
-                        for (SchemaChangeRecord record : schemaChangeRecords) {
-                            recordFlusher.flush(record);
-                        }
-                        metricGroup
-                                .getIOMetricGroup()
-                                .getNumRecordsOutCounter()
-                                .inc(schemaChangeRecords.size());
-                        schemaChangeRecords.clear();
+                        reducedBuffer.clear();
                     }
                 }
 
+                // sync write current record
+                Record record = currentRecord.get();
+                if (record == null) {
+                    return;
+                }
+                if (record instanceof SchemaChangeRecord) {
+                    recordFlusher.flush((SchemaChangeRecord) record);
+                } else {
+                    recordFlusher.flush(Collections.singletonList((DataChangeRecord) record));
+                }
+                metricGroup.getIOMetricGroup().getNumRecordsOutCounter().inc();
+                currentRecord.compareAndSet(record, null);
                 bufferCount = 0;
                 break;
             } catch (Exception e) {

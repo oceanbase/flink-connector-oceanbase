@@ -21,6 +21,9 @@ import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,24 +34,16 @@ public class TableInfo implements Table {
 
     private static final long serialVersionUID = 1L;
 
-    private final String schemaName;
-    private final String tableName;
+    private final TableId tableId;
     private final List<String> primaryKey;
     private final List<String> fieldNames;
     private final Map<String, Integer> fieldIndexMap;
     private final List<LogicalType> dataTypes;
 
-    public TableInfo(String schemaName, String tableName, ResolvedSchema resolvedSchema) {
+    public TableInfo(TableId tableId, ResolvedSchema resolvedSchema) {
         this(
-                schemaName,
-                tableName,
-                resolvedSchema
-                        .getPrimaryKey()
-                        .map(UniqueConstraint::getColumns)
-                        .orElseThrow(
-                                () ->
-                                        new UnsupportedOperationException(
-                                                "Table without PK is not supported.")),
+                tableId,
+                resolvedSchema.getPrimaryKey().map(UniqueConstraint::getColumns).orElse(null),
                 resolvedSchema.getColumnNames(),
                 resolvedSchema.getColumnDataTypes().stream()
                         .map(DataType::getLogicalType)
@@ -56,13 +51,11 @@ public class TableInfo implements Table {
     }
 
     public TableInfo(
-            String schemaName,
-            String tableName,
-            List<String> primaryKey,
-            List<String> fieldNames,
-            List<LogicalType> dataTypes) {
-        this.schemaName = schemaName;
-        this.tableName = tableName;
+            @Nonnull TableId tableId,
+            @Nullable List<String> primaryKey,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<LogicalType> dataTypes) {
+        this.tableId = tableId;
         this.primaryKey = primaryKey;
         this.fieldNames = fieldNames;
         this.dataTypes = dataTypes;
@@ -73,25 +66,18 @@ public class TableInfo implements Table {
     }
 
     @Override
-    public String getTableId() {
-        return schemaName + "." + tableName;
+    public TableId getTableId() {
+        return tableId;
+    }
+
+    @Override
+    public List<String> getKey() {
+        return primaryKey;
     }
 
     @Override
     public Integer getFieldIndex(String fieldName) {
         return fieldIndexMap.get(fieldName);
-    }
-
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public List<String> getPrimaryKey() {
-        return primaryKey;
     }
 
     public List<String> getFieldNames() {
@@ -111,8 +97,7 @@ public class TableInfo implements Table {
             return false;
         }
         TableInfo that = (TableInfo) o;
-        return Objects.equals(this.schemaName, that.schemaName)
-                && Objects.equals(this.tableName, that.tableName)
+        return Objects.equals(this.tableId, that.tableId)
                 && Objects.equals(this.primaryKey, that.primaryKey)
                 && Objects.equals(this.fieldNames, that.fieldNames)
                 && Objects.equals(this.fieldIndexMap, that.fieldIndexMap)

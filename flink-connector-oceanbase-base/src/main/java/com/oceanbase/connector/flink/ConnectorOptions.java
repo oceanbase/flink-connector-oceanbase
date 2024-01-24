@@ -57,6 +57,12 @@ public abstract class ConnectorOptions implements Serializable {
                     .noDefaultValue()
                     .withDescription("The table name.");
 
+    public static final ConfigOption<Boolean> SYNC_WRITE =
+            ConfigOptions.key("sync-write")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether to write synchronously.");
+
     public static final ConfigOption<Duration> BUFFER_FLUSH_INTERVAL =
             ConfigOptions.key("buffer-flush.interval")
                     .durationType()
@@ -101,6 +107,10 @@ public abstract class ConnectorOptions implements Serializable {
 
     public String getTableName() {
         return allConfig.get(TABLE_NAME);
+    }
+
+    public boolean getSyncWrite() {
+        return allConfig.get(SYNC_WRITE);
     }
 
     public long getBufferFlushInterval() {

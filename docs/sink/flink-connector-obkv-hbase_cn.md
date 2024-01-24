@@ -152,19 +152,20 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 
 ## 配置项
 
-|           参数名            | 是否必需 | 默认值  |    类型    |                                    描述                                     |
-|--------------------------|------|------|----------|---------------------------------------------------------------------------|
-| url                      | 是    |      | String   | 集群的 config url，可以通过 <code>SHOW PARAMETERS LIKE 'obconfig_url'</code> 查询。  |
-| schema-name              | 是    |      | String   | OceanBase 的 db 名。                                                         |
-| table-name               | 是    |      | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。 |
-| username                 | 是    |      | String   | 非 sys 租户的用户名。                                                             |
-| password                 | 是    |      | String   | 非 sys 租户的密码。                                                              |
-| sys.username             | 是    |      | String   | sys 租户的用户名。                                                               |
-| sys.password             | 是    |      | String   | sys 租户用户的密码。                                                              |
-| hbase.properties         | 否    |      | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                 |
-| buffer-flush.interval    | 否    | 1s   | Duration | 缓冲区刷新周期。                                                                  |
-| buffer-flush.buffer-size | 否    | 1000 | Integer  | 缓冲区大小。                                                                    |
-| max-retries              | 否    | 3    | Integer  | 失败重试次数。                                                                   |
+|           参数名            | 是否必需 |  默认值  |    类型    |                                    描述                                     |
+|--------------------------|------|-------|----------|---------------------------------------------------------------------------|
+| url                      | 是    |       | String   | 集群的 config url，可以通过 <code>SHOW PARAMETERS LIKE 'obconfig_url'</code> 查询。  |
+| schema-name              | 是    |       | String   | OceanBase 的 db 名。                                                         |
+| table-name               | 是    |       | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。 |
+| username                 | 是    |       | String   | 非 sys 租户的用户名。                                                             |
+| password                 | 是    |       | String   | 非 sys 租户的密码。                                                              |
+| sys.username             | 是    |       | String   | sys 租户的用户名。                                                               |
+| sys.password             | 是    |       | String   | sys 租户用户的密码。                                                              |
+| hbase.properties         | 否    |       | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                 |
+| sync-write               | 否    | false | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                    |
+| buffer-flush.interval    | 否    | 1s    | Duration | 缓冲区刷新周期。                                                                  |
+| buffer-flush.buffer-size | 否    | 1000  | Integer  | 缓冲区大小。                                                                    |
+| max-retries              | 否    | 3     | Integer  | 失败重试次数。                                                                   |
 
 ## 参考信息
 

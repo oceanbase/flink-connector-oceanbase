@@ -16,6 +16,9 @@
 
 package com.oceanbase.connector.flink.table;
 
+import java.io.Serializable;
+import java.util.Optional;
+
 public class DataChangeRecord implements Record {
 
     private static final long serialVersionUID = 1L;
@@ -25,18 +28,35 @@ public class DataChangeRecord implements Record {
         DELETE,
     }
 
+    public interface KeyExtractor extends Serializable {
+
+        Object extract(DataChangeRecord record);
+
+        static KeyExtractor simple() {
+            return record ->
+                    Optional.ofNullable(record.getTable().getKey())
+                            .map(
+                                    keys ->
+                                            new DataChangeRecordData(
+                                                    keys.stream()
+                                                            .map(record::getFieldValue)
+                                                            .toArray()))
+                            .orElse(null);
+        }
+    }
+
     private final Table table;
     private final Type type;
-    private final Object[] values;
+    private final DataChangeRecordData data;
 
     public DataChangeRecord(Table table, Type type, Object[] values) {
         this.table = table;
         this.type = type;
-        this.values = values;
+        this.data = new DataChangeRecordData(values);
     }
 
     @Override
-    public String getTableId() {
+    public TableId getTableId() {
         return table.getTableId();
     }
 
@@ -53,6 +73,6 @@ public class DataChangeRecord implements Record {
     }
 
     public Object getFieldValue(String fieldName) {
-        return values[table.getFieldIndex(fieldName)];
+        return data.getValue(table.getFieldIndex(fieldName));
     }
 }

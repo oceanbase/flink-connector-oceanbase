@@ -73,6 +73,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(OceanBaseConnectorOptions.SYNC_WRITE);
         options.add(OceanBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OceanBaseConnectorOptions.BUFFER_SIZE);
         options.add(OceanBaseConnectorOptions.MAX_RETRIES);

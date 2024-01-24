@@ -23,7 +23,6 @@ import com.oceanbase.connector.flink.table.RecordSerializationSchema;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
-import org.apache.flink.util.function.SerializableFunction;
 
 public class OceanBaseSink<T> implements Sink<T> {
 
@@ -32,14 +31,14 @@ public class OceanBaseSink<T> implements Sink<T> {
     private final ConnectorOptions options;
     private final TypeSerializer<T> typeSerializer;
     private final RecordSerializationSchema<T> recordSerializer;
-    private final SerializableFunction<DataChangeRecord, String> keyExtractor;
+    private final DataChangeRecord.KeyExtractor keyExtractor;
     private final RecordFlusher recordFlusher;
 
     public OceanBaseSink(
             ConnectorOptions options,
             TypeSerializer<T> typeSerializer,
             RecordSerializationSchema<T> recordSerializer,
-            SerializableFunction<DataChangeRecord, String> keyExtractor,
+            DataChangeRecord.KeyExtractor keyExtractor,
             RecordFlusher recordFlusher) {
         this.options = options;
         this.typeSerializer = typeSerializer;

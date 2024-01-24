@@ -22,6 +22,9 @@ import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
+import javax.annotation.Nonnull;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,9 +32,7 @@ import java.util.stream.IntStream;
 
 public class HTableInfo implements Table {
 
-    private final String databaseName;
-    private final String tableName;
-
+    private final TableId tableId;
     private final String rowKeyName;
     private final LogicalType rowKeyType;
     private final Map<String, Integer> fieldIndexMap;
@@ -39,10 +40,9 @@ public class HTableInfo implements Table {
     private final Map<String, String[]> columnNameMap;
     private final Map<String, LogicalType[]> columnTypeMap;
 
-    public HTableInfo(String databaseName, String tableName, ResolvedSchema resolvedSchema) {
+    public HTableInfo(TableId tableId, ResolvedSchema resolvedSchema) {
         this(
-                databaseName,
-                tableName,
+                tableId,
                 rowKeyColumn(resolvedSchema).getName(),
                 rowKeyColumn(resolvedSchema).getDataType().getLogicalType(),
                 columns(resolvedSchema).stream().map(Column::getName).collect(Collectors.toList()),
@@ -97,15 +97,13 @@ public class HTableInfo implements Table {
     }
 
     public HTableInfo(
-            String databaseName,
-            String tableName,
-            String rowKeyName,
-            LogicalType rowKeyType,
-            List<String> fieldNames,
-            Map<String, String[]> columnNameMap,
-            Map<String, LogicalType[]> columnTypeMap) {
-        this.databaseName = databaseName;
-        this.tableName = tableName;
+            @Nonnull TableId tableId,
+            @Nonnull String rowKeyName,
+            @Nonnull LogicalType rowKeyType,
+            @Nonnull List<String> fieldNames,
+            @Nonnull Map<String, String[]> columnNameMap,
+            @Nonnull Map<String, LogicalType[]> columnTypeMap) {
+        this.tableId = tableId;
         this.rowKeyName = rowKeyName;
         this.rowKeyType = rowKeyType;
         this.familyNames =
@@ -119,16 +117,13 @@ public class HTableInfo implements Table {
     }
 
     @Override
-    public String getTableId() {
-        return databaseName + "." + tableName;
+    public TableId getTableId() {
+        return tableId;
     }
 
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public String getTableName() {
-        return tableName;
+    @Override
+    public List<String> getKey() {
+        return Collections.singletonList(rowKeyName);
     }
 
     public String getRowKeyName() {

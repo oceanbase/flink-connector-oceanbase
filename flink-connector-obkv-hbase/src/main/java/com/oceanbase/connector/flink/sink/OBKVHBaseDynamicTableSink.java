@@ -17,8 +17,10 @@
 package com.oceanbase.connector.flink.sink;
 
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
+import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.HTableInfo;
 import com.oceanbase.connector.flink.table.OBKVHBaseRowDataSerializationSchema;
+import com.oceanbase.connector.flink.table.TableId;
 
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
@@ -42,10 +44,11 @@ public class OBKVHBaseDynamicTableSink extends AbstractDynamicTableSink {
                                 typeSerializer,
                                 new OBKVHBaseRowDataSerializationSchema(
                                         new HTableInfo(
-                                                connectorOptions.getSchemaName(),
-                                                connectorOptions.getTableName(),
+                                                new TableId(
+                                                        connectorOptions.getSchemaName(),
+                                                        connectorOptions.getTableName()),
                                                 physicalSchema)),
-                                null,
+                                DataChangeRecord.KeyExtractor.simple(),
                                 new OBKVHBaseRecordFlusher(connectorOptions)));
     }
 

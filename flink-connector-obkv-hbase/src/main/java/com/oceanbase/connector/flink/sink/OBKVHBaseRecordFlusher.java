@@ -36,10 +36,17 @@ import java.util.stream.Collectors;
 
 public class OBKVHBaseRecordFlusher implements RecordFlusher {
 
+    private final OBKVHBaseConnectorOptions options;
     private final OBKVHBaseConnectionProvider connectionProvider;
 
     public OBKVHBaseRecordFlusher(OBKVHBaseConnectorOptions options) {
-        this.connectionProvider = new OBKVHBaseConnectionProvider(options);
+        this(options, new OBKVHBaseConnectionProvider(options));
+    }
+
+    public OBKVHBaseRecordFlusher(
+            OBKVHBaseConnectorOptions options, OBKVHBaseConnectionProvider connectionProvider) {
+        this.options = options;
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
@@ -98,8 +105,7 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
         }
 
         flush(
-                connectionProvider.getHTableClient(
-                        tableInfo.getDatabaseName(), tableInfo.getTableName()),
+                connectionProvider.getHTableClient(tableInfo.getTableId()),
                 familyPutListMap,
                 familyDeleteListMap);
     }
