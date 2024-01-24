@@ -17,16 +17,20 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
-import com.oceanbase.connector.flink.table.TableCache;
+import com.oceanbase.connector.flink.utils.TableCache;
 
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTableInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
 public class OBKVHBaseConnectionProvider implements ConnectionProvider {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectionProvider.class);
 
     private static final long serialVersionUID = 1L;
 
@@ -63,10 +67,11 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
     }
 
     private Configuration getConfig(String databaseName) {
-        org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
-        conf.set(
-                OHConstants.HBASE_OCEANBASE_PARAM_URL,
-                String.format("%s&database=%s", options.getUrl(), databaseName));
+        String paramUrl = String.format("%s&database=%s", options.getUrl(), databaseName);
+        LOG.debug("Set paramURL for database {} to {}", databaseName, paramUrl);
+
+        Configuration conf = new Configuration();
+        conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, paramUrl);
         conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, options.getUsername());
         conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, options.getPassword());
         conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, options.getSysUsername());

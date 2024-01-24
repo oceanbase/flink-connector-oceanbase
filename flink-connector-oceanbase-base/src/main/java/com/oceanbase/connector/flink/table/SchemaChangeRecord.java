@@ -53,4 +53,18 @@ public class SchemaChangeRecord implements Record {
     public String getSql() {
         return sql;
     }
+
+    @Override
+    public String toString() {
+        return "SchemaChangeRecord{"
+                + "tableId='"
+                + tableId
+                + '\''
+                + ", sql='"
+                + sql
+                + '\''
+                + ", type="
+                + type
+                + '}';
+    }
 }

@@ -160,25 +160,25 @@ VALUES (1, 'Tom', 99),
 
 ## 配置项
 
-|           参数名            | 是否必需 |           默认值            |    类型    |                            描述                             |
-|--------------------------|------|--------------------------|----------|-----------------------------------------------------------|
-| url                      | 是    |                          | String   | 数据库的 JDBC url。                                            |
-| schema-name              | 是    |                          | String   | 连接的 schema 名或 db 名。                                       |
-| table-name               | 是    |                          | String   | 表名。                                                       |
-| username                 | 是    |                          | String   | 连接用户名。                                                    |
-| password                 | 是    |                          | String   | 连接密码。                                                     |
-| compatible-mode          | 否    | mysql                    | String   | 兼容模式，可以是 'mysql' 或 'oracle'。                              |
-| driver-class-name        | 否    | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。 |
-| cluster-name             | 否    |                          | String   | 集群名，'partition.enabled' 为 true 时为必填。                      |
-| tenant-name              | 否    |                          | String   | 租户名，'partition.enabled' 为 true 时为必填。                      |
-| druid-properties         | 否    |                          | String   | Druid 连接池属性，多个值用分号分隔。                                     |
-| buffer-flush.interval    | 否    | 1s                       | Duration | 缓冲区刷新周期。                                                  |
-| buffer-flush.buffer-size | 否    | 1000                     | Integer  | 缓冲区大小。                                                    |
-| max-retries              | 否    | 3                        | Integer  | 失败重试次数。                                                   |
-| memstore-check.enabled   | 否    | true                     | Boolean  | 是否开启内存检查。                                                 |
-| memstore-check.threshold | 否    | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                        |
-| memstore-check.interval  | 否    | 30s                      | Duration | 内存使用检查周期。                                                 |
-| partition.enabled        | 否    | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。                                      |
+|           参数名            | Table API 必需 | DataStream 必需 |           默认值            |    类型    |                            描述                             |
+|--------------------------|--------------|---------------|--------------------------|----------|-----------------------------------------------------------|
+| url                      | 是            | 是             |                          | String   | 数据库的 JDBC url。                                            |
+| username                 | 是            | 是             |                          | String   | 连接用户名。                                                    |
+| password                 | 是            | 是             |                          | String   | 连接密码。                                                     |
+| schema-name              | 是            | 不支持           |                          | String   | 连接的 schema 名或 db 名。                                       |
+| table-name               | 是            | 不支持           |                          | String   | 表名。                                                       |
+| compatible-mode          | 否            | 否             | mysql                    | String   | 兼容模式，可以是 'mysql' 或 'oracle'。                              |
+| driver-class-name        | 否            | 否             | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。 |
+| cluster-name             | 否            | 否             |                          | String   | 集群名，'partition.enabled' 为 true 时为必填。                      |
+| tenant-name              | 否            | 否             |                          | String   | 租户名，'partition.enabled' 为 true 时为必填。                      |
+| druid-properties         | 否            | 否             |                          | String   | Druid 连接池属性，多个值用分号分隔。                                     |
+| buffer-flush.interval    | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。                                                  |
+| buffer-flush.buffer-size | 否            | 否             | 1000                     | Integer  | 缓冲区大小。                                                    |
+| max-retries              | 否            | 否             | 3                        | Integer  | 失败重试次数。                                                   |
+| memstore-check.enabled   | 否            | 否             | true                     | Boolean  | 是否开启内存检查。                                                 |
+| memstore-check.threshold | 否            | 否             | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                        |
+| memstore-check.interval  | 否            | 否             | 30s                      | Duration | 内存使用检查周期。                                                 |
+| partition.enabled        | 否            | 否             | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。                                      |
 
 ## 参考信息
 

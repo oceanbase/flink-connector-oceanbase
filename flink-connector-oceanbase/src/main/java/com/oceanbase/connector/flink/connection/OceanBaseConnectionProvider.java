@@ -76,6 +76,11 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         public boolean isV4() {
             return StringUtils.isNoneBlank(text) && text.startsWith("4.");
         }
+
+        @Override
+        public String toString() {
+            return "Version{" + "text='" + text + '\'' + '}';
+        }
     }
 
     private final OceanBaseConnectorOptions options;
@@ -115,7 +120,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
                     druidDataSource.setDriverClassName(options.getDriverClassName());
                     Properties properties = options.getDruidProperties();
                     if (properties != null) {
-                        druidDataSource.configFromPropety(properties);
+                        druidDataSource.configFromPropeties(properties);
                     }
                     dataSource = druidDataSource;
                     inited = true;
@@ -132,7 +137,9 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
     public Version getVersion() {
         if (version == null) {
             try {
-                version = new Version(queryVersion());
+                String versionText = queryVersion();
+                LOG.info("Got OceanBase version number: {}", versionText);
+                version = new Version(versionText);
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to query version of OceanBase", e);
             }

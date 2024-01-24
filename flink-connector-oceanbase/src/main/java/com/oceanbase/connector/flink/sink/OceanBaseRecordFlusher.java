@@ -22,8 +22,8 @@ import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
-import com.oceanbase.connector.flink.table.TableCache;
 import com.oceanbase.connector.flink.table.TableInfo;
+import com.oceanbase.connector.flink.utils.TableCache;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.model.TableEntry;
@@ -80,6 +80,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         if (record.shouldRefreshSchema()) {
             getTablePartInfoCache().remove(record.getTableId());
         }
+        LOG.info("Flush SchemaChangeRecord successfully: {}", record);
     }
 
     @Override
@@ -149,6 +150,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                 connectionProvider.getVersion().isV4()
                         ? dialect.getMemStoreExistStatement(options.getMemStoreThreshold())
                         : dialect.getLegacyMemStoreExistStatement(options.getMemStoreThreshold());
+        LOG.debug("Check memstore with sql: {}", queryMemStoreSql);
         try (Connection connection = connectionProvider.getConnection();
                 Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
@@ -239,7 +241,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                         connectionProvider.isMySqlMode()
                                 ? ObServerMode.fromMySql(version.getText())
                                 : ObServerMode.fromOracle(version.getText()));
-
+        LOG.debug("Query table entry by tableEntryKey: {}", tableEntryKey);
         try (Connection connection = connectionProvider.getConnection()) {
             TableEntry tableEntry =
                     new TableEntryExtractor()
@@ -247,6 +249,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             if (tableEntry == null) {
                 throw new RuntimeException("Failed to get table entry with key: " + tableEntryKey);
             }
+            LOG.info("Query tableEntry by {}, got: {}", tableEntryKey, tableEntry);
             return new OceanBaseTablePartInfo(tableEntry, version.isV4());
         } catch (Exception e) {
             throw new RuntimeException("Failed to get table partition info", e);

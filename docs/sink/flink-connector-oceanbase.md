@@ -158,25 +158,25 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-|          Option          | Required |         Default          |   Type   |                                                             Description                                                             |
-|--------------------------|----------|--------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------|
-| url                      | Yes      |                          | String   | JDBC url.                                                                                                                           |
-| schema-name              | Yes      |                          | String   | The schema name or database name.                                                                                                   |
-| table-name               | Yes      |                          | String   | The table name.                                                                                                                     |
-| username                 | Yes      |                          | String   | The username.                                                                                                                       |
-| password                 | Yes      |                          | String   | The password.                                                                                                                       |
-| compatible-mode          | No       | mysql                    | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'.                                                                       |
-| driver-class-name        | No       | com.mysql.cj.jdbc.Driver | String   | The driver class name, use 'com.mysql.cj.jdbc.Driver' by default. If other value is set, you need to introduce the driver manually. |
-| cluster-name             | No       |                          | String   | The cluster name of OceanBase, required when 'partition.enabled' is 'true'.                                                         |
-| tenant-name              | No       |                          | String   | The tenant name of OceanBase, required when 'partition.enabled' is 'true'.                                                          |
-| druid-properties         | No       |                          | String   | Druid connection pool properties, multiple values are separated by semicolons.                                                      |
-| buffer-flush.interval    | No       | 1s                       | Duration | Buffer flush interval.                                                                                                              |
-| buffer-flush.buffer-size | No       | 1000                     | Integer  | Buffer size.                                                                                                                        |
-| max-retries              | No       | 3                        | Integer  | Max retry times on failure.                                                                                                         |
-| memstore-check.enabled   | No       | true                     | Boolean  | Whether enable memstore check.                                                                                                      |
-| memstore-check.threshold | No       | 0.9                      | Double   | Memstore usage threshold ratio relative to the limit value.                                                                         |
-| memstore-check.interval  | No       | 30s                      | Duration | Memstore check interval.                                                                                                            |
-| partition.enabled        | No       | false                    | Boolean  | Whether to enable partition calculation and flush records by partitions.                                                            |
+|          Option          | Required by Table API | Required by DataStream |         Default          |   Type   |                                                             Description                                                             |
+|--------------------------|-----------------------|------------------------|--------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------|
+| url                      | Yes                   | Yes                    |                          | String   | JDBC url.                                                                                                                           |
+| username                 | Yes                   | Yes                    |                          | String   | The username.                                                                                                                       |
+| password                 | Yes                   | Yes                    |                          | String   | The password.                                                                                                                       |
+| schema-name              | Yes                   | Not supported          |                          | String   | The schema name or database name.                                                                                                   |
+| table-name               | Yes                   | Not supported          |                          | String   | The table name.                                                                                                                     |
+| compatible-mode          | No                    | No                     | mysql                    | String   | The compatible mode of OceanBase, can be 'mysql' or 'oracle'.                                                                       |
+| driver-class-name        | No                    | No                     | com.mysql.cj.jdbc.Driver | String   | The driver class name, use 'com.mysql.cj.jdbc.Driver' by default. If other value is set, you need to introduce the driver manually. |
+| cluster-name             | No                    | No                     |                          | String   | The cluster name of OceanBase, required when 'partition.enabled' is 'true'.                                                         |
+| tenant-name              | No                    | No                     |                          | String   | The tenant name of OceanBase, required when 'partition.enabled' is 'true'.                                                          |
+| druid-properties         | No                    | No                     |                          | String   | Druid connection pool properties, multiple values are separated by semicolons.                                                      |
+| buffer-flush.interval    | No                    | No                     | 1s                       | Duration | Buffer flush interval.                                                                                                              |
+| buffer-flush.buffer-size | No                    | No                     | 1000                     | Integer  | Buffer size.                                                                                                                        |
+| max-retries              | No                    | No                     | 3                        | Integer  | Max retry times on failure.                                                                                                         |
+| memstore-check.enabled   | No                    | No                     | true                     | Boolean  | Whether enable memstore check.                                                                                                      |
+| memstore-check.threshold | No                    | No                     | 0.9                      | Double   | Memstore usage threshold ratio relative to the limit value.                                                                         |
+| memstore-check.interval  | No                    | No                     | 30s                      | Duration | Memstore check interval.                                                                                                            |
+| partition.enabled        | No                    | No                     | false                    | Boolean  | Whether to enable partition calculation and flush records by partitions.                                                            |
 
 ## References
 
