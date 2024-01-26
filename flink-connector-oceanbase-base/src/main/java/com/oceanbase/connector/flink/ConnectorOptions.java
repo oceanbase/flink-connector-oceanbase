@@ -68,7 +68,8 @@ public abstract class ConnectorOptions implements Serializable {
                     .durationType()
                     .defaultValue(Duration.ofSeconds(1))
                     .withDescription(
-                            "The flush interval, over this time, asynchronous threads will flush data. Default value is '1s'.");
+                            "The flush interval, over this time, asynchronous threads will flush data. Default value is '1s'. "
+                                    + "If it's set to zero value like '0', scheduled flushing will be disabled.");
 
     public static final ConfigOption<Integer> BUFFER_SIZE =
             ConfigOptions.key("buffer-flush.buffer-size")

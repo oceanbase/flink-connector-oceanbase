@@ -173,7 +173,7 @@ VALUES (1, 'Tom', 99),
 | tenant-name              | 否            | 否             |                          | String   | 租户名，'partition.enabled' 为 true 时为必填。                      |
 | druid-properties         | 否            | 否             |                          | String   | Druid 连接池属性，多个值用分号分隔。                                     |
 | sync-write               | 否            | 否             | false                    | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                    |
-| buffer-flush.interval    | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。                                                  |
+| buffer-flush.interval    | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                 |
 | buffer-flush.buffer-size | 否            | 否             | 1000                     | Integer  | 缓冲区大小。                                                    |
 | max-retries              | 否            | 否             | 3                        | Integer  | 失败重试次数。                                                   |
 | memstore-check.enabled   | 否            | 否             | true                     | Boolean  | 是否开启内存检查。                                                 |

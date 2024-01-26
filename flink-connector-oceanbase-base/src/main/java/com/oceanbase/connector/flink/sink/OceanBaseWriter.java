@@ -80,7 +80,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
         this.keyExtractor = keyExtractor;
         this.recordFlusher = recordFlusher;
         this.scheduler =
-                options.getSyncWrite()
+                (options.getSyncWrite() || options.getBufferFlushInterval() == 0)
                         ? null
                         : new ScheduledThreadPoolExecutor(
                                 1, new ExecutorThreadFactory("OceanBaseWriter.scheduler"));

@@ -163,7 +163,7 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 | sys.password             | 是    |       | String   | sys 租户用户的密码。                                                              |
 | hbase.properties         | 否    |       | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                 |
 | sync-write               | 否    | false | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                    |
-| buffer-flush.interval    | 否    | 1s    | Duration | 缓冲区刷新周期。                                                                  |
+| buffer-flush.interval    | 否    | 1s    | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                                 |
 | buffer-flush.buffer-size | 否    | 1000  | Integer  | 缓冲区大小。                                                                    |
 | max-retries              | 否    | 3     | Integer  | 失败重试次数。                                                                   |
 
