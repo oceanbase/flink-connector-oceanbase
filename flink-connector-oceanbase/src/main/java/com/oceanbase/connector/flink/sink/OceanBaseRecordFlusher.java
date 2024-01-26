@@ -100,6 +100,10 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         TableId tableId = tableInfo.getTableId();
 
         if (CollectionUtils.isEmpty(tableInfo.getKey())) {
+            if (batch.stream().anyMatch(data -> !data.isUpsert())) {
+                throw new IllegalArgumentException(
+                        "Table without PK must only contain insert records");
+            }
             flush(
                     dialect.getInsertIntoStatement(
                             tableId.getSchemaName(),
