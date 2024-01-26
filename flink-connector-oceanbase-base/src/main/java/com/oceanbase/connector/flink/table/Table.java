@@ -17,10 +17,13 @@
 package com.oceanbase.connector.flink.table;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface Table extends Serializable {
 
-    String getTableId();
+    TableId getTableId();
+
+    List<String> getKey();
 
     Integer getFieldIndex(String fieldName);
 }

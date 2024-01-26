@@ -75,6 +75,7 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(OBKVHBaseConnectorOptions.SYNC_WRITE);
         options.add(OBKVHBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OBKVHBaseConnectorOptions.BUFFER_SIZE);
         options.add(OBKVHBaseConnectorOptions.MAX_RETRIES);

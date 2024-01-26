@@ -19,8 +19,10 @@ package com.oceanbase.connector.flink;
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
 import com.oceanbase.connector.flink.sink.OBKVHBaseRecordFlusher;
 import com.oceanbase.connector.flink.sink.OceanBaseSink;
+import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.HTableInfo;
 import com.oceanbase.connector.flink.table.OBKVHBaseRowDataSerializationSchema;
+import com.oceanbase.connector.flink.table.TableId;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -87,7 +89,8 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
     public void before() throws Exception {
         OBKVHBaseConnectorOptions options = new OBKVHBaseConnectorOptions(getOptions());
         OBKVHBaseConnectionProvider connectionProvider = new OBKVHBaseConnectionProvider(options);
-        client = connectionProvider.getHTableClient(OB_SERVER.getDatabaseName(), getTestTable());
+        TableId tableId = new TableId(options.getSchemaName(), options.getTableName());
+        client = connectionProvider.getHTableClient(tableId);
     }
 
     @After
@@ -141,10 +144,11 @@ public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
                         null,
                         new OBKVHBaseRowDataSerializationSchema(
                                 new HTableInfo(
-                                        connectorOptions.getSchemaName(),
-                                        connectorOptions.getTableName(),
+                                        new TableId(
+                                                connectorOptions.getSchemaName(),
+                                                connectorOptions.getTableName()),
                                         physicalSchema)),
-                        null,
+                        DataChangeRecord.KeyExtractor.simple(),
                         new OBKVHBaseRecordFlusher(connectorOptions));
 
         List<RowData> dataSet =

@@ -22,6 +22,7 @@ import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
+import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
 import com.oceanbase.connector.flink.utils.TableCache;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
@@ -59,8 +60,13 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     private volatile long lastCheckMemStoreTime;
 
     public OceanBaseRecordFlusher(OceanBaseConnectorOptions options) {
+        this(options, new OceanBaseConnectionProvider(options));
+    }
+
+    public OceanBaseRecordFlusher(
+            OceanBaseConnectorOptions options, OceanBaseConnectionProvider connectionProvider) {
         this.options = options;
-        this.connectionProvider = new OceanBaseConnectionProvider(options);
+        this.connectionProvider = connectionProvider;
         this.dialect = connectionProvider.getDialect();
     }
 
@@ -78,7 +84,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             statement.execute(record.getSql());
         }
         if (record.shouldRefreshSchema()) {
-            getTablePartInfoCache().remove(record.getTableId());
+            getTablePartInfoCache().remove(record.getTableId().identifier());
         }
         LOG.info("Flush SchemaChangeRecord successfully: {}", record);
     }
@@ -91,6 +97,23 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         checkMemStore();
 
         TableInfo tableInfo = (TableInfo) batch.get(0).getTable();
+        TableId tableId = tableInfo.getTableId();
+
+        if (CollectionUtils.isEmpty(tableInfo.getKey())) {
+            if (batch.stream().anyMatch(data -> !data.isUpsert())) {
+                throw new IllegalArgumentException(
+                        "Table without PK must only contain insert records");
+            }
+            flush(
+                    dialect.getInsertIntoStatement(
+                            tableId.getSchemaName(),
+                            tableId.getTableName(),
+                            tableInfo.getFieldNames()),
+                    tableInfo.getFieldNames(),
+                    batch);
+            return;
+        }
+
         List<DataChangeRecord> upsertBatch = new ArrayList<>();
         List<DataChangeRecord> deleteBatch = new ArrayList<>();
         batch.forEach(
@@ -103,21 +126,19 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                 });
         if (!upsertBatch.isEmpty()) {
             flush(
-                    tableInfo,
                     dialect.getUpsertStatement(
-                            tableInfo.getSchemaName(),
-                            tableInfo.getTableName(),
+                            tableId.getSchemaName(),
+                            tableId.getTableName(),
                             tableInfo.getFieldNames(),
-                            tableInfo.getPrimaryKey()),
+                            tableInfo.getKey()),
+                    tableInfo.getFieldNames(),
                     upsertBatch);
         }
         if (!deleteBatch.isEmpty()) {
             flush(
-                    tableInfo,
                     dialect.getDeleteStatement(
-                            tableInfo.getSchemaName(),
-                            tableInfo.getTableName(),
-                            tableInfo.getPrimaryKey()),
+                            tableId.getSchemaName(), tableId.getTableName(), tableInfo.getKey()),
+                    tableInfo.getKey(),
                     deleteBatch);
         }
     }
@@ -158,7 +179,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         }
     }
 
-    private void flush(TableInfo tableInfo, String sql, List<DataChangeRecord> batch)
+    private void flush(String sql, List<String> statementFields, List<DataChangeRecord> batch)
             throws Exception {
         Map<Long, List<DataChangeRecord>> group = groupRecords(batch);
         if (group == null) {
@@ -168,9 +189,8 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             for (List<DataChangeRecord> groupBatch : group.values()) {
                 for (DataChangeRecord record : groupBatch) {
-                    for (int i = 0; i < tableInfo.getFieldNames().size(); i++) {
-                        statement.setObject(
-                                i + 1, record.getFieldValue(tableInfo.getFieldNames().get(i)));
+                    for (int i = 0; i < statementFields.size(); i++) {
+                        statement.setObject(i + 1, record.getFieldValue(statementFields.get(i)));
                     }
                     statement.addBatch();
                 }
@@ -193,7 +213,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
 
     private Long getPartId(DataChangeRecord record) {
         TableInfo tableInfo = (TableInfo) record.getTable();
-        OceanBaseTablePartInfo tablePartInfo = getTablePartInfo(tableInfo);
+        OceanBaseTablePartInfo tablePartInfo = getTablePartInfo(tableInfo.getTableId());
         if (tablePartInfo == null || MapUtils.isEmpty(tablePartInfo.getPartColumnIndexMap())) {
             return null;
         }
@@ -204,16 +224,14 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         return tablePartInfo.getPartIdCalculator().calculatePartId(obj);
     }
 
-    private OceanBaseTablePartInfo getTablePartInfo(TableInfo tableInfo) {
+    private OceanBaseTablePartInfo getTablePartInfo(TableId tableId) {
         if (!options.getPartitionEnabled()) {
             return null;
         }
         return getTablePartInfoCache()
                 .get(
-                        tableInfo.getTableId(),
-                        () ->
-                                queryTablePartInfo(
-                                        tableInfo.getSchemaName(), tableInfo.getTableName()));
+                        tableId.identifier(),
+                        () -> queryTablePartInfo(tableId.getSchemaName(), tableId.getTableName()));
     }
 
     private OceanBaseTablePartInfo queryTablePartInfo(String schemaName, String tableName) {

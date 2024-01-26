@@ -17,6 +17,7 @@
 package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
+import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.utils.TableCache;
 
 import com.alipay.oceanbase.hbase.OHTableClient;
@@ -49,15 +50,16 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
         return hTableCache;
     }
 
-    public HTableInterface getHTableClient(String databaseName, String tableName) {
-        String tableId = databaseName + "." + tableName;
+    public HTableInterface getHTableClient(TableId tableId) {
         return getHTableCache()
                 .get(
-                        tableId,
+                        tableId.identifier(),
                         () -> {
                             try {
                                 OHTableClient tableClient =
-                                        new OHTableClient(tableName, getConfig(databaseName));
+                                        new OHTableClient(
+                                                tableId.getTableName(),
+                                                getConfig(tableId.getSchemaName()));
                                 tableClient.init();
                                 return tableClient;
                             } catch (Exception e) {

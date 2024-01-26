@@ -19,5 +19,5 @@ package com.oceanbase.connector.flink.table;
 import java.io.Serializable;
 
 public interface Record extends Serializable {
-    String getTableId();
+    TableId getTableId();
 }

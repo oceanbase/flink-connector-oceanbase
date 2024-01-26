@@ -162,7 +162,8 @@ Once executed, the records should have been written to OceanBase.
 | sys.username             | Yes      |         | String   | The username of sys tenant.                                                                                  |
 | sys.password             | Yes      |         | String   | The password of sys tenant.                                                                                  |
 | hbase.properties         | No       |         | String   | Properties to configure 'obkv-hbase-client-java', multiple values are separated by semicolons.               |
-| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval.                                                                                       |
+| sync-write               | No       | false   | Boolean  | Whether to write data synchronously, will not use buffer if it's set to 'true'.                              |
+| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval. Set '0' to disable scheduled flushing.                                                |
 | buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size.                                                                                                 |
 | max-retries              | No       | 3       | Integer  | Max retry times on failure.                                                                                  |
 

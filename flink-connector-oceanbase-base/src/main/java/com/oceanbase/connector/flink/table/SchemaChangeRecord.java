@@ -27,18 +27,18 @@ public class SchemaChangeRecord implements Record {
         TRUNCATE
     }
 
-    private final String tableId;
+    private final TableId tableId;
     private final String sql;
     private final Type type;
 
-    public SchemaChangeRecord(String tableId, String sql, Type type) {
+    public SchemaChangeRecord(TableId tableId, String sql, Type type) {
         this.tableId = tableId;
         this.sql = sql;
         this.type = type;
     }
 
     @Override
-    public String getTableId() {
+    public TableId getTableId() {
         return tableId;
     }
 
