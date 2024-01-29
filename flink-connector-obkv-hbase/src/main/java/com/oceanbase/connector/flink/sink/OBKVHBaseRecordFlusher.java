@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 
 public class OBKVHBaseRecordFlusher implements RecordFlusher {
 
+    private static final long serialVersionUID = 1L;
+
     private final OBKVHBaseConnectorOptions options;
     private final OBKVHBaseConnectionProvider connectionProvider;
 
@@ -56,17 +58,17 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void flush(List<DataChangeRecord> batch) throws Exception {
-        if (batch == null || batch.isEmpty()) {
+    public void flush(List<DataChangeRecord> records) throws Exception {
+        if (records == null || records.isEmpty()) {
             return;
         }
 
-        HTableInfo tableInfo = (HTableInfo) batch.get(0).getTable();
+        HTableInfo tableInfo = (HTableInfo) records.get(0).getTable();
 
         Map<byte[], List<Put>> familyPutListMap = new HashMap<>();
         Map<byte[], List<Delete>> familyDeleteListMap = new HashMap<>();
 
-        for (DataChangeRecord record : batch) {
+        for (DataChangeRecord record : records) {
             byte[] rowKey = (byte[]) record.getFieldValue(tableInfo.getRowKeyName());
             for (String familyName : tableInfo.getFamilyNames()) {
                 Object familyValue = record.getFieldValue(familyName);

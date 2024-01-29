@@ -16,37 +16,45 @@
 
 package com.oceanbase.connector.flink.utils;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-public class TableCache<T> {
+public class TableCache<T> implements Serializable {
 
-    private final Map<String, T> cache;
+    private static final long serialVersionUID = 1L;
 
-    public TableCache() {
-        cache = new ConcurrentHashMap<>();
+    private transient Map<String, T> cache;
+
+    private Map<String, T> getCache() {
+        if (cache == null) {
+            cache = new ConcurrentHashMap<>();
+        }
+        return cache;
     }
 
     public Collection<T> getAll() {
-        return cache.values();
+        return getCache().values();
     }
 
     public T get(String tableId, Supplier<T> supplier) {
-        if (cache.containsKey(tableId)) {
-            return cache.get(tableId);
+        if (getCache().containsKey(tableId)) {
+            return getCache().get(tableId);
         }
         T t = supplier.get();
-        cache.put(tableId, t);
+        getCache().put(tableId, t);
         return t;
     }
 
     public void remove(String tableId) {
-        cache.remove(tableId);
+        getCache().remove(tableId);
     }
 
     public void clear() {
-        cache.clear();
+        if (cache != null) {
+            cache.clear();
+        }
     }
 }
