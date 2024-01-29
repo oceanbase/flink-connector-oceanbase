@@ -37,35 +37,27 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     private final OBKVHBaseConnectorOptions options;
 
-    private transient TableCache<HTableInterface> hTableCache;
+    private final TableCache<HTableInterface> tableCache;
 
     public OBKVHBaseConnectionProvider(OBKVHBaseConnectorOptions options) {
         this.options = options;
-    }
-
-    private TableCache<HTableInterface> getHTableCache() {
-        if (hTableCache == null) {
-            hTableCache = new TableCache<>();
-        }
-        return hTableCache;
+        this.tableCache = new TableCache<>();
     }
 
     public HTableInterface getHTableClient(TableId tableId) {
-        return getHTableCache()
-                .get(
-                        tableId.identifier(),
-                        () -> {
-                            try {
-                                OHTableClient tableClient =
-                                        new OHTableClient(
-                                                tableId.getTableName(),
-                                                getConfig(tableId.getSchemaName()));
-                                tableClient.init();
-                                return tableClient;
-                            } catch (Exception e) {
-                                throw new RuntimeException("Failed to initialize OHTableClient", e);
-                            }
-                        });
+        return tableCache.get(
+                tableId.identifier(),
+                () -> {
+                    try {
+                        OHTableClient tableClient =
+                                new OHTableClient(
+                                        tableId.getTableName(), getConfig(tableId.getSchemaName()));
+                        tableClient.init();
+                        return tableClient;
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to initialize OHTableClient", e);
+                    }
+                });
     }
 
     private Configuration getConfig(String databaseName) {
@@ -89,9 +81,9 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     @Override
     public void close() throws Exception {
-        for (HTableInterface table : getHTableCache().getAll()) {
+        for (HTableInterface table : tableCache.getAll()) {
             table.close();
         }
-        getHTableCache().clear();
+        tableCache.clear();
     }
 }

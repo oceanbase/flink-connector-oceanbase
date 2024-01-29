@@ -55,7 +55,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     private final OceanBaseConnectionProvider connectionProvider;
     private final OceanBaseDialect dialect;
 
-    private transient TableCache<OceanBaseTablePartInfo> tablePartInfoCache;
+    private final TableCache<OceanBaseTablePartInfo> tablePartInfoCache;
 
     private volatile long lastCheckMemStoreTime;
 
@@ -68,13 +68,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         this.options = options;
         this.connectionProvider = connectionProvider;
         this.dialect = connectionProvider.getDialect();
-    }
-
-    private TableCache<OceanBaseTablePartInfo> getTablePartInfoCache() {
-        if (tablePartInfoCache == null) {
-            tablePartInfoCache = new TableCache<>();
-        }
-        return tablePartInfoCache;
+        this.tablePartInfoCache = new TableCache<>();
     }
 
     @Override
@@ -84,23 +78,23 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             statement.execute(record.getSql());
         }
         if (record.shouldRefreshSchema()) {
-            getTablePartInfoCache().remove(record.getTableId().identifier());
+            tablePartInfoCache.remove(record.getTableId().identifier());
         }
         LOG.info("Flush SchemaChangeRecord successfully: {}", record);
     }
 
     @Override
-    public synchronized void flush(List<DataChangeRecord> batch) throws Exception {
-        if (batch == null || batch.isEmpty()) {
+    public synchronized void flush(List<DataChangeRecord> records) throws Exception {
+        if (records == null || records.isEmpty()) {
             return;
         }
         checkMemStore();
 
-        TableInfo tableInfo = (TableInfo) batch.get(0).getTable();
+        TableInfo tableInfo = (TableInfo) records.get(0).getTable();
         TableId tableId = tableInfo.getTableId();
 
         if (CollectionUtils.isEmpty(tableInfo.getKey())) {
-            if (batch.stream().anyMatch(data -> !data.isUpsert())) {
+            if (records.stream().anyMatch(data -> !data.isUpsert())) {
                 throw new IllegalArgumentException(
                         "Table without PK must only contain insert records");
             }
@@ -110,13 +104,13 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                             tableId.getTableName(),
                             tableInfo.getFieldNames()),
                     tableInfo.getFieldNames(),
-                    batch);
+                    records);
             return;
         }
 
         List<DataChangeRecord> upsertBatch = new ArrayList<>();
         List<DataChangeRecord> deleteBatch = new ArrayList<>();
-        batch.forEach(
+        records.forEach(
                 data -> {
                     if (data.isUpsert()) {
                         upsertBatch.add(data);
@@ -179,16 +173,16 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         }
     }
 
-    private void flush(String sql, List<String> statementFields, List<DataChangeRecord> batch)
+    private void flush(String sql, List<String> statementFields, List<DataChangeRecord> records)
             throws Exception {
-        Map<Long, List<DataChangeRecord>> group = groupRecords(batch);
+        Map<Long, List<DataChangeRecord>> group = groupRecords(records);
         if (group == null) {
             return;
         }
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (List<DataChangeRecord> groupBatch : group.values()) {
-                for (DataChangeRecord record : groupBatch) {
+            for (List<DataChangeRecord> groupRecords : group.values()) {
+                for (DataChangeRecord record : groupRecords) {
                     for (int i = 0; i < statementFields.size(); i++) {
                         statement.setObject(i + 1, record.getFieldValue(statementFields.get(i)));
                     }
@@ -228,10 +222,9 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         if (!options.getPartitionEnabled()) {
             return null;
         }
-        return getTablePartInfoCache()
-                .get(
-                        tableId.identifier(),
-                        () -> queryTablePartInfo(tableId.getSchemaName(), tableId.getTableName()));
+        return tablePartInfoCache.get(
+                tableId.identifier(),
+                () -> queryTablePartInfo(tableId.getSchemaName(), tableId.getTableName()));
     }
 
     private OceanBaseTablePartInfo queryTablePartInfo(String schemaName, String tableName) {

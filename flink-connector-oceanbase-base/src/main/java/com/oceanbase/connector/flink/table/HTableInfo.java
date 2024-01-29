@@ -32,6 +32,8 @@ import java.util.stream.IntStream;
 
 public class HTableInfo implements Table {
 
+    private static final long serialVersionUID = 1L;
+
     private final TableId tableId;
     private final String rowKeyName;
     private final LogicalType rowKeyType;

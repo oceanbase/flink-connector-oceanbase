@@ -26,6 +26,8 @@ import java.util.Properties;
 
 public class OBKVHBaseConnectorOptions extends ConnectorOptions {
 
+    private static final long serialVersionUID = 1L;
+
     public static final ConfigOption<String> SYS_USERNAME =
             ConfigOptions.key("sys.username")
                     .stringType()
@@ -43,8 +45,6 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Properties to configure 'obkv-hbase-client-java'.");
-
-    private static final long serialVersionUID = 1L;
 
     public OBKVHBaseConnectorOptions(Map<String, String> config) {
         super(config);
