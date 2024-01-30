@@ -25,12 +25,6 @@ under the License.
     <artifactId>flink-connector-oceanbase</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <druid.version>1.2.21</druid.version>
-        <mysql.client.version>8.0.28</mysql.client.version>
-        <ob.partition.caculator.version>1.8.0-RELEASE</ob.partition.caculator.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -41,17 +35,16 @@ under the License.
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>${druid.version}</version>
+            <version>1.2.21</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.client.version}</version>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-partition-calculator</artifactId>
-            <version>${ob.partition.caculator.version}</version>
+            <version>1.8.0-RELEASE</version>
         </dependency>
 
         <dependency>
