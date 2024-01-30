@@ -64,21 +64,23 @@ under the License.
                             <artifactSet>
                                 <includes>
                                     <include>com.oceanbase:*</include>
-                                    <include>com.alibaba:druid</include>
-                                    <include>mysql:mysql-connector-java</include>
-                                    <include>commons-collections:commons-collections</include>
-                                    <include>org.apache.commons:commons-lang3</include>
+                                    <include>com.alibaba:*</include>
+                                    <include>com.alipay.sofa:bolt</include>
+                                    <include>com.alipay.sofa.common:sofa-common-tools</include>
                                     <include>com.google.guava:guava</include>
+                                    <include>commons-lang:commons-lang</include>
+                                    <include>mysql:mysql-connector-java</include>
+                                    <include>io.netty:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.commons</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>com.google</pattern>
                                     <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
