@@ -21,6 +21,7 @@ import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.Record;
 import com.oceanbase.connector.flink.table.RecordSerializationSchema;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
+import com.oceanbase.connector.flink.table.TransactionRecord;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.Sink;
@@ -53,6 +54,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
     private final RecordSerializationSchema<T> recordSerializer;
     private final DataChangeRecord.KeyExtractor keyExtractor;
     private final RecordFlusher recordFlusher;
+    private final OceanBaseWriterEvent.Listener writerEventListener;
 
     private final AtomicReference<Record> currentRecord = new AtomicReference<>();
 
@@ -72,13 +74,15 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
             TypeSerializer<T> typeSerializer,
             RecordSerializationSchema<T> recordSerializer,
             DataChangeRecord.KeyExtractor keyExtractor,
-            RecordFlusher recordFlusher) {
+            RecordFlusher recordFlusher,
+            OceanBaseWriterEvent.Listener writerEventListener) {
         this.options = options;
         this.metricGroup = initContext.metricGroup();
         this.typeSerializer = typeSerializer;
         this.recordSerializer = recordSerializer;
         this.keyExtractor = keyExtractor;
         this.recordFlusher = recordFlusher;
+        this.writerEventListener = writerEventListener;
         this.scheduler =
                 (options.getSyncWrite() || options.getBufferFlushInterval() == 0)
                         ? null
@@ -107,6 +111,10 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
             throw new IllegalArgumentException(
                     "When 'sync-write' is not enabled, keyExtractor is required to construct the buffer key.");
         }
+
+        if (writerEventListener != null) {
+            writerEventListener.apply(OceanBaseWriterEvent.INITIALIZED);
+        }
     }
 
     @Override
@@ -119,19 +127,15 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
         if (record == null) {
             return;
         }
-        if (!(record instanceof SchemaChangeRecord) && !(record instanceof DataChangeRecord)) {
-            LOG.info("Discard unsupported record: {}", record);
-            return;
-        }
 
-        if (options.getSyncWrite() || record instanceof SchemaChangeRecord) {
+        if ((options.getSyncWrite() && record instanceof DataChangeRecord)
+                || (record instanceof SchemaChangeRecord || record instanceof TransactionRecord)) {
             // redundant check, currentRecord should always be null here
             while (!currentRecord.compareAndSet(null, record)) {
                 flush(false);
             }
-            metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
             flush(false);
-        } else {
+        } else if (record instanceof DataChangeRecord) {
             DataChangeRecord dataChangeRecord = (DataChangeRecord) record;
             Object key = keyExtractor.extract(dataChangeRecord);
             if (key == null) {
@@ -147,11 +151,13 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                 }
             }
             bufferCount++;
-            metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
             if (bufferCount >= options.getBufferSize()) {
                 flush(false);
             }
+        } else {
+            LOG.info("Discard unsupported record: {}", record);
         }
+        metricGroup.getIOMetricGroup().getNumRecordsInCounter().inc();
     }
 
     protected void checkFlushException() {
@@ -206,8 +212,12 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                 }
                 if (record instanceof SchemaChangeRecord) {
                     recordFlusher.flush((SchemaChangeRecord) record);
-                } else {
+                } else if (record instanceof TransactionRecord) {
+                    recordFlusher.flush((TransactionRecord) record);
+                } else if (record instanceof DataChangeRecord) {
                     recordFlusher.flush(Collections.singletonList((DataChangeRecord) record));
+                } else {
+                    LOG.info("Discard unsupported record: {}", record);
                 }
                 metricGroup.getIOMetricGroup().getNumRecordsOutCounter().inc();
                 currentRecord.compareAndSet(record, null);
@@ -240,6 +250,10 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                     LOG.warn("Writing records to OceanBase failed", e);
                     throw new RuntimeException("Writing records to OceanBase failed", e);
                 }
+            }
+
+            if (writerEventListener != null) {
+                writerEventListener.apply(OceanBaseWriterEvent.CLOSING);
             }
 
             try {

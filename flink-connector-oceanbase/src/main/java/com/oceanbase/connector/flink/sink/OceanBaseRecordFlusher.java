@@ -19,27 +19,41 @@ package com.oceanbase.connector.flink.sink;
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.connection.OceanBaseTablePartInfo;
+import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
+import com.oceanbase.connector.flink.connection.OceanBaseVersion;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
+import com.oceanbase.connector.flink.table.TransactionRecord;
 import com.oceanbase.connector.flink.utils.TableCache;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 
+import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObj;
+import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObjType;
+import com.alipay.oceanbase.rpc.table.ObDirectLoadBucket;
+import com.alipay.oceanbase.rpc.table.ObTableDirectLoad;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +70,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     private final OceanBaseDialect dialect;
 
     private final TableCache<OceanBaseTablePartInfo> tablePartInfoCache;
+    private final TableCache<ObTableDirectLoad> directLoadCache;
 
     private volatile long lastCheckMemStoreTime;
 
@@ -69,10 +84,35 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         this.connectionProvider = connectionProvider;
         this.dialect = connectionProvider.getDialect();
         this.tablePartInfoCache = new TableCache<>();
+        this.directLoadCache = new TableCache<>();
     }
 
     @Override
-    public synchronized void flush(SchemaChangeRecord record) throws Exception {
+    public void flush(@Nonnull TransactionRecord record) throws Exception {
+        if (options.getDirectLoadEnabled()) {
+            switch (record.getType()) {
+                case BEGIN:
+                    getTableDirectLoad(record.getTableId()).begin();
+                    break;
+                case COMMIT:
+                    getTableDirectLoad(record.getTableId()).commit();
+                    break;
+                case ROLLBACK:
+                    getTableDirectLoad(record.getTableId()).abort();
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                            "Unsupported transaction record type: " + record.getType());
+            }
+        }
+    }
+
+    @Override
+    public synchronized void flush(@Nonnull SchemaChangeRecord record) throws Exception {
+        if (options.getDirectLoadEnabled()) {
+            throw new UnsupportedOperationException();
+        }
+
         try (Connection connection = connectionProvider.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.execute(record.getSql());
@@ -93,21 +133,6 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         TableInfo tableInfo = (TableInfo) records.get(0).getTable();
         TableId tableId = tableInfo.getTableId();
 
-        if (CollectionUtils.isEmpty(tableInfo.getKey())) {
-            if (records.stream().anyMatch(data -> !data.isUpsert())) {
-                throw new IllegalArgumentException(
-                        "Table without PK must only contain insert records");
-            }
-            flush(
-                    dialect.getInsertIntoStatement(
-                            tableId.getSchemaName(),
-                            tableId.getTableName(),
-                            tableInfo.getFieldNames()),
-                    tableInfo.getFieldNames(),
-                    records);
-            return;
-        }
-
         List<DataChangeRecord> upsertBatch = new ArrayList<>();
         List<DataChangeRecord> deleteBatch = new ArrayList<>();
         records.forEach(
@@ -119,16 +144,37 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                     }
                 });
         if (!upsertBatch.isEmpty()) {
-            flush(
-                    dialect.getUpsertStatement(
-                            tableId.getSchemaName(),
-                            tableId.getTableName(),
-                            tableInfo.getFieldNames(),
-                            tableInfo.getKey()),
-                    tableInfo.getFieldNames(),
-                    upsertBatch);
+            if (options.getDirectLoadEnabled()) {
+                directLoad(tableId, tableInfo.getFieldNames(), upsertBatch);
+            } else if (CollectionUtils.isEmpty(tableInfo.getKey())) {
+                flush(
+                        dialect.getInsertIntoStatement(
+                                tableId.getSchemaName(),
+                                tableId.getTableName(),
+                                tableInfo.getFieldNames()),
+                        tableInfo.getFieldNames(),
+                        upsertBatch);
+            } else {
+                flush(
+                        dialect.getUpsertStatement(
+                                tableId.getSchemaName(),
+                                tableId.getTableName(),
+                                tableInfo.getFieldNames(),
+                                tableInfo.getKey()),
+                        tableInfo.getFieldNames(),
+                        upsertBatch);
+            }
         }
         if (!deleteBatch.isEmpty()) {
+            if (CollectionUtils.isEmpty(tableInfo.getKey())) {
+                throw new RuntimeException(
+                        "There should be no delete records when the table does not contain PK");
+            }
+            if (options.getDirectLoadEnabled()) {
+                throw new RuntimeException(
+                        "There should be no delete records when direct load is enabled");
+            }
+
             flush(
                     dialect.getDeleteStatement(
                             tableId.getSchemaName(), tableId.getTableName(), tableInfo.getKey()),
@@ -171,6 +217,41 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
             return resultSet.next();
         }
+    }
+
+    private void directLoad(TableId tableId, List<String> fields, List<DataChangeRecord> records)
+            throws Exception {
+        ObDirectLoadBucket bucket = new ObDirectLoadBucket();
+        for (DataChangeRecord record : records) {
+            bucket.addRow(
+                    fields.stream()
+                            .map(f -> toObObj(record.getFieldValue(f)))
+                            .toArray(ObObj[]::new));
+        }
+        getTableDirectLoad(tableId).insert(bucket);
+    }
+
+    private ObTableDirectLoad getTableDirectLoad(TableId tableId) {
+        return directLoadCache.get(
+                tableId.identifier(), () -> connectionProvider.getDirectLoad(tableId));
+    }
+
+    private ObObj toObObj(Object value) {
+        Object obObjValue = toObObjValue(value);
+        return new ObObj(ObObjType.valueOfType(obObjValue).getDefaultObjMeta(), obObjValue);
+    }
+
+    private Object toObObjValue(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Time) {
+            return new Timestamp(((Time) obj).getTime());
+        }
+        if (obj instanceof BigDecimal || obj instanceof BigInteger) {
+            return obj.toString();
+        }
+        return obj;
     }
 
     private void flush(String sql, List<String> statementFields, List<DataChangeRecord> records)
@@ -219,7 +300,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     }
 
     private OceanBaseTablePartInfo getTablePartInfo(TableId tableId) {
-        if (!options.getPartitionEnabled()) {
+        if (options.getSyncWrite() || !options.getPartitionEnabled()) {
             return null;
         }
         return tablePartInfoCache.get(
@@ -233,25 +314,26 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
          - non-sys tenant username and password for 4.x and later versions
          - sys tenant username and password for 3.x and early versions
         */
-        OceanBaseConnectionProvider.Version version = connectionProvider.getVersion();
-        if ((version.isV4() && "sys".equalsIgnoreCase(options.getTenantName()))
-                || (!version.isV4() && !"sys".equalsIgnoreCase(options.getTenantName()))) {
+        OceanBaseVersion version = connectionProvider.getVersion();
+        OceanBaseUserInfo userInfo = connectionProvider.getUserInfo();
+        if ((version.isV4() && "sys".equalsIgnoreCase(userInfo.getTenant()))
+                || (!version.isV4() && !"sys".equalsIgnoreCase(userInfo.getTenant()))) {
             LOG.warn(
                     "Can't query table entry on OceanBase version {} with account of tenant {}.",
-                    version.getText(),
-                    options.getTenantName());
+                    version.getVersion(),
+                    userInfo.getTenant());
             return null;
         }
 
         TableEntryKey tableEntryKey =
                 new TableEntryKey(
-                        options.getClusterName(),
-                        options.getTenantName(),
+                        userInfo.getCluster(),
+                        userInfo.getTenant(),
                         schemaName,
                         tableName,
-                        connectionProvider.isMySqlMode()
-                                ? ObServerMode.fromMySql(version.getText())
-                                : ObServerMode.fromOracle(version.getText()));
+                        dialect instanceof OceanBaseMySQLDialect
+                                ? ObServerMode.fromMySql(version.getVersion())
+                                : ObServerMode.fromOracle(version.getVersion()));
         LOG.debug("Query table entry by tableEntryKey: {}", tableEntryKey);
         try (Connection connection = connectionProvider.getConnection()) {
             TableEntry tableEntry =
@@ -272,6 +354,12 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         connectionProvider.close();
         if (tablePartInfoCache != null) {
             tablePartInfoCache.clear();
+        }
+        if (directLoadCache != null) {
+            for (ObTableDirectLoad directLoad : directLoadCache.getAll()) {
+                directLoad.getTable().close();
+            }
+            directLoadCache.clear();
         }
     }
 }

@@ -77,15 +77,20 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OceanBaseConnectorOptions.BUFFER_SIZE);
         options.add(OceanBaseConnectorOptions.MAX_RETRIES);
-        options.add(OceanBaseConnectorOptions.COMPATIBLE_MODE);
         options.add(OceanBaseConnectorOptions.DRIVER_CLASS_NAME);
-        options.add(OceanBaseConnectorOptions.CLUSTER_NAME);
-        options.add(OceanBaseConnectorOptions.TENANT_NAME);
         options.add(OceanBaseConnectorOptions.DRUID_PROPERTIES);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_ENABLED);
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
         options.add(OceanBaseConnectorOptions.PARTITION_ENABLED);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_ENABLED);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_HOST);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_PORT);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_PARALLEL);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_MAX_ERROR_ROWS);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_DUP_ACTION);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_TIMEOUT);
+        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_HEARTBEAT_TIMEOUT);
         return options;
     }
 }

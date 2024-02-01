@@ -22,6 +22,7 @@ import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.OceanBaseRowDataSerializationSchema;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
+import com.oceanbase.connector.flink.table.TransactionRecord;
 
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
@@ -40,21 +41,41 @@ public class OceanBaseDynamicTableSink extends AbstractDynamicTableSink {
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
         OceanBaseConnectionProvider connectionProvider =
                 new OceanBaseConnectionProvider(connectorOptions);
+        TableId tableId =
+                new TableId(
+                        connectionProvider.getDialect()::getFullTableName,
+                        connectorOptions.getSchemaName(),
+                        connectorOptions.getTableName());
+        OceanBaseRecordFlusher recordFlusher =
+                new OceanBaseRecordFlusher(connectorOptions, connectionProvider);
         return new SinkProvider(
                 typeSerializer ->
                         new OceanBaseSink<>(
                                 connectorOptions,
                                 typeSerializer,
                                 new OceanBaseRowDataSerializationSchema(
-                                        new TableInfo(
-                                                new TableId(
-                                                        connectionProvider.getDialect()
-                                                                ::getFullTableName,
-                                                        connectorOptions.getSchemaName(),
-                                                        connectorOptions.getTableName()),
-                                                physicalSchema)),
+                                        new TableInfo(tableId, physicalSchema)),
                                 DataChangeRecord.KeyExtractor.simple(),
-                                new OceanBaseRecordFlusher(connectorOptions, connectionProvider)));
+                                recordFlusher,
+                                getWriterEventListener(recordFlusher, tableId)));
+    }
+
+    protected OceanBaseWriterEvent.Listener getWriterEventListener(
+            RecordFlusher recordFlusher, TableId tableId) {
+        return (event) -> {
+            try {
+                if (event == OceanBaseWriterEvent.INITIALIZED) {
+                    recordFlusher.flush(
+                            new TransactionRecord(tableId, TransactionRecord.Type.BEGIN));
+                }
+                if (event == OceanBaseWriterEvent.CLOSING) {
+                    recordFlusher.flush(
+                            new TransactionRecord(tableId, TransactionRecord.Type.COMMIT));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to flush transaction record", e);
+            }
+        };
     }
 
     @Override

@@ -21,6 +21,8 @@ import com.oceanbase.connector.flink.utils.OptionUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import com.alipay.oceanbase.rpc.protocol.payload.impl.direct_load.ObLoadDupActionType;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
@@ -28,31 +30,12 @@ import java.util.Properties;
 public class OceanBaseConnectorOptions extends ConnectorOptions {
     private static final long serialVersionUID = 1L;
 
-    public static final ConfigOption<String> COMPATIBLE_MODE =
-            ConfigOptions.key("compatible-mode")
-                    .stringType()
-                    .defaultValue("mysql")
-                    .withDescription(
-                            "The compatible mode of OceanBase, can be 'mysql' or 'oracle', use 'mysql' by default.");
-
     public static final ConfigOption<String> DRIVER_CLASS_NAME =
             ConfigOptions.key("driver-class-name")
                     .stringType()
                     .defaultValue("com.mysql.cj.jdbc.Driver")
                     .withDescription(
                             "JDBC driver class name, use 'com.mysql.cj.jdbc.Driver' by default.");
-
-    public static final ConfigOption<String> CLUSTER_NAME =
-            ConfigOptions.key("cluster-name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The cluster name.");
-
-    public static final ConfigOption<String> TENANT_NAME =
-            ConfigOptions.key("tenant-name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The tenant name.");
 
     public static final ConfigOption<String> DRUID_PROPERTIES =
             ConfigOptions.key("druid-properties")
@@ -87,47 +70,60 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
                     .withDescription(
                             "Whether to enable partition calculation and flush records by partitions. Default value is 'false'.");
 
+    public static final ConfigOption<Boolean> DIRECT_LOAD_ENABLED =
+            ConfigOptions.key("direct-load.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether to enable direct load.");
+
+    public static final ConfigOption<String> DIRECT_LOAD_HOST =
+            ConfigOptions.key("direct-load.host")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Hostname used in direct load.");
+
+    public static final ConfigOption<Integer> DIRECT_LOAD_PORT =
+            ConfigOptions.key("direct-load.port")
+                    .intType()
+                    .defaultValue(2882)
+                    .withDescription("Rpc port number used in direct load.");
+
+    public static final ConfigOption<Integer> DIRECT_LOAD_PARALLEL =
+            ConfigOptions.key("direct-load.parallel")
+                    .intType()
+                    .defaultValue(8)
+                    .withDescription("Parallelism of direct load.");
+
+    public static final ConfigOption<Long> DIRECT_LOAD_MAX_ERROR_ROWS =
+            ConfigOptions.key("direct-load.max-error-rows")
+                    .longType()
+                    .defaultValue(0L)
+                    .withDescription("Maximum tolerable number of error rows.");
+
+    public static final ConfigOption<ObLoadDupActionType> DIRECT_LOAD_DUP_ACTION =
+            ConfigOptions.key("direct-load.dup-action")
+                    .enumType(ObLoadDupActionType.class)
+                    .defaultValue(ObLoadDupActionType.REPLACE)
+                    .withDescription("Action when there is duplicated record in direct load.");
+
+    public static final ConfigOption<Duration> DIRECT_LOAD_TIMEOUT =
+            ConfigOptions.key("direct-load.timeout")
+                    .durationType()
+                    .defaultValue(Duration.ofDays(7))
+                    .withDescription("Timeout for direct load task.");
+
+    public static final ConfigOption<Duration> DIRECT_LOAD_HEARTBEAT_TIMEOUT =
+            ConfigOptions.key("direct-load.heartbeat-timeout")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(30))
+                    .withDescription("Client heartbeat timeout in direct load task.");
+
     public OceanBaseConnectorOptions(Map<String, String> config) {
         super(config);
-        if (getUrl().contains("mysql")) {
-            if (!getDriverClassName().contains("mysql")) {
-                throw new IllegalArgumentException(
-                        "Wrong 'driver-class-name', should use mysql driver for url: " + getUrl());
-            }
-            if (!getCompatibleMode().equalsIgnoreCase("mysql")) {
-                throw new IllegalArgumentException(
-                        "Wrong 'compatible-mode', the mysql driver can only be used on 'mysql' mode.");
-            }
-        } else if (getUrl().contains("oceanbase")) {
-            if (!getDriverClassName().contains("oceanbase")) {
-                throw new IllegalArgumentException(
-                        "Wrong 'driver-class-name', should use oceanbase driver for url: "
-                                + getUrl());
-            }
-        }
-
-        if (getPartitionEnabled()) {
-            if (getClusterName() == null || getTenantName() == null) {
-                throw new IllegalArgumentException(
-                        "'cluster-name' and 'tenant-name' are required when 'partition.enabled' is true.");
-            }
-        }
-    }
-
-    public String getCompatibleMode() {
-        return allConfig.get(COMPATIBLE_MODE);
     }
 
     public String getDriverClassName() {
         return allConfig.get(DRIVER_CLASS_NAME);
-    }
-
-    public String getClusterName() {
-        return allConfig.get(CLUSTER_NAME);
-    }
-
-    public String getTenantName() {
-        return allConfig.get(TENANT_NAME);
     }
 
     public Properties getDruidProperties() {
@@ -148,5 +144,37 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
 
     public boolean getPartitionEnabled() {
         return allConfig.get(PARTITION_ENABLED);
+    }
+
+    public boolean getDirectLoadEnabled() {
+        return allConfig.get(DIRECT_LOAD_ENABLED);
+    }
+
+    public String getDirectLoadHost() {
+        return allConfig.get(DIRECT_LOAD_HOST);
+    }
+
+    public int getDirectLoadPort() {
+        return allConfig.get(DIRECT_LOAD_PORT);
+    }
+
+    public int getDirectLoadParallel() {
+        return allConfig.get(DIRECT_LOAD_PARALLEL);
+    }
+
+    public long getDirectLoadMaxErrorRows() {
+        return allConfig.get(DIRECT_LOAD_MAX_ERROR_ROWS);
+    }
+
+    public ObLoadDupActionType getDirectLoadDupAction() {
+        return allConfig.get(DIRECT_LOAD_DUP_ACTION);
+    }
+
+    public long getDirectLoadTimeout() {
+        return allConfig.get(DIRECT_LOAD_TIMEOUT).toNanos() / 1000;
+    }
+
+    public long getDirectLoadHeartbeatTimeout() {
+        return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toNanos() / 1000;
     }
 }

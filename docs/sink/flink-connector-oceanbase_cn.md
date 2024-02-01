@@ -160,26 +160,31 @@ VALUES (1, 'Tom', 99),
 
 ## 配置项
 
-|           参数名            | Table API 必需 | DataStream 必需 |           默认值            |    类型    |                            描述                             |
-|--------------------------|--------------|---------------|--------------------------|----------|-----------------------------------------------------------|
-| url                      | 是            | 是             |                          | String   | 数据库的 JDBC url。                                            |
-| username                 | 是            | 是             |                          | String   | 连接用户名。                                                    |
-| password                 | 是            | 是             |                          | String   | 连接密码。                                                     |
-| schema-name              | 是            | 不支持           |                          | String   | 连接的 schema 名或 db 名。                                       |
-| table-name               | 是            | 不支持           |                          | String   | 表名。                                                       |
-| compatible-mode          | 否            | 否             | mysql                    | String   | 兼容模式，可以是 'mysql' 或 'oracle'。                              |
-| driver-class-name        | 否            | 否             | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。 |
-| cluster-name             | 否            | 否             |                          | String   | 集群名，'partition.enabled' 为 true 时为必填。                      |
-| tenant-name              | 否            | 否             |                          | String   | 租户名，'partition.enabled' 为 true 时为必填。                      |
-| druid-properties         | 否            | 否             |                          | String   | Druid 连接池属性，多个值用分号分隔。                                     |
-| sync-write               | 否            | 否             | false                    | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                    |
-| buffer-flush.interval    | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                 |
-| buffer-flush.buffer-size | 否            | 否             | 1000                     | Integer  | 缓冲区大小。                                                    |
-| max-retries              | 否            | 否             | 3                        | Integer  | 失败重试次数。                                                   |
-| memstore-check.enabled   | 否            | 否             | true                     | Boolean  | 是否开启内存检查。                                                 |
-| memstore-check.threshold | 否            | 否             | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                        |
-| memstore-check.interval  | 否            | 否             | 30s                      | Duration | 内存使用检查周期。                                                 |
-| partition.enabled        | 否            | 否             | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。                                      |
+|              参数名              | Table API 必需 | DataStream 必需 |           默认值            |    类型    |                                    描述                                     |
+|-------------------------------|--------------|---------------|--------------------------|----------|---------------------------------------------------------------------------|
+| url                           | 是            | 是             |                          | String   | 数据库的 JDBC url。                                                            |
+| username                      | 是            | 是             |                          | String   | 连接用户名。                                                                    |
+| password                      | 是            | 是             |                          | String   | 连接密码。                                                                     |
+| schema-name                   | 是            | 不支持           |                          | String   | 连接的 schema 名或 db 名。                                                       |
+| table-name                    | 是            | 不支持           |                          | String   | 表名。                                                                       |
+| driver-class-name             | 否            | 否             | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。                 |
+| druid-properties              | 否            | 否             |                          | String   | Druid 连接池属性，多个值用分号分隔。                                                     |
+| sync-write                    | 否            | 否             | false                    | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                    |
+| buffer-flush.interval         | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                                 |
+| buffer-flush.buffer-size      | 否            | 否             | 1000                     | Integer  | 缓冲区大小。                                                                    |
+| max-retries                   | 否            | 否             | 3                        | Integer  | 失败重试次数。                                                                   |
+| memstore-check.enabled        | 否            | 否             | true                     | Boolean  | 是否开启内存检查。                                                                 |
+| memstore-check.threshold      | 否            | 否             | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                                        |
+| memstore-check.interval       | 否            | 否             | 30s                      | Duration | 内存使用检查周期。                                                                 |
+| partition.enabled             | 否            | 否             | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。仅当 'sync-write' 和 'direct-load.enabled' 都为 false 时生效。 |
+| direct-load.enabled           | 否            | 否             | false                    | Boolean  | 是否开启旁路导入。需要注意旁路导入需要将 sink 的并发度设置为1。                                       |
+| direct-load.host              | 否            | 否             |                          | String   | 旁路导入使用的域名或 IP 地址，开启旁路导入时为必填项。                                             |
+| direct-load.port              | 否            | 否             | 2882                     | Integer  | 旁路导入使用的 RPC 端口，开启旁路导入时为必填项。                                               |
+| direct-load.parallel          | 否            | 否             | 8                        | Integer  | 旁路导入任务的并发度。                                                               |
+| direct-load.max-error-rows    | 否            | 否             | 0                        | Long     | 旁路导入任务最大可容忍的错误行数目。                                                        |
+| direct-load.dup-action        | 否            | 否             | REPLACE                  | STRING   | 旁路导入任务中主键重复时的处理策略。可以是 'STOP_ON_DUP'（本次导入失败），'REPLACE'（替换）或 'IGNORE'（忽略）。  |
+| direct-load.timeout           | 否            | 否             | 7d                       | Duration | 旁路导入任务的超时时间。                                                              |
+| direct-load.heartbeat-timeout | 否            | 否             | 30s                      | Duration | 旁路导入任务客户端的心跳超时时间。                                                         |
 
 ## 参考信息
 

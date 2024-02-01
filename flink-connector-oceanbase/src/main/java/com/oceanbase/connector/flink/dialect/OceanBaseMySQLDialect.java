@@ -52,7 +52,7 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
     }
 
     @Override
-    public String getSelectOBVersionStatement() {
-        return "SELECT OB_VERSION()";
+    public String getQueryTenantNameStatement() {
+        return "SHOW TENANT";
     }
 }
