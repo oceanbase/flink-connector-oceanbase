@@ -20,19 +20,22 @@ import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.connector.flink.table.TableId;
+import com.oceanbase.connector.flink.utils.OceanBaseJdbcUtils;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.alipay.oceanbase.rpc.table.ObDirectLoadParameter;
+import com.alipay.oceanbase.rpc.table.ObTable;
+import com.alipay.oceanbase.rpc.table.ObTableDirectLoad;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
+import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 
 public class OceanBaseConnectionProvider implements ConnectionProvider {
@@ -41,75 +44,43 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
 
     private static final long serialVersionUID = 1L;
 
-    enum CompatibleMode {
-        MYSQL,
-        ORACLE;
-
-        public static CompatibleMode parse(@Nonnull String text) {
-            switch (text.trim().toUpperCase()) {
-                case "MYSQL":
-                    return MYSQL;
-                case "ORACLE":
-                    return ORACLE;
-                default:
-                    throw new UnsupportedOperationException("Unsupported compatible mode: " + text);
-            }
-        }
-
-        public boolean isMySqlMode() {
-            return this == MYSQL;
-        }
-    }
-
-    public static class Version {
-
-        private final String text;
-
-        Version(String text) {
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        public boolean isV4() {
-            return StringUtils.isNoneBlank(text) && text.startsWith("4.");
-        }
-
-        @Override
-        public String toString() {
-            return "Version{" + "text='" + text + '\'' + '}';
-        }
-    }
-
     private final OceanBaseConnectorOptions options;
-    private final CompatibleMode compatibleMode;
     private final OceanBaseDialect dialect;
 
-    private Version version;
+    private OceanBaseVersion version;
+    private OceanBaseUserInfo userInfo;
 
     private transient volatile boolean inited = false;
     private transient DataSource dataSource;
 
     public OceanBaseConnectionProvider(OceanBaseConnectorOptions options) {
         this.options = options;
-        this.compatibleMode = CompatibleMode.parse(options.getCompatibleMode());
         this.dialect =
-                compatibleMode.isMySqlMode()
+                "MySQL".equalsIgnoreCase(getCompatibleMode().trim())
                         ? new OceanBaseMySQLDialect()
                         : new OceanBaseOracleDialect();
     }
 
-    public boolean isMySqlMode() {
-        return compatibleMode.isMySqlMode();
+    private String getCompatibleMode() {
+        String mode =
+                OceanBaseJdbcUtils.getCompatibleMode(
+                        () ->
+                                DriverManager.getConnection(
+                                        options.getUrl(),
+                                        options.getUsername(),
+                                        options.getPassword()));
+        if (StringUtils.isBlank(mode)) {
+            throw new RuntimeException("Query found empty compatible mode");
+        }
+        LOG.info("Query found OceanBase compatible mode: {}", mode);
+        return mode;
     }
 
     public OceanBaseDialect getDialect() {
         return dialect;
     }
 
-    public void init() {
+    protected void init() {
         if (!inited) {
             synchronized (this) {
                 if (!inited) {
@@ -134,44 +105,73 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         return dataSource.getConnection();
     }
 
-    public Version getVersion() {
+    public OceanBaseVersion getVersion() {
         if (version == null) {
-            try {
-                String versionText = queryVersion();
-                LOG.info("Got OceanBase version number: {}", versionText);
-                version = new Version(versionText);
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed to query version of OceanBase", e);
-            }
+            String versionComment = OceanBaseJdbcUtils.getVersionComment(this::getConnection);
+            LOG.info("Query found version comment: {}", versionComment);
+            version = OceanBaseVersion.fromVersionComment(versionComment);
         }
         return version;
     }
 
-    private String queryVersion() throws SQLException {
-        try (Connection conn = getConnection();
-                Statement statement = conn.createStatement()) {
-            try {
-                ResultSet rs = statement.executeQuery(dialect.getSelectOBVersionStatement());
-                if (rs.next()) {
-                    return rs.getString(1);
+    public OceanBaseUserInfo getUserInfo() {
+        if (userInfo == null) {
+            OceanBaseUserInfo user = OceanBaseUserInfo.parse(options.getUsername());
+            if (user.getCluster() == null) {
+                String cluster = OceanBaseJdbcUtils.getClusterName(this::getConnection);
+                if (StringUtils.isBlank(cluster)) {
+                    throw new RuntimeException("Query found empty cluster name");
                 }
-            } catch (SQLException e) {
-                if (!e.getMessage().contains("not exist")) {
-                    throw e;
-                }
+                user.setCluster(cluster);
             }
-
-            ResultSet rs = statement.executeQuery(dialect.getQueryVersionCommentStatement());
-            if (rs.next()) {
-                String versionComment = rs.getString("VALUE");
-                String[] parts = StringUtils.split(versionComment, " ");
-                if (parts != null && parts.length > 1) {
-                    return parts[1];
+            if (user.getTenant() == null) {
+                String tenant = OceanBaseJdbcUtils.getTenantName(this::getConnection, dialect);
+                if (StringUtils.isBlank(tenant)) {
+                    throw new RuntimeException("Query found empty tenant name");
                 }
-                throw new RuntimeException("Illegal 'version_comment': " + versionComment);
+                user.setTenant(tenant);
             }
-            throw new RuntimeException("'version_comment' not found");
+            userInfo = user;
         }
+        return userInfo;
+    }
+
+    public ObTableDirectLoad getDirectLoad(TableId tableId) {
+        int count = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableId.identifier());
+        if (count != 0) {
+            throw new RuntimeException(
+                    "Direct load can only work on empty table, while table "
+                            + tableId.identifier()
+                            + " has "
+                            + count
+                            + " rows");
+        }
+        ObTable table = getDirectLoadTable(tableId.getSchemaName());
+        return new ObTableDirectLoad(table, tableId.getTableName(), getDirectLoadParameter(), true);
+    }
+
+    private ObTable getDirectLoadTable(String schemaName) {
+        try {
+            return new ObTable.Builder(options.getDirectLoadHost(), options.getDirectLoadPort())
+                    .setLoginInfo(
+                            getUserInfo().getTenant(),
+                            getUserInfo().getUser(),
+                            options.getPassword(),
+                            schemaName)
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get ObTable", e);
+        }
+    }
+
+    private ObDirectLoadParameter getDirectLoadParameter() {
+        ObDirectLoadParameter parameter = new ObDirectLoadParameter();
+        parameter.setParallel(options.getDirectLoadParallel());
+        parameter.setMaxErrorRowCount(options.getDirectLoadMaxErrorRows());
+        parameter.setDupAction(options.getDirectLoadDupAction());
+        parameter.setTimeout(options.getDirectLoadTimeout());
+        parameter.setHeartBeatTimeout(options.getDirectLoadHeartbeatTimeout());
+        return parameter;
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.oceanbase.connector.flink.table.OceanBaseTestDataSerializationSchema;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
+import com.oceanbase.connector.flink.utils.OceanBaseJdbcUtils;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -291,6 +292,49 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Test
+    public void testDirectLoadSink() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+        StreamTableEnvironment tEnv =
+                StreamTableEnvironment.create(
+                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
+
+        tEnv.executeSql(
+                "CREATE TEMPORARY TABLE target ("
+                        + " `id` INT NOT NULL,"
+                        + " name STRING,"
+                        + " description STRING,"
+                        + " weight DECIMAL(20, 10),"
+                        + " PRIMARY KEY (`id`) NOT ENFORCED"
+                        + ") with ("
+                        + "  'connector'='oceanbase',"
+                        + "  'direct-load.enabled'='true',"
+                        + "  'direct-load.host'='"
+                        + OB_SERVER.getHost()
+                        + "',"
+                        + "  'direct-load.port'='"
+                        + OB_SERVER.getActualPort(2882)
+                        + "',"
+                        + getOptionsString()
+                        + ");");
+
+        tEnv.executeSql(
+                        "INSERT INTO target "
+                                + "VALUES (101, 'scooter', 'Small 2-wheel scooter', 3.14),"
+                                + "       (102, 'car battery', '12V car battery', 8.1),"
+                                + "       (103, '12-pack drill bits', '12-pack of drill bits with sizes ranging from #40 to #3', 0.8),"
+                                + "       (104, 'hammer', '12oz carpenter''s hammer', 0.75),"
+                                + "       (105, 'hammer', '14oz carpenter''s hammer', 0.875),"
+                                + "       (106, 'hammer', '16oz carpenter''s hammer', 1.0),"
+                                + "       (107, 'rocks', 'box of assorted rocks', 5.3),"
+                                + "       (108, 'jacket', 'water resistent black wind breaker', 0.1),"
+                                + "       (109, 'spare tire', '24 inch spare tire', 22.2);")
+                .await();
+
+        validateSinkResults();
+    }
+
+    @Test
     public void testSink() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -326,7 +370,7 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
         validateSinkResults();
     }
 
-    private void validateSinkResults() throws SQLException {
+    private void validateSinkResults() throws SQLException, InterruptedException {
         List<String> expected =
                 Arrays.asList(
                         "101,scooter,Small 2-wheel scooter,3.1400000000",
@@ -339,9 +383,19 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         "108,jacket,water resistent black wind breaker,0.1000000000",
                         "109,spare tire,24 inch spare tire,22.2000000000");
 
+        waitForTableCount(getTestTable(), expected.size());
+
         List<String> actual = queryTable(getTestTable());
 
         assertEqualsInAnyOrder(expected, actual);
+    }
+
+    private void waitForTableCount(String tableName, int expectedCount)
+            throws InterruptedException {
+        while (OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName)
+                < expectedCount) {
+            Thread.sleep(100);
+        }
     }
 
     public List<String> queryTable(String tableName) throws SQLException {

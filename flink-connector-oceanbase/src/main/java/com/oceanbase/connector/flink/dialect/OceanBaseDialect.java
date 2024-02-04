@@ -127,19 +127,5 @@ public interface OceanBaseDialect extends Serializable {
                 + threshold;
     }
 
-    /**
-     * Get the select statement for OB_VERSION() function
-     *
-     * @return the select statement for OB_VERSION() function
-     */
-    String getSelectOBVersionStatement();
-
-    /**
-     * Get the statement to query 'version_comment'
-     *
-     * @return the statement to query 'version_comment'
-     */
-    default String getQueryVersionCommentStatement() {
-        return "SHOW VARIABLES LIKE 'version_comment'";
-    }
+    String getQueryTenantNameStatement();
 }

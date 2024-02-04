@@ -85,7 +85,7 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
     }
 
     @Override
-    public String getSelectOBVersionStatement() {
-        return "SELECT OB_VERSION() FROM DUAL";
+    public String getQueryTenantNameStatement() {
+        return "SELECT TENANT_NAME FROM SYS.DBA_OB_TENANTS";
     }
 }

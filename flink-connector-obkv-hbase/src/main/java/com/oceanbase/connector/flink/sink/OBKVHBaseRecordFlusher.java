@@ -20,7 +20,6 @@ import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OBKVHBaseConnectionProvider;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.HTableInfo;
-import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.client.Delete;
@@ -49,11 +48,6 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
             OBKVHBaseConnectorOptions options, OBKVHBaseConnectionProvider connectionProvider) {
         this.options = options;
         this.connectionProvider = connectionProvider;
-    }
-
-    @Override
-    public void flush(SchemaChangeRecord record) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
