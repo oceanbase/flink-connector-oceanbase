@@ -62,6 +62,12 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
     }
 
     private String getCompatibleMode() {
+        try {
+            Class.forName(options.getDriverClassName());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(
+                    "Failed to load driver class: " + options.getDriverClassName(), e);
+        }
         String mode =
                 OceanBaseJdbcUtils.getCompatibleMode(
                         () ->
