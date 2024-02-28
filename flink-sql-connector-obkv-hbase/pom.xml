@@ -64,15 +64,16 @@ under the License.
                             <artifactSet>
                                 <includes>
                                     <include>com.oceanbase:*</include>
-                                    <include>com.alibaba:fastjson</include>
+                                    <include>com.alibaba:*</include>
                                     <include>com.alipay.sofa:bolt</include>
                                     <include>com.alipay.sofa.common:sofa-common-tools</include>
                                     <include>com.google.guava:guava</include>
                                     <include>commons-lang:commons-lang</include>
+                                    <include>mysql:mysql-connector-java</include>
+                                    <include>io.netty:*</include>
                                     <include>commons-logging:commons-logging</include>
                                     <include>org.apache.hadoop:hadoop-core</include>
                                     <include>org.apache.hbase:hbase</include>
-                                    <include>io.netty:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -81,12 +82,12 @@ under the License.
                                     <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.hadoop</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>io.netty</pattern>
                                     <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.hadoop</pattern>
+                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
