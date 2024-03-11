@@ -47,4 +47,9 @@ public class DataChangeRecordData implements Serializable {
     public int hashCode() {
         return Arrays.deepHashCode(this.values);
     }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(values);
+    }
 }
