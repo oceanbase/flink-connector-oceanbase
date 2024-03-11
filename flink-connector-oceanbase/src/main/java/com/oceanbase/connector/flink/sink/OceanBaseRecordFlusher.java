@@ -263,13 +263,23 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             for (List<DataChangeRecord> groupRecords : group.values()) {
-                for (DataChangeRecord record : groupRecords) {
-                    for (int i = 0; i < statementFields.size(); i++) {
-                        statement.setObject(i + 1, record.getFieldValue(statementFields.get(i)));
+                try {
+                    for (DataChangeRecord record : groupRecords) {
+                        for (int i = 0; i < statementFields.size(); i++) {
+                            statement.setObject(
+                                    i + 1, record.getFieldValue(statementFields.get(i)));
+                        }
+                        statement.addBatch();
                     }
-                    statement.addBatch();
+                    statement.executeBatch();
+                } catch (SQLException e) {
+                    throw new RuntimeException(
+                            "Failed to execute batch with sql: "
+                                    + sql
+                                    + ", records: "
+                                    + groupRecords,
+                            e);
                 }
-                statement.executeBatch();
             }
         }
     }

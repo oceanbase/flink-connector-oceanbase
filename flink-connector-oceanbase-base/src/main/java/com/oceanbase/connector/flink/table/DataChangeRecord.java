@@ -75,4 +75,9 @@ public class DataChangeRecord implements Record {
     public Object getFieldValue(String fieldName) {
         return data.getValue(table.getFieldIndex(fieldName));
     }
+
+    @Override
+    public String toString() {
+        return "DataChangeRecord{" + "table=" + table + ", type=" + type + ", data=" + data + '}';
+    }
 }
