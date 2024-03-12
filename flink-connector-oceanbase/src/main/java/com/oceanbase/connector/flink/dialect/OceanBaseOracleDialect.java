@@ -86,6 +86,6 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
 
     @Override
     public String getQueryTenantNameStatement() {
-        return "SELECT TENANT_NAME FROM SYS.DBA_OB_TENANTS";
+        return "SELECT SYS_CONTEXT('USERENV', 'CON_NAME') FROM DUAL";
     }
 }
