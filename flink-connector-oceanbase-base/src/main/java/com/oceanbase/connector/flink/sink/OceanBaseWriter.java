@@ -204,6 +204,7 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                         reducedBuffer.clear();
                     }
                 }
+                bufferCount = 0;
 
                 // sync write current record
                 Record record = currentRecord.get();
@@ -221,7 +222,6 @@ public class OceanBaseWriter<T> implements SinkWriter<T> {
                 }
                 metricGroup.getIOMetricGroup().getNumRecordsOutCounter().inc();
                 currentRecord.compareAndSet(record, null);
-                bufferCount = 0;
                 break;
             } catch (Exception e) {
                 LOG.error("OceanBaseWriter flush error, retry times = {}", i, e);
