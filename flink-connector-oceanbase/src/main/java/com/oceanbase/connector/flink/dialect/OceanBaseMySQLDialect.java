@@ -16,7 +16,10 @@
 
 package com.oceanbase.connector.flink.dialect;
 
+import org.apache.flink.util.function.SerializableFunction;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,13 +38,14 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<String> uniqueKeyFields) {
+            @Nonnull List<String> uniqueKeyFields,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
         String updateClause =
                 fieldNames.stream()
                         .filter(f -> !uniqueKeyFields.contains(f))
                         .map(f -> quoteIdentifier(f) + "=VALUES(" + quoteIdentifier(f) + ")")
                         .collect(Collectors.joining(", "));
-        return getInsertIntoStatement(schemaName, tableName, fieldNames)
+        return getInsertIntoStatement(schemaName, tableName, fieldNames, placeholderFunc)
                 + " ON DUPLICATE KEY UPDATE "
                 + updateClause;
     }

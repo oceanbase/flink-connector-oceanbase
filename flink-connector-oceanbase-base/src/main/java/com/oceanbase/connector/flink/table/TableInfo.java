@@ -20,6 +20,7 @@ import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.util.function.SerializableFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,6 +40,7 @@ public class TableInfo implements Table {
     private final List<String> fieldNames;
     private final Map<String, Integer> fieldIndexMap;
     private final List<LogicalType> dataTypes;
+    private final SerializableFunction<String, String> placeholderFunc;
 
     public TableInfo(TableId tableId, ResolvedSchema resolvedSchema) {
         this(
@@ -47,14 +49,16 @@ public class TableInfo implements Table {
                 resolvedSchema.getColumnNames(),
                 resolvedSchema.getColumnDataTypes().stream()
                         .map(DataType::getLogicalType)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()),
+                null);
     }
 
     public TableInfo(
             @Nonnull TableId tableId,
             @Nullable List<String> primaryKey,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<LogicalType> dataTypes) {
+            @Nonnull List<LogicalType> dataTypes,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
         this.tableId = tableId;
         this.primaryKey = primaryKey;
         this.fieldNames = fieldNames;
@@ -63,6 +67,7 @@ public class TableInfo implements Table {
                 IntStream.range(0, fieldNames.size())
                         .boxed()
                         .collect(Collectors.toMap(fieldNames::get, i -> i));
+        this.placeholderFunc = placeholderFunc;
     }
 
     @Override
@@ -86,6 +91,10 @@ public class TableInfo implements Table {
 
     public List<LogicalType> getDataTypes() {
         return dataTypes;
+    }
+
+    public SerializableFunction<String, String> getPlaceholderFunc() {
+        return placeholderFunc;
     }
 
     @Override

@@ -16,7 +16,10 @@
 
 package com.oceanbase.connector.flink.dialect;
 
+import org.apache.flink.util.function.SerializableFunction;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,10 +38,11 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<String> uniqueKeyFields) {
+            @Nonnull List<String> uniqueKeyFields,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
         String sourceFields =
                 fieldNames.stream()
-                        .map(f -> "? AS " + quoteIdentifier(f))
+                        .map(f -> getPlaceholder(f, placeholderFunc) + " AS " + quoteIdentifier(f))
                         .collect(Collectors.joining(", "));
 
         String onClause =

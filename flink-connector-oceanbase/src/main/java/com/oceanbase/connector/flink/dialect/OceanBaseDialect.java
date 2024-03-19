@@ -16,10 +16,12 @@
 
 package com.oceanbase.connector.flink.dialect;
 
+import org.apache.flink.util.function.SerializableFunction;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,19 +47,34 @@ public interface OceanBaseDialect extends Serializable {
     }
 
     /**
+     * Gets the placeholder for prepared statement
+     *
+     * @param fieldName field name
+     * @param placeholderFunc user defined placeholder function
+     * @return the placeholder for prepared statement
+     */
+    default String getPlaceholder(
+            @Nonnull String fieldName,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
+        return placeholderFunc != null ? placeholderFunc.apply(fieldName) : "?";
+    }
+
+    /**
      * Gets the upsert statement
      *
      * @param schemaName schema name
      * @param tableName table name
      * @param fieldNames field names list
      * @param uniqueKeyFields unique key field names list
+     * @param placeholderFunc function used to get placeholder for the fields
      * @return the statement string
      */
     String getUpsertStatement(
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<String> uniqueKeyFields);
+            @Nonnull List<String> uniqueKeyFields,
+            @Nullable SerializableFunction<String, String> placeholderFunc);
 
     /**
      * Gets the insert statement
@@ -65,15 +82,20 @@ public interface OceanBaseDialect extends Serializable {
      * @param schemaName schema name
      * @param tableName table name
      * @param fieldNames field names list
+     * @param placeholderFunc function used to get placeholder for the fields
      * @return the statement string
      */
     default String getInsertIntoStatement(
             @Nonnull String schemaName,
             @Nonnull String tableName,
-            @Nonnull List<String> fieldNames) {
+            @Nonnull List<String> fieldNames,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
         String columns =
                 fieldNames.stream().map(this::quoteIdentifier).collect(Collectors.joining(", "));
-        String placeholders = String.join(", ", Collections.nCopies(fieldNames.size(), "?"));
+        String placeholders =
+                fieldNames.stream()
+                        .map(f -> getPlaceholder(f, placeholderFunc))
+                        .collect(Collectors.joining(", "));
         return "INSERT INTO "
                 + getFullTableName(schemaName, tableName)
                 + "("
