@@ -151,7 +151,8 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                         dialect.getInsertIntoStatement(
                                 tableId.getSchemaName(),
                                 tableId.getTableName(),
-                                tableInfo.getFieldNames()),
+                                tableInfo.getFieldNames(),
+                                tableInfo.getPlaceholderFunc()),
                         tableInfo.getFieldNames(),
                         upsertBatch);
             } else {
@@ -160,7 +161,8 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                                 tableId.getSchemaName(),
                                 tableId.getTableName(),
                                 tableInfo.getFieldNames(),
-                                tableInfo.getKey()),
+                                tableInfo.getKey(),
+                                tableInfo.getPlaceholderFunc()),
                         tableInfo.getFieldNames(),
                         upsertBatch);
             }

@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class OceanBaseConnectorITCase extends OceanBaseTestBase {
@@ -292,6 +293,91 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     @Test
+    public void testGis() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        String tableName = "gis_types";
+        Map<String, String> options = getOptions();
+        options.put("table-name", tableName);
+
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(options);
+        OceanBaseConnectionProvider connectionProvider =
+                new OceanBaseConnectionProvider(connectorOptions);
+        OceanBaseSink<RowData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OceanBaseRowDataSerializationSchema(
+                                new TableInfo(
+                                        new TableId(
+                                                connectionProvider.getDialect()::getFullTableName,
+                                                connectorOptions.getSchemaName(),
+                                                connectorOptions.getTableName()),
+                                        Collections.singletonList("id"),
+                                        Arrays.asList(
+                                                "id",
+                                                "point_c",
+                                                "geometry_c",
+                                                "linestring_c",
+                                                "polygon_c",
+                                                "multipoint_c",
+                                                "multiline_c",
+                                                "multipolygon_c",
+                                                "geometrycollection_c"),
+                                        Arrays.asList(
+                                                DataTypes.INT().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType(),
+                                                DataTypes.STRING().getLogicalType()),
+                                        x -> "id".equals(x) ? "?" : "ST_GeomFromText(?)")),
+                        DataChangeRecord.KeyExtractor.simple(),
+                        new OceanBaseRecordFlusher(connectorOptions));
+
+        List<String> values =
+                Arrays.asList(
+                        "POINT(1 1)",
+                        "POLYGON((1 1,2 1,2 2,1 2,1 1))",
+                        "LINESTRING(3 0,3 3,3 5)",
+                        "POLYGON((1 1,2 1,2 2,1 2,1 1))",
+                        "MULTIPOINT((1 1),(2 2))",
+                        "MULTILINESTRING((1 1,2 2,3 3),(4 4,5 5))",
+                        "MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))",
+                        "GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))");
+
+        GenericRowData rowData = new GenericRowData(RowKind.INSERT, values.size() + 1);
+        rowData.setField(0, 1);
+        for (int i = 0; i < values.size(); i++) {
+            rowData.setField(i + 1, StringData.fromString(values.get(i)));
+        }
+
+        env.fromElements((RowData) rowData).sinkTo(sink);
+        env.execute();
+
+        waitForTableCount(tableName, 1);
+        List<String> actual =
+                queryTable(
+                        tableName,
+                        Arrays.asList(
+                                "id",
+                                "ST_AsWKT(point_c)",
+                                "ST_AsWKT(geometry_c)",
+                                "ST_AsWKT(linestring_c)",
+                                "ST_AsWKT(polygon_c)",
+                                "ST_AsWKT(multipoint_c)",
+                                "ST_AsWKT(multiline_c)",
+                                "ST_AsWKT(multipolygon_c)",
+                                "ST_AsWKT(geometrycollection_c)"));
+
+        assertEquals(actual.get(0), "1," + String.join(",", values));
+    }
+
+    @Test
     public void testDirectLoadSink() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -399,10 +485,16 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
     }
 
     public List<String> queryTable(String tableName) throws SQLException {
+        return queryTable(tableName, Collections.singletonList("*"));
+    }
+
+    public List<String> queryTable(String tableName, List<String> fields) throws SQLException {
         List<String> result = new ArrayList<>();
         try (Connection connection = getConnection();
                 Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery("SELECT * FROM " + tableName);
+            ResultSet rs =
+                    statement.executeQuery(
+                            "SELECT " + String.join(", ", fields) + " FROM " + tableName);
             ResultSetMetaData metaData = rs.getMetaData();
 
             while (rs.next()) {

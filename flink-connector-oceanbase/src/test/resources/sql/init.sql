@@ -21,3 +21,17 @@ CREATE TABLE products
   description VARCHAR(512),
   weight      DECIMAL(20, 10)
 );
+
+
+CREATE TABLE gis_types
+(
+  id                   INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  point_c              POINT,
+  geometry_c           GEOMETRY,
+  linestring_c         LINESTRING,
+  polygon_c            POLYGON,
+  multipoint_c         MULTIPOINT,
+  multiline_c          MULTILINESTRING,
+  multipolygon_c       MULTIPOLYGON,
+  geometrycollection_c GEOMETRYCOLLECTION
+)
