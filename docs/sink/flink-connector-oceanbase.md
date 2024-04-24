@@ -52,6 +52,25 @@ To use this connector through Flink SQL directly, you need to download the shade
 - Release versions: https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
 - Snapshot versions: https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
+This project has built-in MySQL driver 8.0.28. For users of OceanBase EE who want to use OceanBase JDBC driver, they need to manually introduce the following dependencies:
+
+<div class="wy-table-responsive">
+<table class="colwidths-auto docutils">
+    <thead>
+      <tr>
+        <th class="text-left">Dependency Item</th>
+        <th class="text-left">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client/2.4.9">com.oceanbase:oceanbase-client:2.4.9</a></td>
+        <td>Used for connecting to OceanBase EE.</td>
+      </tr>
+    </tbody>
+</table>
+</div>
+
 ### Demo
 
 #### Preparation
@@ -67,59 +86,6 @@ CREATE TABLE `t_sink` (
   PRIMARY KEY (`id`)
 );
 ```
-
-#### Java Demo
-
-Take Maven project for example, add the required dependencies to the pom.xml, and then use the following code.
-
-```java
-package com.oceanbase;
-
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env =
-                StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
-        StreamTableEnvironment tEnv =
-                StreamTableEnvironment.create(
-                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
-
-        tEnv.executeSql(
-                "CREATE TABLE t_sink ( "
-                        + "  id       INT,"
-                        + "  username VARCHAR,"
-                        + "  score    INT,"
-                        + "  PRIMARY KEY (id) NOT ENFORCED"
-                        + ") with ("
-                        + "    'connector' = 'oceanbase',"
-                        + "    'url' = 'jdbc:mysql://127.0.0.1:2881/test',"
-                        + "    'schema-name'= 'test',"
-                        + "    'table-name' = 't_sink',"
-                        + "    'username' = 'root@test#obcluster',"
-                        + "    'password' = 'pswd',"
-                        + "    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100',"
-                        + "    'buffer-flush.interval' = '1s',"
-                        + "    'buffer-flush.buffer-size' = '5000',"
-                        + "    'max-retries' = '3'"
-                        + "    );");
-
-        tEnv.executeSql(
-                        "INSERT INTO t_sink VALUES "
-                                + "(1, 'Tom', 99),"
-                                + "(2, 'Jerry', 88),"
-                                + "(1, 'Tom', 89);")
-                .await();
-    }
-}
-
-```
-
-Once executed, the records should have been written to OceanBase.
-
-For more information please refer to [OceanBaseConnectorITCase.java](../../flink-connector-oceanbase/src/test/java/com/oceanbase/connector/flink/OceanBaseConnectorITCase.java).
 
 #### Flink SQL Demo
 
@@ -155,6 +121,30 @@ VALUES (1, 'Tom', 99),
 ```
 
 Once executed, the records should have been written to OceanBase.
+
+For users of OceanBase EE, you need to specify the `url` and `driver-class-name` corresponding to the OceanBase JDBC driver.
+
+```sql
+CREATE TABLE t_sink
+(
+    id       INT,
+    username VARCHAR,
+    score    INT,
+    PRIMARY KEY (id) NOT ENFORCED
+) with (
+    'connector' = 'oceanbase',
+    'url' = 'jdbc:oceanbase://127.0.0.1:2881/SYS',
+    'driver-class-name' = 'com.oceanbase.jdbc.Driver',
+    'schema-name' = 'SYS',
+    'table-name' = 'T_SINK',
+    'username' = 'SYS@test#obcluster',
+    'password' = 'pswd',
+    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100;',
+    'buffer-flush.interval' = '1s',
+    'buffer-flush.buffer-size' = '5000',
+    'max-retries' = '3'
+    );
+```
 
 ## Configuration
 

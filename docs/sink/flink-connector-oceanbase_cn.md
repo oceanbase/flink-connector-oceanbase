@@ -52,6 +52,25 @@ mvn clean package -DskipTests
 - 正式版本：https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase
 - 快照版本：https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase
 
+本项目内置了 MySQL 驱动 8.0.28，对于想使用 OceanBase JDBC 驱动的 OceanBase 数据库企业版的用户，需要手动引入以下依赖：
+
+<div class="wy-table-responsive">
+<table class="colwidths-auto docutils">
+    <thead>
+      <tr>
+        <th class="text-left">依赖名称</th>
+        <th class="text-left">说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://mvnrepository.com/artifact/com.oceanbase/oceanbase-client/2.4.9">com.oceanbase:oceanbase-client:2.4.9</a></td>
+        <td>用于连接到 OceanBase 数据库企业版。</td>
+      </tr>
+    </tbody>
+</table>
+</div>
+
 ### 示例
 
 #### 准备
@@ -68,59 +87,6 @@ CREATE TABLE `t_sink`
   PRIMARY KEY (`id`)
 );
 ```
-
-#### Java 应用示例
-
-以 Maven 项目为例，将需要的依赖加入到应用的 pom.xml 文件中，然后使用以下代码。
-
-```java
-package com.oceanbase;
-
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env =
-                StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
-        StreamTableEnvironment tEnv =
-                StreamTableEnvironment.create(
-                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
-
-        tEnv.executeSql(
-                "CREATE TABLE t_sink ( "
-                        + "  id       INT,"
-                        + "  username VARCHAR,"
-                        + "  score    INT,"
-                        + "  PRIMARY KEY (id) NOT ENFORCED"
-                        + ") with ("
-                        + "    'connector' = 'oceanbase',"
-                        + "    'url' = 'jdbc:mysql://127.0.0.1:2881/test',"
-                        + "    'schema-name'= 'test',"
-                        + "    'table-name' = 't_sink',"
-                        + "    'username' = 'root@test#obcluster',"
-                        + "    'password' = 'pswd',"
-                        + "    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100',"
-                        + "    'buffer-flush.interval' = '1s',"
-                        + "    'buffer-flush.buffer-size' = '5000',"
-                        + "    'max-retries' = '3'"
-                        + "    );");
-
-        tEnv.executeSql(
-                        "INSERT INTO t_sink VALUES "
-                                + "(1, 'Tom', 99),"
-                                + "(2, 'Jerry', 88),"
-                                + "(1, 'Tom', 89);")
-                .await();
-    }
-}
-
-```
-
-执行完成后，即可在 OceanBase 中检索验证。
-
-更多信息请参考 [OceanBaseConnectorITCase.java](../../flink-connector-oceanbase/src/test/java/com/oceanbase/connector/flink/OceanBaseConnectorITCase.java)。
 
 #### Flink SQL 示例
 
@@ -157,6 +123,30 @@ VALUES (1, 'Tom', 99),
 ```
 
 执行完成后，即可在 OceanBase 中检索验证。
+
+对于 OceanBase 数据库企业版的用户，需要指定 OceanBase JDBC 驱动对应的 `url` 和 `driver-class-name`。
+
+```sql
+CREATE TABLE t_sink
+(
+    id       INT,
+    username VARCHAR,
+    score    INT,
+    PRIMARY KEY (id) NOT ENFORCED
+) with (
+    'connector' = 'oceanbase',
+    'url' = 'jdbc:oceanbase://127.0.0.1:2881/SYS',
+    'driver-class-name' = 'com.oceanbase.jdbc.Driver',
+    'schema-name' = 'SYS',
+    'table-name' = 'T_SINK',
+    'username' = 'SYS@test#obcluster',
+    'password' = 'pswd',
+    'druid-properties' = 'druid.initialSize=10;druid.maxActive=100;',
+    'buffer-flush.interval' = '1s',
+    'buffer-flush.buffer-size' = '5000',
+    'max-retries' = '3'
+    );
+```
 
 ## 配置项
 
