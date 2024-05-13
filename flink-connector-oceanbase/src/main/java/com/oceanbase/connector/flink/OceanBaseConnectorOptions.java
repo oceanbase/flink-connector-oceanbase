@@ -118,6 +118,12 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
                     .defaultValue(Duration.ofSeconds(30))
                     .withDescription("Client heartbeat timeout in direct load task.");
 
+    public static final ConfigOption<Boolean> COLUMN_NAME_CASE_INSENSITIVE =
+            ConfigOptions.key("column.name.case.insensitive")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("By default, column name matching is case-insensitive.");
+
     public OceanBaseConnectorOptions(Map<String, String> config) {
         super(config);
     }
@@ -176,5 +182,9 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
 
     public long getDirectLoadHeartbeatTimeout() {
         return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toNanos() / 1000;
+    }
+
+    public boolean getColumnNameCaseInsensitive() {
+        return allConfig.get(COLUMN_NAME_CASE_INSENSITIVE);
     }
 }

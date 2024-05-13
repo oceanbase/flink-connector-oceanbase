@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 public class OceanBaseTestDataSerializationSchema
         extends AbstractRecordSerializationSchema<OceanBaseTestData> {
 
-    private final OceanBaseDialect dialect = new OceanBaseMySQLDialect();
+    private final OceanBaseDialect dialect = new OceanBaseMySQLDialect(null);
 
     @Override
     public Record serialize(OceanBaseTestData data) {

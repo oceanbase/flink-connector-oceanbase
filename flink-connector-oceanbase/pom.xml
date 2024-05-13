@@ -49,6 +49,12 @@ under the License.
             <groupId>com.oceanbase</groupId>
             <artifactId>obkv-table-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>com.oceanbase</groupId>

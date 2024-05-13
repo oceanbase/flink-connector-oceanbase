@@ -16,20 +16,33 @@
 
 package com.oceanbase.connector.flink.dialect;
 
+import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
+
 import org.apache.flink.util.function.SerializableFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class OceanBaseOracleDialect implements OceanBaseDialect {
 
     private static final long serialVersionUID = 1L;
 
+    private final OceanBaseConnectorOptions options;
+
+    public OceanBaseOracleDialect(OceanBaseConnectorOptions options) {
+        this.options = options;
+    }
+
     @Override
     public String quoteIdentifier(@Nonnull String identifier) {
+        if (Objects.isNull(options) || options.getColumnNameCaseInsensitive()) {
+            return identifier;
+        }
+
         return "\"" + identifier + "\"";
     }
 
