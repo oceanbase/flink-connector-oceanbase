@@ -39,7 +39,7 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
 
     @Override
     public String quoteIdentifier(@Nonnull String identifier) {
-        if (Objects.isNull(options) || options.getColumnNameCaseInsensitive()) {
+        if (Objects.isNull(options) || options.getOracleTenantCaseInsensitive()) {
             return identifier;
         }
 
