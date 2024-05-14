@@ -57,7 +57,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         this.options = options;
         this.dialect =
                 "MySQL".equalsIgnoreCase(getCompatibleMode().trim())
-                        ? new OceanBaseMySQLDialect(options)
+                        ? new OceanBaseMySQLDialect()
                         : new OceanBaseOracleDialect(options);
     }
 

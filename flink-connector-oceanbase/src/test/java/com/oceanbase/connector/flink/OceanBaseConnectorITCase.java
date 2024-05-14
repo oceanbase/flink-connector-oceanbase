@@ -99,7 +99,7 @@ public class OceanBaseConnectorITCase extends OceanBaseTestBase {
                         DataChangeRecord.KeyExtractor.simple(),
                         new OceanBaseRecordFlusher(connectorOptions));
 
-        OceanBaseDialect dialect = new OceanBaseMySQLDialect(connectorOptions);
+        OceanBaseDialect dialect = new OceanBaseMySQLDialect();
         String database = getDatabaseName();
         String tableA = getTestTable() + "A";
         String tableB = getTestTable() + "B";
