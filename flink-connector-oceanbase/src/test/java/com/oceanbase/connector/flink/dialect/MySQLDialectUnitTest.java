@@ -15,15 +15,21 @@
  */
 package com.oceanbase.connector.flink.dialect;
 
+import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.testcontainers.shaded.com.google.common.collect.Maps;
 
 public class MySQLDialectUnitTest {
 
     @Test
     public void testQuoteIdentifier() {
+        OceanBaseConnectorOptions options = new OceanBaseConnectorOptions(Maps.newHashMap());
+        Assert.assertTrue(options.getTableOracleTenantCaseInsensitive());
+        OceanBaseOracleDialect oracleDialect = new OceanBaseOracleDialect(options);
+
         String identifier = "name";
-        String quoteStr = "`" + identifier.replaceAll("`", "``") + "`";
-        Assert.assertEquals(quoteStr, String.format("`%s`", identifier));
+        Assert.assertEquals(oracleDialect.quoteIdentifier(identifier), identifier);
     }
 }

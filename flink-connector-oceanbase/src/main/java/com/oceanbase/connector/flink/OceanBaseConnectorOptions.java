@@ -118,8 +118,8 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
                     .defaultValue(Duration.ofSeconds(30))
                     .withDescription("Client heartbeat timeout in direct load task.");
 
-    public static final ConfigOption<Boolean> ORACLE_TENANT_CASE_INSENSITIVE =
-            ConfigOptions.key("oracle.tenant.case.insensitive")
+    public static final ConfigOption<Boolean> TABLE_ORACLE_TENANT_CASE_INSENSITIVE =
+            ConfigOptions.key("table.oracle-tenant-case-insensitive")
                     .booleanType()
                     .defaultValue(true)
                     .withDescription(
@@ -185,7 +185,7 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
         return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toNanos() / 1000;
     }
 
-    public boolean getOracleTenantCaseInsensitive() {
-        return allConfig.get(ORACLE_TENANT_CASE_INSENSITIVE);
+    public boolean getTableOracleTenantCaseInsensitive() {
+        return allConfig.get(TABLE_ORACLE_TENANT_CASE_INSENSITIVE);
     }
 }
