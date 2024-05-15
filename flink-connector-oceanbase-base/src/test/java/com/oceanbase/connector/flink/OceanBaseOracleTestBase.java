@@ -18,12 +18,6 @@ package com.oceanbase.connector.flink;
 
 import org.apache.flink.util.TestLogger;
 
-import org.junit.ClassRule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.utility.MountableFile;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,38 +27,32 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class OceanBaseTestBase extends TestLogger {
+public abstract class OceanBaseOracleTestBase extends TestLogger {
+    public static final String URL = System.getenv("URL");
+    public static final String USER_NAME = System.getenv("USER_NAME");
+    public static final String PASSWORD = System.getenv("PASSWORD");
+    public static final String SCHEMA_NAME = System.getenv("SCHEMA_NAME");
+    public static final String HOST = System.getenv("HOST");
+    public static final String PORT = System.getenv("PORT");
 
-    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseTestBase.class);
-
-    public static final String IMAGE_TAG = "4.2.1_bp2";
-
-    @ClassRule
-    public static final OceanBaseContainer OB_SERVER =
-            new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME + ":" + IMAGE_TAG)
-                    .withNetworkMode("host")
-                    .withSysPassword("123456")
-                    .withCopyFileToContainer(
-                            MountableFile.forClasspathResource("sql/init.sql"),
-                            "/root/boot/init.d/init.sql")
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+    public static final String DRIVER_CLASS_NAME = "com.oceanbase.jdbc.Driver";
 
     protected String getUrl() {
-        return OB_SERVER.getJdbcUrl();
+        return URL;
     }
 
     protected abstract String getTestTable();
 
     protected String getUsername() {
-        return OB_SERVER.getUsername();
+        return USER_NAME;
     }
 
     protected String getPassword() {
-        return OB_SERVER.getPassword();
+        return PASSWORD;
     }
 
     protected String getDatabaseName() {
-        return OB_SERVER.getDatabaseName();
+        return SCHEMA_NAME;
     }
 
     protected Map<String, String> getOptions() {
@@ -74,6 +62,7 @@ public abstract class OceanBaseTestBase extends TestLogger {
         options.put("password", getPassword());
         options.put("schema-name", getDatabaseName());
         options.put("table-name", getTestTable());
+        options.put("driver-class-name", DRIVER_CLASS_NAME);
         return options;
     }
 
