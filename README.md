@@ -28,7 +28,7 @@ There are some community projects which can be used to work with Apache Flink an
 
 |                            Project                             | OceanBase Compatible Mode |                                                                  Supported Features                                                                  |
 |----------------------------------------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle             | [Source + CDC](https://ververica.github.io/flink-cdc-connectors/master/content/connectors/oceanbase-cdc.html)                                        |
+| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle             | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/oceanbase-cdc/)                                |
 | [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle             | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase)<br/> [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
 
 ## Community

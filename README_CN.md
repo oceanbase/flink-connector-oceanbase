@@ -28,7 +28,7 @@
 
 |                            Project                             | OceanBase 兼容模式 |                                                                      支持的功能                                                                       |
 |----------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle  | [Source + CDC](https://ververica.github.io/flink-cdc-connectors/master/content/connectors/oceanbase-cdc%28ZH%29.html)                            |
+| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle  | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/zh/docs/connectors/flink-sources/oceanbase-cdc/)                         |
 | [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle  | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase), [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
 
 ## 社区
