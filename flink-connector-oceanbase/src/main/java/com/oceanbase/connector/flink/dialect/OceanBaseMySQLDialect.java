@@ -16,8 +16,9 @@
 
 package com.oceanbase.connector.flink.dialect;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.util.function.SerializableFunction;
+
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,12 +47,11 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
                         .filter(f -> !uniqueKeyFields.contains(f))
                         .map(f -> quoteIdentifier(f) + "=VALUES(" + quoteIdentifier(f) + ")")
                         .collect(Collectors.joining(", "));
-        String insertIntoStatement = getInsertIntoStatement(schemaName, tableName, fieldNames, placeholderFunc);
+        String insertIntoStatement =
+                getInsertIntoStatement(schemaName, tableName, fieldNames, placeholderFunc);
         if (StringUtils.isNotEmpty(updateClause)) {
             // ON DUPLICATE KEY UPDATE
-            return insertIntoStatement
-                    + " ON DUPLICATE KEY UPDATE "
-                    + updateClause;
+            return insertIntoStatement + " ON DUPLICATE KEY UPDATE " + updateClause;
         } else {
             // INSERT IGNORE
             return StringUtils.replace(insertIntoStatement, "INSERT", "INSERT IGNORE", 1);
