@@ -54,7 +54,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-public class OBKVHBaseConnectorITCase extends OceanBaseTestBase {
+public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     public static final String CLUSTER_NAME = "obcluster";
     public static final String CONFIG_URL =

@@ -33,9 +33,9 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class OceanBaseTestBase extends TestLogger {
+public abstract class OceanBaseMySQLTestBase extends TestLogger {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseTestBase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseMySQLTestBase.class);
 
     public static final String IMAGE_TAG = "4.2.1_bp2";
 

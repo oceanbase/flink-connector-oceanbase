@@ -21,7 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.testcontainers.shaded.com.google.common.collect.Maps;
 
-public class MySQLDialectUnitTest {
+public class OceanBaseOracleDialectTest {
 
     @Test
     public void testQuoteIdentifier() {

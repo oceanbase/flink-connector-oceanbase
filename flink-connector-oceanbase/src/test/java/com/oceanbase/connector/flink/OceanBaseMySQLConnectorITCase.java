@@ -63,7 +63,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class OceanBaseConnectorITCase extends OceanBaseTestBase {
+public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
 
     @Override
     protected String getTestTable() {
