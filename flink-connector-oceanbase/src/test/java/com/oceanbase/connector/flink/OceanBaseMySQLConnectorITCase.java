@@ -481,8 +481,7 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
             throws InterruptedException {
         int tableRowsCount = 0;
         for (int i = 0; i < 100; ++i) {
-            tableRowsCount =
-                OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
+            tableRowsCount = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
             if (tableRowsCount < expectedCount) {
                 Thread.sleep(100);
             }

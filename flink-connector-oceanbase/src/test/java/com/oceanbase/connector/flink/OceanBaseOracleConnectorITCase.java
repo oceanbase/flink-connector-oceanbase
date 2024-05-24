@@ -301,11 +301,10 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
     }
 
     private void waitingAndAssertTableCount(String tableName, int expectedCount)
-        throws InterruptedException {
+            throws InterruptedException {
         int tableRowsCount = 0;
         for (int i = 0; i < 100; ++i) {
-            tableRowsCount =
-                OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
+            tableRowsCount = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
             if (tableRowsCount < expectedCount) {
                 Thread.sleep(100);
             }
