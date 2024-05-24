@@ -45,6 +45,7 @@ import org.apache.flink.types.RowKind;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -359,7 +360,7 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
         env.fromElements((RowData) rowData).sinkTo(sink);
         env.execute();
 
-        waitForTableCount(tableName, 1);
+        waitingAndAssertTableCount(tableName, 1);
         List<String> actual =
                 queryTable(
                         tableName,
@@ -469,19 +470,23 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
                         "108,jacket,water resistent black wind breaker,0.1000000000",
                         "109,spare tire,24 inch spare tire,22.2000000000");
 
-        waitForTableCount(getTestTable(), expected.size());
+        waitingAndAssertTableCount(getTestTable(), expected.size());
 
         List<String> actual = queryTable(getTestTable());
 
         assertEqualsInAnyOrder(expected, actual);
     }
 
-    private void waitForTableCount(String tableName, int expectedCount)
+    private void waitingAndAssertTableCount(String tableName, int expectedCount)
             throws InterruptedException {
-        while (OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName)
-                < expectedCount) {
-            Thread.sleep(100);
+        int tableRowsCount = 0;
+        for (int i = 0; i < 100; ++i) {
+            tableRowsCount = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
+            if (tableRowsCount < expectedCount) {
+                Thread.sleep(100);
+            }
         }
+        Assert.assertEquals(tableRowsCount, expectedCount);
     }
 
     public List<String> queryTable(String tableName) throws SQLException {
