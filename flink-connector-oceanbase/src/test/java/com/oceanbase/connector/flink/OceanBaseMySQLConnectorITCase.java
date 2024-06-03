@@ -46,7 +46,9 @@ import org.apache.flink.types.RowKind;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.testcontainers.containers.GenericContainer;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -58,6 +60,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,23 +69,32 @@ import static org.junit.Assert.assertTrue;
 
 public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
 
-    @Override
-    protected String getTestTable() {
-        return "products";
-    }
+    @ClassRule public static final GenericContainer<?> CONTAINER = container("sql/init.sql");
+
+    private static final String TEST_TABLE = "products";
 
     @Override
     protected Map<String, String> getOptions() {
-        Map<String, String> options = super.getOptions();
+        Map<String, String> options = new HashMap<>();
+        options.put("url", getJdbcUrl(CONTAINER));
+        options.put("username", TEST_USERNAME);
+        options.put("password", TEST_PASSWORD);
+        options.put("schema-name", TEST_DATABASE);
+        options.put("table-name", TEST_TABLE);
         options.put("druid-properties", "druid.initialSize=4;druid.maxActive=20;");
         return options;
+    }
+
+    protected Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(getJdbcUrl(CONTAINER), TEST_USERNAME, TEST_PASSWORD);
     }
 
     @After
     public void after() throws Exception {
         try (Connection connection = getConnection();
                 Statement statement = connection.createStatement()) {
-            statement.execute("DELETE FROM " + getTestTable());
+            statement.execute("DELETE FROM products");
+            statement.execute("DELETE FROM gis_types");
         }
     }
 
@@ -101,10 +113,10 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
                         new OceanBaseRecordFlusher(connectorOptions));
 
         OceanBaseDialect dialect = new OceanBaseMySQLDialect();
-        String database = getDatabaseName();
-        String tableA = getTestTable() + "A";
-        String tableB = getTestTable() + "B";
-        String tableC = getTestTable() + "C";
+        String database = TEST_DATABASE;
+        String tableA = TEST_TABLE + "A";
+        String tableB = TEST_TABLE + "B";
+        String tableC = TEST_TABLE + "C";
 
         String tableFullNameA = dialect.getFullTableName(database, tableA);
         String tableFullNameB = dialect.getFullTableName(database, tableB);
@@ -397,10 +409,10 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
                         + "  'connector'='oceanbase',"
                         + "  'direct-load.enabled'='true',"
                         + "  'direct-load.host'='"
-                        + OB_SERVER.getHost()
+                        + CONTAINER.getHost()
                         + "',"
                         + "  'direct-load.port'='"
-                        + OB_SERVER.getActualPort(2882)
+                        + CONTAINER.getMappedPort(RPC_PORT)
                         + "',"
                         + getOptionsString()
                         + ");");
@@ -470,9 +482,9 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
                         "108,jacket,water resistent black wind breaker,0.1000000000",
                         "109,spare tire,24 inch spare tire,22.2000000000");
 
-        waitingAndAssertTableCount(getTestTable(), expected.size());
+        waitingAndAssertTableCount(TEST_TABLE, expected.size());
 
-        List<String> actual = queryTable(getTestTable());
+        List<String> actual = queryTable(TEST_TABLE);
 
         assertEqualsInAnyOrder(expected, actual);
     }
@@ -514,9 +526,5 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
             }
         }
         return result;
-    }
-
-    protected Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(getUrl(), getUsername(), getPassword());
     }
 }

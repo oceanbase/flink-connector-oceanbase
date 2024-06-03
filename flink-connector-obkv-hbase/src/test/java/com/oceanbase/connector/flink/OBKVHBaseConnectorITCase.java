@@ -43,12 +43,22 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,30 +66,39 @@ import static org.junit.Assert.assertTrue;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
-    public static final String CLUSTER_NAME = "obcluster";
-    public static final String CONFIG_URL =
-            "http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=" + CLUSTER_NAME;
+    private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectorITCase.class);
 
-    @Override
-    protected String getTestTable() {
-        return "htable";
-    }
+    @ClassRule public static final GenericContainer<?> CONTAINER = container("sql/init.sql");
 
-    @Override
-    protected String getUrl() {
-        return CONFIG_URL;
-    }
+    private static final String TEST_TABLE = "htable";
 
-    @Override
-    protected String getUsername() {
-        return OB_SERVER.getUsername() + "#" + CLUSTER_NAME;
+    protected String getConfigUrl() {
+        try (Connection connection =
+                        DriverManager.getConnection(
+                                getJdbcUrl(CONTAINER), SYS_USERNAME, SYS_PASSWORD);
+                Statement statement = connection.createStatement()) {
+            ResultSet rs = statement.executeQuery("SHOW PARAMETERS LIKE 'obconfig_url'");
+            String configUrl = rs.next() ? rs.getString("VALUE") : null;
+            if (configUrl == null || configUrl.isEmpty()) {
+                throw new RuntimeException("obconfig_url not found");
+            }
+            LOG.info("Got obconfig_url: {}", configUrl);
+            return configUrl;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     protected Map<String, String> getOptions() {
-        Map<String, String> options = super.getOptions();
-        options.put("sys.username", OB_SERVER.getSysUsername());
-        options.put("sys.password", OB_SERVER.getSysPassword());
+        Map<String, String> options = new HashMap<>();
+        options.put("url", getConfigUrl());
+        options.put("sys.username", SYS_USERNAME);
+        options.put("sys.password", SYS_PASSWORD);
+        options.put("username", TEST_USERNAME + "#" + CLUSTER_NAME);
+        options.put("password", TEST_PASSWORD);
+        options.put("schema-name", TEST_DATABASE);
+        options.put("table-name", TEST_TABLE);
         return options;
     }
 
@@ -95,6 +114,9 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     @After
     public void after() throws Exception {
+        if (client == null) {
+            return;
+        }
         client.delete(
                 Arrays.asList(
                         deleteFamily("1", "family1"),
