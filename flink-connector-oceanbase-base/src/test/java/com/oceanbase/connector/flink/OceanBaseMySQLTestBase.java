@@ -18,13 +18,15 @@ package com.oceanbase.connector.flink;
 
 import org.apache.flink.util.TestLogger;
 
-import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.MountableFile;
 
-import java.util.HashMap;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,44 +39,49 @@ public abstract class OceanBaseMySQLTestBase extends TestLogger {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseMySQLTestBase.class);
 
-    public static final String IMAGE_TAG = "4.2.1_bp2";
+    protected static final Network NETWORK = Network.newNetwork();
 
-    @ClassRule
-    public static final OceanBaseContainer OB_SERVER =
-            new OceanBaseContainer(OceanBaseContainer.DOCKER_IMAGE_NAME + ":" + IMAGE_TAG)
-                    .withNetworkMode("host")
-                    .withSysPassword("123456")
-                    .withCopyFileToContainer(
-                            MountableFile.forClasspathResource("sql/init.sql"),
-                            "/root/boot/init.d/init.sql")
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+    public static final int SQL_PORT = 2881;
+    public static final int RPC_PORT = 2882;
+    public static final int CONFIG_SERVER_PORT = 8080;
 
-    protected String getUrl() {
-        return OB_SERVER.getJdbcUrl();
+    public static final String CLUSTER_NAME = "github-action";
+    public static final String SYS_USERNAME = "root";
+    public static final String SYS_PASSWORD = "123456";
+    public static final String TEST_TENANT = "flink";
+    public static final String TEST_USERNAME = "root@" + TEST_TENANT;
+    public static final String TEST_PASSWORD = "654321";
+    public static final String TEST_DATABASE = "test";
+
+    @SuppressWarnings("resource")
+    protected static GenericContainer<?> container(String initSqlFile) {
+        GenericContainer<?> container =
+                new GenericContainer<>("oceanbase/oceanbase-ce")
+                        .withNetwork(NETWORK)
+                        .withExposedPorts(SQL_PORT, RPC_PORT, CONFIG_SERVER_PORT)
+                        .withEnv("MODE", "mini")
+                        .withEnv("OB_CLUSTER_NAME", CLUSTER_NAME)
+                        .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
+                        .withEnv("OB_TENANT_NAME", TEST_TENANT)
+                        .withEnv("OB_TENANT_PASSWORD", TEST_PASSWORD)
+                        .waitingFor(Wait.forLogMessage(".*boot success!.*", 1))
+                        .withStartupTimeout(Duration.ofMinutes(4))
+                        .withLogConsumer(new Slf4jLogConsumer(LOG));
+        if (initSqlFile != null) {
+            container.withCopyFileToContainer(
+                    MountableFile.forClasspathResource(initSqlFile), "/root/boot/init.d/init.sql");
+        }
+        return container;
     }
 
-    protected abstract String getTestTable();
+    protected abstract Map<String, String> getOptions();
 
-    protected String getUsername() {
-        return OB_SERVER.getUsername();
+    protected String getJdbcUrl(GenericContainer<?> container) {
+        return getJdbcUrl(container.getHost(), container.getMappedPort(SQL_PORT));
     }
 
-    protected String getPassword() {
-        return OB_SERVER.getPassword();
-    }
-
-    protected String getDatabaseName() {
-        return OB_SERVER.getDatabaseName();
-    }
-
-    protected Map<String, String> getOptions() {
-        Map<String, String> options = new HashMap<>();
-        options.put("url", getUrl());
-        options.put("username", getUsername());
-        options.put("password", getPassword());
-        options.put("schema-name", getDatabaseName());
-        options.put("table-name", getTestTable());
-        return options;
+    protected String getJdbcUrl(String host, int port) {
+        return "jdbc:mysql://" + host + ":" + port + "/" + TEST_DATABASE + "?useSSL=false";
     }
 
     protected String getOptionsString() {
