@@ -26,10 +26,11 @@
 
 在其他的社区和组织中，也有一些项目可以用于通过 Flink 处理 OceanBase 中的数据。
 
-|                            Project                             | OceanBase 兼容模式 |                                                                      支持的功能                                                                       |
-|----------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle  | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/zh/docs/connectors/flink-sources/oceanbase-cdc/)                         |
-| [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle  | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase), [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
+|                                Project                                 | OceanBase 兼容模式 |                                                                      支持的功能                                                                       |
+|------------------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Flink Connector JDBC](https://github.com/apache/flink-connector-jdbc) | MySQL, Oracle  | [Source + Sink](https://nightlies.apache.org/flink/flink-docs-release-1.19/zh/docs/connectors/table/jdbc/)                                       |
+| [Flink CDC](https://github.com/ververica/flink-cdc-connectors)         | MySQL, Oracle  | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/zh/docs/connectors/flink-sources/oceanbase-cdc/)                         |
+| [Apache SeaTunnel](https://github.com/apache/seatunnel)                | MySQL, Oracle  | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase), [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
 
 ## 社区
 
