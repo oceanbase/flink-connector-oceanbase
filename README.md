@@ -26,10 +26,11 @@ This repository contains connectors as following:
 
 There are some community projects which can be used to work with Apache Flink and OceanBase.
 
-|                            Project                             | OceanBase Compatible Mode |                                                                  Supported Features                                                                  |
-|----------------------------------------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Flink CDC](https://github.com/ververica/flink-cdc-connectors) | MySQL, Oracle             | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/oceanbase-cdc/)                                |
-| [Apache SeaTunnel](https://github.com/apache/seatunnel)        | MySQL, Oracle             | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase)<br/> [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
+|                                Project                                 | OceanBase Compatible Mode |                                                                  Supported Features                                                                  |
+|------------------------------------------------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Flink Connector JDBC](https://github.com/apache/flink-connector-jdbc) | MySQL, Oracle             | [Source + Sink](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/connectors/table/jdbc/)                                              |
+| [Flink CDC](https://github.com/ververica/flink-cdc-connectors)         | MySQL, Oracle             | [Source + CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/oceanbase-cdc/)                                |
+| [Apache SeaTunnel](https://github.com/apache/seatunnel)                | MySQL, Oracle             | [Source](https://seatunnel.apache.org/docs/connector-v2/source/OceanBase)<br/> [Sink](https://seatunnel.apache.org/docs/connector-v2/sink/OceanBase) |
 
 ## Community
 
