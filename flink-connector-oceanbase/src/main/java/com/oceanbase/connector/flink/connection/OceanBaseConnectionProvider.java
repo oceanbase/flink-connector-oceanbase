@@ -36,7 +36,9 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class OceanBaseConnectionProvider implements ConnectionProvider {
 
@@ -95,6 +97,8 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
                     druidDataSource.setUsername(options.getUsername());
                     druidDataSource.setPassword(options.getPassword());
                     druidDataSource.setDriverClassName(options.getDriverClassName());
+                    druidDataSource.setConnectProperties(
+                            initializeDefaultJdbcProperties(options.getUrl()));
                     Properties properties = options.getDruidProperties();
                     if (properties != null) {
                         druidDataSource.configFromPropeties(properties);
@@ -104,6 +108,32 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
                 }
             }
         }
+    }
+
+    private Properties initializeDefaultJdbcProperties(String jdbcUrl) {
+        Properties defaultJdbcProperties = new Properties();
+        defaultJdbcProperties.setProperty("useSSL", "false");
+        defaultJdbcProperties.setProperty("rewriteBatchedStatements", "true");
+        defaultJdbcProperties.setProperty("initialTimeout", "2");
+        defaultJdbcProperties.setProperty("autoReconnect", "true");
+        defaultJdbcProperties.setProperty("maxReconnects", "3");
+
+        defaultJdbcProperties.setProperty("useInformationSchema", "true");
+        defaultJdbcProperties.setProperty("nullCatalogMeansCurrent", "false");
+        defaultJdbcProperties.setProperty("useUnicode", "true");
+        defaultJdbcProperties.setProperty("zeroDateTimeBehavior", "convertToNull");
+        defaultJdbcProperties.setProperty("characterEncoding", "UTF-8");
+        defaultJdbcProperties.setProperty("characterSetResults", "UTF-8");
+
+        // Avoid overwriting user's custom jdbc properties.
+        List<String> jdbcUrlProperties =
+                defaultJdbcProperties.keySet().stream()
+                        .map(Object::toString)
+                        .filter(jdbcUrl::contains)
+                        .collect(Collectors.toList());
+        jdbcUrlProperties.forEach(defaultJdbcProperties::remove);
+
+        return defaultJdbcProperties;
     }
 
     public Connection getConnection() throws SQLException {
