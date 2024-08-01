@@ -36,7 +36,9 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class OceanBaseConnectionProvider implements ConnectionProvider {
 
@@ -115,7 +117,6 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         defaultJdbcProperties.setProperty("initialTimeout", "2");
         defaultJdbcProperties.setProperty("autoReconnect", "true");
         defaultJdbcProperties.setProperty("maxReconnects", "3");
-        defaultJdbcProperties.setProperty("assureReadOnly", "true");
 
         defaultJdbcProperties.setProperty("useInformationSchema", "true");
         defaultJdbcProperties.setProperty("nullCatalogMeansCurrent", "false");
@@ -125,12 +126,13 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         defaultJdbcProperties.setProperty("characterSetResults", "UTF-8");
 
         // Avoid overwriting user's custom jdbc properties.
-        defaultJdbcProperties.forEach(
-                (key, value) -> {
-                    if (jdbcUrl.contains(key.toString())) {
-                        defaultJdbcProperties.remove(key);
-                    }
-                });
+        List<String> jdbcUrlProperties =
+                defaultJdbcProperties.keySet().stream()
+                        .map(Object::toString)
+                        .filter(jdbcUrl::contains)
+                        .collect(Collectors.toList());
+        jdbcUrlProperties.forEach(defaultJdbcProperties::remove);
+
         return defaultJdbcProperties;
     }
 
