@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class OceanBaseRecordFlusher implements RecordFlusher {
 
@@ -300,7 +301,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
 
     private Long getPartId(DataChangeRecord record) {
         TableInfo tableInfo = (TableInfo) record.getTable();
-        OceanBaseTablePartInfo tablePartInfo = getTablePartInfo(tableInfo.getTableId());
+        OceanBaseTablePartInfo tablePartInfo = getTablePartInfo(tableInfo);
         if (tablePartInfo == null || MapUtils.isEmpty(tablePartInfo.getPartColumnIndexMap())) {
             return null;
         }
@@ -311,13 +312,20 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         return tablePartInfo.getPartIdCalculator().calculatePartId(obj);
     }
 
-    private OceanBaseTablePartInfo getTablePartInfo(TableId tableId) {
+    private OceanBaseTablePartInfo getTablePartInfo(TableInfo tableInfo) {
         if (options.getSyncWrite() || !options.getPartitionEnabled()) {
             return null;
         }
         return tablePartInfoCache.get(
-                tableId.identifier(),
-                () -> queryTablePartInfo(tableId.getSchemaName(), tableId.getTableName()));
+                tableInfo.getTableId().identifier(),
+                () -> {
+                    OceanBaseTablePartInfo tablePartInfo =
+                            queryTablePartInfo(
+                                    tableInfo.getTableId().getSchemaName(),
+                                    tableInfo.getTableId().getTableName());
+                    verifyTablePartInfo(tableInfo, tablePartInfo);
+                    return tablePartInfo;
+                });
     }
 
     private OceanBaseTablePartInfo queryTablePartInfo(String schemaName, String tableName) {
@@ -358,6 +366,23 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             return new OceanBaseTablePartInfo(tableEntry, version.isV4());
         } catch (Exception e) {
             throw new RuntimeException("Failed to get table partition info", e);
+        }
+    }
+
+    private void verifyTablePartInfo(TableInfo tableInfo, OceanBaseTablePartInfo tablePartInfo) {
+        if (tablePartInfo == null) {
+            return;
+        }
+        List<String> columns =
+                tablePartInfo.getPartColumnIndexMap().keySet().stream()
+                        .filter(partCol -> !tableInfo.getFieldNames().contains(partCol))
+                        .collect(Collectors.toList());
+        if (!columns.isEmpty()) {
+            throw new RuntimeException(
+                    "Table "
+                            + tableInfo.getTableId().identifier()
+                            + " does not contain partition columns: "
+                            + columns);
         }
     }
 

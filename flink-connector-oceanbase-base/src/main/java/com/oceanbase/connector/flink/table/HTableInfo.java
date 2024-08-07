@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 public class HTableInfo implements Table {
 
     private static final long serialVersionUID = 1L;
@@ -149,7 +151,8 @@ public class HTableInfo implements Table {
     }
 
     @Override
-    public Integer getFieldIndex(String fieldName) {
-        return fieldIndexMap.get(fieldName);
+    public int getFieldIndex(String fieldName) {
+        return checkNotNull(
+                fieldIndexMap.get(fieldName), String.format("Field '%s' not found", fieldName));
     }
 }

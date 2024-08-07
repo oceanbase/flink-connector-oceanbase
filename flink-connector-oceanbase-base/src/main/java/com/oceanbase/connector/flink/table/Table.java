@@ -25,5 +25,5 @@ public interface Table extends Serializable {
 
     List<String> getKey();
 
-    Integer getFieldIndex(String fieldName);
+    int getFieldIndex(String fieldName);
 }
