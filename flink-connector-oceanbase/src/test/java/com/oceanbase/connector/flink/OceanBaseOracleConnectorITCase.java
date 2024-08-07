@@ -309,7 +309,7 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                 Thread.sleep(100);
             }
         }
-        Assert.assertEquals(tableRowsCount, expectedCount);
+        Assert.assertEquals(expectedCount, tableRowsCount);
     }
 
     public List<String> queryTable(String tableName) throws SQLException {
