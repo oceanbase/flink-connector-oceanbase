@@ -16,90 +16,96 @@
 
 package com.oceanbase.connector.flink;
 
-import org.apache.flink.util.TestLogger;
-
+import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.MountableFile;
+import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-public abstract class OceanBaseMySQLTestBase extends TestLogger {
+public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseMySQLTestBase.class);
 
+    private static final int SQL_PORT = 2881;
+    private static final int RPC_PORT = 2882;
+    private static final int CONFIG_SERVER_PORT = 8080;
+
+    private static final String CLUSTER_NAME = "flink-oceanbase-ci";
+    private static final String TEST_TENANT = "flink";
+    private static final String SYS_PASSWORD = "123456";
+    private static final String TEST_PASSWORD = "654321";
+
     protected static final Network NETWORK = Network.newNetwork();
 
-    public static final int SQL_PORT = 2881;
-    public static final int RPC_PORT = 2882;
-    public static final int CONFIG_SERVER_PORT = 8080;
+    @ClassRule
+    public static final OceanBaseCEContainer CONTAINER =
+            new OceanBaseCEContainer("oceanbase/oceanbase-ce:latest")
+                    .withMode(OceanBaseCEContainer.Mode.MINI)
+                    .withNetwork(NETWORK)
+                    .withTenantName(TEST_TENANT)
+                    .withPassword(TEST_PASSWORD)
+                    .withExposedPorts(SQL_PORT, RPC_PORT, CONFIG_SERVER_PORT)
+                    .withEnv("OB_CLUSTER_NAME", CLUSTER_NAME)
+                    .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
+                    .withStartupTimeout(Duration.ofMinutes(4))
+                    .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    public static final String CLUSTER_NAME = "github-action";
-    public static final String SYS_USERNAME = "root";
-    public static final String SYS_PASSWORD = "123456";
-    public static final String TEST_TENANT = "flink";
-    public static final String TEST_USERNAME = "root@" + TEST_TENANT;
-    public static final String TEST_PASSWORD = "654321";
-    public static final String TEST_DATABASE = "test";
-
-    @SuppressWarnings("resource")
-    protected static GenericContainer<?> container(String initSqlFile) {
-        GenericContainer<?> container =
-                new GenericContainer<>("oceanbase/oceanbase-ce")
-                        .withNetwork(NETWORK)
-                        .withExposedPorts(SQL_PORT, RPC_PORT, CONFIG_SERVER_PORT)
-                        .withEnv("MODE", "mini")
-                        .withEnv("OB_CLUSTER_NAME", CLUSTER_NAME)
-                        .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
-                        .withEnv("OB_TENANT_NAME", TEST_TENANT)
-                        .withEnv("OB_TENANT_PASSWORD", TEST_PASSWORD)
-                        .waitingFor(Wait.forLogMessage(".*boot success!.*", 1))
-                        .withStartupTimeout(Duration.ofMinutes(4))
-                        .withLogConsumer(new Slf4jLogConsumer(LOG));
-        if (initSqlFile != null) {
-            container.withCopyFileToContainer(
-                    MountableFile.forClasspathResource(initSqlFile), "/root/boot/init.d/init.sql");
-        }
-        return container;
+    @Override
+    public String getHost() {
+        return CONTAINER.getHost();
     }
 
-    protected abstract Map<String, String> getOptions();
-
-    protected String getJdbcUrl(GenericContainer<?> container) {
-        return getJdbcUrl(container.getHost(), container.getMappedPort(SQL_PORT));
+    @Override
+    public int getPort() {
+        return CONTAINER.getMappedPort(SQL_PORT);
     }
 
-    protected String getJdbcUrl(String host, int port) {
-        return "jdbc:mysql://" + host + ":" + port + "/" + TEST_DATABASE + "?useSSL=false";
+    @Override
+    public int getRpcPort() {
+        return CONTAINER.getMappedPort(RPC_PORT);
     }
 
-    protected String getOptionsString() {
-        return getOptions().entrySet().stream()
-                .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
-                .collect(Collectors.joining(","));
+    @Override
+    public String getJdbcUrl() {
+        return "jdbc:mysql://"
+                + getHost()
+                + ":"
+                + getPort()
+                + "/"
+                + getSchemaName()
+                + "?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
     }
 
-    public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEqualsInOrder(
-                expected.stream().sorted().collect(Collectors.toList()),
-                actual.stream().sorted().collect(Collectors.toList()));
+    @Override
+    public String getClusterName() {
+        return CLUSTER_NAME;
     }
 
-    public static void assertEqualsInOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEquals(expected.size(), actual.size());
-        assertArrayEquals(expected.toArray(new String[0]), actual.toArray(new String[0]));
+    @Override
+    public String getSchemaName() {
+        return CONTAINER.getDatabaseName();
+    }
+
+    @Override
+    public String getSysUsername() {
+        return "root";
+    }
+
+    @Override
+    public String getSysPassword() {
+        return SYS_PASSWORD;
+    }
+
+    @Override
+    public String getUsername() {
+        return CONTAINER.getUsername();
+    }
+
+    @Override
+    public String getPassword() {
+        return CONTAINER.getPassword();
     }
 }

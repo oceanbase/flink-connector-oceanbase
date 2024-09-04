@@ -24,7 +24,6 @@ import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.OceanBaseTestData;
 import com.oceanbase.connector.flink.table.OceanBaseTestDataSerializationSchema;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
-import com.oceanbase.connector.flink.utils.OceanBaseJdbcUtils;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -38,211 +37,17 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.RowKind;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
 @Ignore
 public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
-
-    @Override
-    protected String getTestTable() {
-        return "products";
-    }
-
-    @Override
-    protected Map<String, String> getOptions() {
-        Map<String, String> options = super.getOptions();
-        options.put("druid-properties", "druid.initialSize=4;druid.maxActive=20;");
-        return options;
-    }
-
-    @Before
-    public void before() throws SQLException {
-        try (Connection connection = getConnection();
-                Statement statement = connection.createStatement()) {
-            statement.execute(
-                    String.format(
-                            " CREATE TABLE %s (\n"
-                                    + "    id number primary key, \n"
-                                    + "    name varchar(225), \n"
-                                    + "    description varchar(225), \n"
-                                    + "    weight number\n"
-                                    + ")",
-                            getTestTable()));
-        }
-    }
-
-    @After
-    public void after() throws Exception {
-        try (Connection connection = getConnection();
-                Statement statement = connection.createStatement()) {
-            statement.execute("DELETE FROM " + getTestTable());
-            statement.execute("DROP TABLE " + getTestTable());
-        }
-    }
-
-    @Test
-    public void testMultipleTableSink() throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
-
-        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
-        OceanBaseSink<OceanBaseTestData> sink =
-                new OceanBaseSink<>(
-                        connectorOptions,
-                        null,
-                        new OceanBaseTestDataSerializationSchema(),
-                        DataChangeRecord.KeyExtractor.simple(),
-                        new OceanBaseRecordFlusher(connectorOptions));
-
-        OceanBaseDialect dialect = new OceanBaseOracleDialect(connectorOptions);
-        String database = getDatabaseName();
-        String tableA = getTestTable() + "A";
-        String tableB = getTestTable().toUpperCase() + "b";
-        String tableC = getTestTable() + "C";
-
-        String tableFullNameA = dialect.getFullTableName(database, tableA);
-        String tableFullNameB = dialect.getFullTableName(database, tableB);
-        String tableFullNameC = dialect.getFullTableName(database, tableC);
-
-        ResolvedSchema schemaA =
-                new ResolvedSchema(
-                        Arrays.asList(
-                                Column.physical("a", DataTypes.INT().notNull()),
-                                Column.physical("a1", DataTypes.INT().notNull())),
-                        Collections.emptyList(),
-                        UniqueConstraint.primaryKey("pk", Collections.singletonList("a")));
-        ResolvedSchema schemaB =
-                new ResolvedSchema(
-                        Arrays.asList(
-                                Column.physical("b", DataTypes.INT().notNull()),
-                                Column.physical("b1", DataTypes.STRING().notNull())),
-                        Collections.emptyList(),
-                        UniqueConstraint.primaryKey("pk", Collections.singletonList("b")));
-        ResolvedSchema schemaC =
-                ResolvedSchema.of(
-                        Arrays.asList(
-                                Column.physical("c", DataTypes.INT().notNull()),
-                                Column.physical("c1", DataTypes.STRING().notNull())));
-
-        // create table and insert rows
-        List<OceanBaseTestData> dataSet =
-                Arrays.asList(
-                        new OceanBaseTestData(
-                                database,
-                                tableA,
-                                SchemaChangeRecord.Type.CREATE,
-                                String.format(
-                                        "CREATE TABLE %s (A number primary key, a1 number)",
-                                        tableFullNameA)),
-                        new OceanBaseTestData(
-                                database,
-                                tableB,
-                                SchemaChangeRecord.Type.CREATE,
-                                String.format(
-                                        "CREATE TABLE %s (b number primary key, B1 varchar(20))",
-                                        tableFullNameB)),
-                        new OceanBaseTestData(
-                                database,
-                                tableC,
-                                SchemaChangeRecord.Type.CREATE,
-                                String.format(
-                                        "CREATE TABLE %s (C number, c1 varchar(20))",
-                                        tableFullNameC)),
-                        new OceanBaseTestData(
-                                "test",
-                                tableA,
-                                schemaA,
-                                GenericRowData.ofKind(RowKind.INSERT, 1, 1)),
-                        new OceanBaseTestData(
-                                "test",
-                                tableB,
-                                schemaB,
-                                GenericRowData.ofKind(
-                                        RowKind.INSERT, 2, StringData.fromString("2"))),
-                        new OceanBaseTestData(
-                                "test",
-                                tableB,
-                                schemaB,
-                                GenericRowData.ofKind(
-                                        RowKind.INSERT, 3, StringData.fromString("3"))),
-                        new OceanBaseTestData(
-                                "test",
-                                tableC,
-                                schemaC,
-                                GenericRowData.ofKind(
-                                        RowKind.INSERT, 4, StringData.fromString("4"))));
-
-        env.fromCollection(dataSet).sinkTo(sink);
-        env.execute();
-
-        assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,1"));
-        assertEqualsInAnyOrder(queryTable(tableFullNameB), Arrays.asList("2,2", "3,3"));
-        assertEqualsInAnyOrder(queryTable(tableFullNameC), Collections.singletonList("4,4"));
-
-        // update and delete
-        dataSet =
-                Arrays.asList(
-                        new OceanBaseTestData(
-                                "test",
-                                tableA,
-                                schemaA,
-                                GenericRowData.ofKind(RowKind.UPDATE_AFTER, 1, 2)),
-                        new OceanBaseTestData(
-                                "test",
-                                tableB,
-                                schemaB,
-                                GenericRowData.ofKind(
-                                        RowKind.UPDATE_AFTER, 2, StringData.fromString("3"))),
-                        new OceanBaseTestData(
-                                "test",
-                                tableB,
-                                schemaB,
-                                GenericRowData.ofKind(
-                                        RowKind.DELETE, 3, StringData.fromString("3"))));
-
-        env.fromCollection(dataSet).sinkTo(sink);
-        env.execute();
-
-        assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,2"));
-        assertEqualsInAnyOrder(queryTable(tableFullNameB), Collections.singletonList("2,3"));
-
-        // truncate table
-        dataSet =
-                Arrays.asList(
-                        new OceanBaseTestData(
-                                database,
-                                tableA,
-                                SchemaChangeRecord.Type.TRUNCATE,
-                                String.format("TRUNCATE TABLE %s", tableFullNameA)),
-                        new OceanBaseTestData(
-                                database,
-                                tableA,
-                                SchemaChangeRecord.Type.TRUNCATE,
-                                String.format("TRUNCATE TABLE %s", tableFullNameB)));
-        env.fromCollection(dataSet).sinkTo(sink);
-        env.execute();
-
-        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameA)));
-        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameB)));
-    }
 
     @Test
     public void testSink() throws Exception {
@@ -251,6 +56,8 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(
                         env, EnvironmentSettings.newInstance().inStreamingMode().build());
+
+        initialize("sql/oracle/products.sql");
 
         tEnv.executeSql(
                 "CREATE TEMPORARY TABLE target ("
@@ -261,6 +68,7 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                         + " PRIMARY KEY (`id`) NOT ENFORCED"
                         + ") with ("
                         + "  'connector'='oceanbase',"
+                        + "  'table-name'='products',"
                         + getOptionsString()
                         + ");");
 
@@ -277,10 +85,6 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                                 + "       (109, 'spare tire', '24 inch spare tire', 22.2);")
                 .await();
 
-        validateSinkResults();
-    }
-
-    private void validateSinkResults() throws SQLException, InterruptedException {
         List<String> expected =
                 Arrays.asList(
                         "101,scooter,Small 2-wheel scooter,3.14",
@@ -293,53 +97,180 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                         "108,jacket,water resistent black wind breaker,0.1",
                         "109,spare tire,24 inch spare tire,22.2");
 
-        waitingAndAssertTableCount(getTestTable(), expected.size());
+        waitingAndAssertTableCount("products", expected.size());
 
-        List<String> actual = queryTable(getTestTable());
+        List<String> actual = queryTable("products");
 
         assertEqualsInAnyOrder(expected, actual);
+
+        dropTables("products");
     }
 
-    private void waitingAndAssertTableCount(String tableName, int expectedCount)
-            throws InterruptedException {
-        int tableRowsCount = 0;
-        for (int i = 0; i < 100; ++i) {
-            tableRowsCount = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableName);
-            if (tableRowsCount < expectedCount) {
-                Thread.sleep(100);
-            }
-        }
-        Assert.assertEquals(expectedCount, tableRowsCount);
-    }
+    @Test
+    public void testMultipleTableSink() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
 
-    public List<String> queryTable(String tableName) throws SQLException {
-        return queryTable(tableName, Collections.singletonList("*"));
-    }
+        OceanBaseConnectorOptions connectorOptions =
+                new OceanBaseConnectorOptions(getBaseOptions());
+        OceanBaseSink<OceanBaseTestData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OceanBaseTestDataSerializationSchema(),
+                        DataChangeRecord.KeyExtractor.simple(),
+                        new OceanBaseRecordFlusher(connectorOptions));
 
-    public List<String> queryTable(String tableName, List<String> fields) throws SQLException {
-        List<String> result = new ArrayList<>();
-        try (Connection connection = getConnection();
-                Statement statement = connection.createStatement()) {
-            ResultSet rs =
-                    statement.executeQuery(
-                            "SELECT " + String.join(", ", fields) + " FROM " + tableName);
-            ResultSetMetaData metaData = rs.getMetaData();
+        OceanBaseDialect dialect = new OceanBaseOracleDialect(connectorOptions);
+        String schemaName = getSchemaName();
+        String tableA = "table_a";
+        String tableB = "TABLE_b";
+        String tableC = "TABLE_C";
 
-            while (rs.next()) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < metaData.getColumnCount(); i++) {
-                    if (i != 0) {
-                        sb.append(",");
-                    }
-                    sb.append(rs.getObject(i + 1));
-                }
-                result.add(sb.toString());
-            }
-        }
-        return result;
-    }
+        String tableFullNameA = dialect.getFullTableName(schemaName, tableA);
+        String tableFullNameB = dialect.getFullTableName(schemaName, tableB);
+        String tableFullNameC = dialect.getFullTableName(schemaName, tableC);
 
-    protected Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(getUrl(), getUsername(), getPassword());
+        ResolvedSchema tableSchemaA =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("a", DataTypes.INT().notNull()),
+                                Column.physical("a1", DataTypes.INT().notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("a")));
+        ResolvedSchema tableSchemaB =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("b", DataTypes.INT().notNull()),
+                                Column.physical("b1", DataTypes.STRING().notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("b")));
+        ResolvedSchema tableSchemaC =
+                ResolvedSchema.of(
+                        Arrays.asList(
+                                Column.physical("c", DataTypes.INT().notNull()),
+                                Column.physical("c1", DataTypes.STRING().notNull())));
+
+        // create tables and insert rows
+        List<OceanBaseTestData> dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (A number primary key, a1 number)",
+                                        tableFullNameA)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (b number primary key, B1 varchar(20))",
+                                        tableFullNameB)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableC,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (C number, c1 varchar(20))",
+                                        tableFullNameC)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                tableSchemaA,
+                                GenericRowData.ofKind(RowKind.INSERT, 1, 1)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                tableSchemaB,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 2, StringData.fromString("2"))),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                tableSchemaB,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 3, StringData.fromString("3"))),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableC,
+                                tableSchemaC,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 4, StringData.fromString("4"))));
+
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute().wait();
+
+        assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,1"));
+        assertEqualsInAnyOrder(queryTable(tableFullNameB), Arrays.asList("2,2", "3,3"));
+        assertEqualsInAnyOrder(queryTable(tableFullNameC), Collections.singletonList("4,4"));
+
+        // update and delete rows
+        dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                tableSchemaA,
+                                GenericRowData.ofKind(RowKind.UPDATE_AFTER, 1, 2)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                tableSchemaB,
+                                GenericRowData.ofKind(
+                                        RowKind.UPDATE_AFTER, 2, StringData.fromString("3"))),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                tableSchemaB,
+                                GenericRowData.ofKind(
+                                        RowKind.DELETE, 3, StringData.fromString("3"))));
+
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute().wait();
+
+        assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,2"));
+        assertEqualsInAnyOrder(queryTable(tableFullNameB), Collections.singletonList("2,3"));
+
+        // truncate tables
+        dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                SchemaChangeRecord.Type.TRUNCATE,
+                                String.format("TRUNCATE TABLE %s", tableFullNameA)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                SchemaChangeRecord.Type.TRUNCATE,
+                                String.format("TRUNCATE TABLE %s", tableFullNameB)));
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute().wait();
+
+        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameA)));
+        assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameB)));
+
+        // drop tables
+        dataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableA,
+                                SchemaChangeRecord.Type.DROP,
+                                String.format("DROP TABLE %s ", tableFullNameA)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableB,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format("DROP TABLE %s ", tableFullNameB)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableC,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format("DROP TABLE %s ", tableFullNameC)));
+        env.fromCollection(dataSet).sinkTo(sink);
+        env.execute().wait();
     }
 }

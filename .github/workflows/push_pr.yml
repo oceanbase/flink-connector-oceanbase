@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.*'
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flink-connector-oceanbase:
+    uses: ./.github/workflows/test.yml
+    with:
+      module: flink-connector-oceanbase
+
+  flink-connector-obkv-hbase:
+    uses: ./.github/workflows/test.yml
+    with:
+      module: flink-connector-obkv-hbase

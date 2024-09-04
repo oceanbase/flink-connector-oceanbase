@@ -1,0 +1,29 @@
+name: Test Module
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'zulu'
+          cache: 'maven'
+
+      - name: Maven build
+        run: mvn install -DskipTests=true
+
+      - name: Maven test
+        run: mvn verify -pl :${{ inputs.module }} -am
