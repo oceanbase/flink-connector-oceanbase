@@ -34,7 +34,7 @@ under the License.
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>obkv-hbase-client</artifactId>
-            <version>0.1.4</version>
+            <version>0.1.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
