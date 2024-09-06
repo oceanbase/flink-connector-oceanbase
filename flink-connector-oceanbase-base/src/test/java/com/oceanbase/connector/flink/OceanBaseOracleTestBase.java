@@ -16,72 +16,64 @@
 
 package com.oceanbase.connector.flink;
 
-import org.apache.flink.util.TestLogger;
-
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+public abstract class OceanBaseOracleTestBase extends OceanBaseTestBase {
 
-public abstract class OceanBaseOracleTestBase extends TestLogger {
-    public static final String URL = System.getenv("URL");
-    public static final String USER_NAME = System.getenv("USER_NAME");
-    public static final String PASSWORD = System.getenv("PASSWORD");
-    public static final String SCHEMA_NAME = System.getenv("SCHEMA_NAME");
-    public static final String HOST = System.getenv("HOST");
-    public static final String PORT = System.getenv("PORT");
-
-    public static final String DRIVER_CLASS_NAME = "com.oceanbase.jdbc.Driver";
-
-    protected String getUrl() {
-        return URL;
-    }
-
-    protected abstract String getTestTable();
-
-    protected String getUsername() {
-        return USER_NAME;
-    }
-
-    protected String getPassword() {
-        return PASSWORD;
-    }
-
-    protected String getDatabaseName() {
-        return SCHEMA_NAME;
-    }
-
-    protected Map<String, String> getOptions() {
-        Map<String, String> options = new HashMap<>();
-        options.put("url", getUrl());
-        options.put("username", getUsername());
-        options.put("password", getPassword());
-        options.put("schema-name", getDatabaseName());
-        options.put("table-name", getTestTable());
-        options.put("driver-class-name", DRIVER_CLASS_NAME);
+    @Override
+    public Map<String, String> getOptions() {
+        Map<String, String> options = super.getOptions();
+        options.put("driver-class-name", "com.oceanbase.jdbc.Driver");
         return options;
     }
 
-    protected String getOptionsString() {
-        return getOptions().entrySet().stream()
-                .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
-                .collect(Collectors.joining(","));
+    @Override
+    public String getHost() {
+        return System.getenv("HOST");
     }
 
-    public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEqualsInOrder(
-                expected.stream().sorted().collect(Collectors.toList()),
-                actual.stream().sorted().collect(Collectors.toList()));
+    @Override
+    public int getPort() {
+        return Integer.parseInt(System.getenv("PORT"));
     }
 
-    public static void assertEqualsInOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEquals(expected.size(), actual.size());
-        assertArrayEquals(expected.toArray(new String[0]), actual.toArray(new String[0]));
+    @Override
+    public int getRpcPort() {
+        return Integer.parseInt(System.getenv("RPC_PORT"));
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return String.format("jdbc:oceanbase://%s:%d/%s", getHost(), getPort(), getSchemaName());
+    }
+
+    @Override
+    public String getClusterName() {
+        return System.getenv("CLUSTER_NAME");
+    }
+
+    @Override
+    public String getSchemaName() {
+        return System.getenv("SCHEMA_NAME");
+    }
+
+    @Override
+    public String getSysUsername() {
+        return System.getenv("SYS_USERNAME");
+    }
+
+    @Override
+    public String getSysPassword() {
+        return System.getenv("SYS_PASSWORD");
+    }
+
+    @Override
+    public String getUsername() {
+        return System.getenv("USERNAME");
+    }
+
+    @Override
+    public String getPassword() {
+        return System.getenv("PASSWORD");
     }
 }

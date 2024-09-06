@@ -11,27 +11,10 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-CREATE DATABASE IF NOT EXISTS test;
-USE test;
-
 CREATE TABLE products
 (
-  id          INTEGER      NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(255) NOT NULL DEFAULT 'flink',
-  description VARCHAR(512),
-  weight      DECIMAL(20, 10)
+  id NUMBER PRIMARY KEY,
+  name VARCHAR2(225),
+  description VARCHAR2(225),
+  weight NUMBER
 );
-
-
-CREATE TABLE gis_types
-(
-  id                   INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  point_c              POINT,
-  geometry_c           GEOMETRY,
-  linestring_c         LINESTRING,
-  polygon_c            POLYGON,
-  multipoint_c         MULTIPOINT,
-  multiline_c          MULTILINESTRING,
-  multipolygon_c       MULTIPOLYGON,
-  geometrycollection_c GEOMETRYCOLLECTION
-)

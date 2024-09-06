@@ -30,6 +30,6 @@ public class OceanBaseOracleDialectTest {
         OceanBaseOracleDialect oracleDialect = new OceanBaseOracleDialect(options);
 
         String identifier = "name";
-        Assert.assertEquals(oracleDialect.quoteIdentifier(identifier), identifier);
+        Assert.assertEquals(identifier, oracleDialect.quoteIdentifier(identifier));
     }
 }

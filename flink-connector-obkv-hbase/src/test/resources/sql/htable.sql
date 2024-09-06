@@ -11,9 +11,6 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-CREATE DATABASE IF NOT EXISTS test;
-USE test;
-
 CREATE TABLE `htable$family1`
 (
   `K` varbinary(1024) NOT NULL,
