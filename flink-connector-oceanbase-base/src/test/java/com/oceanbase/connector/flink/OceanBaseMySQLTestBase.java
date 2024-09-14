@@ -19,6 +19,7 @@ package com.oceanbase.connector.flink;
 import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
@@ -31,14 +32,17 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
 
     private static final int SQL_PORT = 2881;
     private static final int RPC_PORT = 2882;
+    private static final int ODP_PORT = 2883;
+    private static final int ODP_RPC_PORT = 2885;
     private static final int CONFIG_SERVER_PORT = 8080;
 
     private static final String CLUSTER_NAME = "flink-oceanbase-ci";
     private static final String TEST_TENANT = "flink";
     private static final String SYS_PASSWORD = "123456";
     private static final String TEST_PASSWORD = "654321";
-
-    public static final Network NETWORK = Network.newNetwork();
+    private static final String APP_NAME = "odp_test";
+    protected GenericContainer<?> obproxy;
+    private static final Network NETWORK = Network.newNetwork();
 
     @ClassRule
     public static final OceanBaseCEContainer CONTAINER =
@@ -54,6 +58,17 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withEnv("OB_LOG_DISK_SIZE", "4G")
                     .withStartupTimeout(Duration.ofMinutes(4))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
+
+    GenericContainer<?> initObProxyContainer(String rsList) {
+        return new GenericContainer<>("oceanbase/obproxy-ce:4.3.1.0-4")
+                .withNetwork(NETWORK)
+                .withEnv("PROXYRO_PASSWORD", SYS_PASSWORD)
+                .withEnv("OB_CLUSTER", CLUSTER_NAME)
+                .withEnv("APP_NAME", APP_NAME)
+                .withEnv("RS_LIST", rsList)
+                .withExposedPorts(ODP_PORT, ODP_RPC_PORT)
+                .withLogConsumer(new Slf4jLogConsumer(LOG));
+    }
 
     @Override
     public String getHost() {
@@ -109,5 +124,11 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     @Override
     public String getPassword() {
         return CONTAINER.getPassword();
+    }
+
+    public String getODPUrl() {
+        String odpUrl = obproxy.getHost() + ":" + obproxy.getMappedPort(ODP_RPC_PORT);
+        LOG.info("odp url value is: {}", odpUrl);
+        return odpUrl;
     }
 }

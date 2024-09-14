@@ -51,13 +51,6 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
                 .collect(Collectors.joining(","));
     }
 
-    public static String getODPOptions(Map<String, Object> options) {
-        assertNotNull(options);
-        return options.entrySet().stream()
-                .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
-                .collect(Collectors.joining(","));
-    }
-
     public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
         assertTrue(expected != null && actual != null);
         assertEqualsInOrder(

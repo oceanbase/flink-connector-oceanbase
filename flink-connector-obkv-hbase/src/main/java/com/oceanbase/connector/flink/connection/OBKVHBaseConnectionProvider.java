@@ -77,11 +77,11 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
             String paramUrl = String.format("%s&database=%s", options.getUrl(), databaseName);
             LOG.debug("Set paramURL for database {} to {}", databaseName, paramUrl);
             conf.set(OHConstants.HBASE_OCEANBASE_PARAM_URL, paramUrl);
+            conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, options.getSysUsername());
+            conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, options.getSysPassword());
         }
         conf.set(OHConstants.HBASE_OCEANBASE_FULL_USER_NAME, options.getUsername());
         conf.set(OHConstants.HBASE_OCEANBASE_PASSWORD, options.getPassword());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_USER_NAME, options.getSysUsername());
-        conf.set(OHConstants.HBASE_OCEANBASE_SYS_PASSWORD, options.getSysPassword());
         Properties hbaseProperties = options.getHBaseProperties();
         if (hbaseProperties != null) {
             for (String name : hbaseProperties.stringPropertyNames()) {
