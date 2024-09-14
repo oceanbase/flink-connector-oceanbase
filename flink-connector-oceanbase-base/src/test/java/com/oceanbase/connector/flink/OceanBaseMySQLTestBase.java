@@ -38,7 +38,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     private static final String SYS_PASSWORD = "123456";
     private static final String TEST_PASSWORD = "654321";
 
-    protected static final Network NETWORK = Network.newNetwork();
+    public static final Network NETWORK = Network.newNetwork();
 
     @ClassRule
     public static final OceanBaseCEContainer CONTAINER =
@@ -50,6 +50,8 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withExposedPorts(SQL_PORT, RPC_PORT, CONFIG_SERVER_PORT)
                     .withEnv("OB_CLUSTER_NAME", CLUSTER_NAME)
                     .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
+                    .withEnv("OB_DATAFILE_SIZE", "2G")
+                    .withEnv("OB_LOG_DISK_SIZE", "4G")
                     .withStartupTimeout(Duration.ofMinutes(4))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 

@@ -46,6 +46,12 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Properties to configure 'obkv-hbase-client-java'.");
 
+    public static final ConfigOption<Boolean> ODP_MODE =
+            ConfigOptions.key("odp-mode")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("When in ODP mode, the url should be odp-ip:odp-port.");
+
     public OBKVHBaseConnectorOptions(Map<String, String> config) {
         super(config);
     }
@@ -60,5 +66,9 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
 
     public Properties getHBaseProperties() {
         return OptionUtils.parseProperties(allConfig.get(HBASE_PROPERTIES));
+    }
+
+    public Boolean getOdpMode() {
+        return allConfig.get(ODP_MODE);
     }
 }

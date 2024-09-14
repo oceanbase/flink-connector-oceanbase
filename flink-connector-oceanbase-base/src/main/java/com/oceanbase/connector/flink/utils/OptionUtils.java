@@ -57,4 +57,12 @@ public class OptionUtils {
         }
         return props;
     }
+
+    public static String[] getIpAndPort(String url) {
+        if (StringUtils.isNotBlank(url)) {
+            return url.split(":");
+        } else {
+            throw new IllegalArgumentException("The URL is not up to specification");
+        }
+    }
 }

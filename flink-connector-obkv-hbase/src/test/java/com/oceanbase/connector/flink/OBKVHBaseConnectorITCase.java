@@ -22,6 +22,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -41,6 +42,13 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
         options.put("password", getPassword());
         options.put("schema-name", getSchemaName());
         return options;
+    }
+
+    @AfterEach
+    public void tearDown() {
+        if (CONTAINER != null) {
+            CONTAINER.close();
+        }
     }
 
     @Test

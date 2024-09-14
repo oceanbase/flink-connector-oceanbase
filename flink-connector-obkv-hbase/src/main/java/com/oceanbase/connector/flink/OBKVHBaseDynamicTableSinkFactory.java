@@ -67,14 +67,15 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OBKVHBaseConnectorOptions.PASSWORD);
         options.add(OBKVHBaseConnectorOptions.SCHEMA_NAME);
         options.add(OBKVHBaseConnectorOptions.TABLE_NAME);
-        options.add(OBKVHBaseConnectorOptions.SYS_USERNAME);
-        options.add(OBKVHBaseConnectorOptions.SYS_PASSWORD);
         return options;
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(OBKVHBaseConnectorOptions.ODP_MODE);
+        options.add(OBKVHBaseConnectorOptions.SYS_USERNAME);
+        options.add(OBKVHBaseConnectorOptions.SYS_PASSWORD);
         options.add(OBKVHBaseConnectorOptions.SYNC_WRITE);
         options.add(OBKVHBaseConnectorOptions.BUFFER_FLUSH_INTERVAL);
         options.add(OBKVHBaseConnectorOptions.BUFFER_SIZE);
