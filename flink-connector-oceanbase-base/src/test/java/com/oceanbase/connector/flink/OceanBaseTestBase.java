@@ -16,8 +16,6 @@
 
 package com.oceanbase.connector.flink;
 
-import org.junit.Assert;
-
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -104,6 +102,42 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         }
     }
 
+    public String getRsList() throws SQLException {
+        Connection connection = null;
+        try {
+            connection =
+                    DriverManager.getConnection(getJdbcUrl(), getSysUsername(), getSysPassword());
+            Statement statement = connection.createStatement();
+            String sql = "SELECT svr_ip, inner_port FROM oceanbase.__all_server;";
+            ResultSet rs = statement.executeQuery(sql);
+            if (rs.next()) {
+                return rs.getString("svr_ip") + ":" + rs.getString("inner_port");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (connection != null) {
+                connection.isClosed();
+            }
+        }
+        return null;
+    }
+
+    public void createProxyUser() {
+        try (Connection connection =
+                        DriverManager.getConnection(
+                                getJdbcUrl(), getSysUsername(), getSysPassword());
+                Statement statement = connection.createStatement()) {
+            String createUserSql = "CREATE USER IF NOT EXISTS 'proxyro' IDENTIFIED BY '123456'";
+            String grantPrivilegesSql = "GRANT ALL PRIVILEGES ON *.* TO 'proxyro'@'%'";
+            statement.execute(createUserSql);
+            statement.execute(grantPrivilegesSql);
+            connection.isClosed();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void initialize(String sqlFile) {
         final URL file = getClass().getClassLoader().getResource(sqlFile);
         assertNotNull("Cannot locate " + sqlFile, file);
@@ -147,7 +181,7 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
                 Thread.sleep(100);
             }
         }
-        Assert.assertEquals(expectedCount, tableRowsCount);
+        assertEquals(expectedCount, tableRowsCount);
     }
 
     public int getTableRowsCount(String tableName) throws SQLException {
