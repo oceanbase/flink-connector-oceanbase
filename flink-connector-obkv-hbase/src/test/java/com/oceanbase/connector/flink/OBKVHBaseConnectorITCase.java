@@ -22,21 +22,20 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
+import org.testcontainers.lifecycle.Startables;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     @Override
     public Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
-        options.put("url", getSysParameter("obconfig_url"));
-        options.put("sys.username", getSysUsername());
-        options.put("sys.password", getSysPassword());
         options.put("username", getUsername() + "#" + getClusterName());
         options.put("password", getPassword());
         options.put("schema-name", getSchemaName());
@@ -45,6 +44,30 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     @Test
     public void testSink() throws Exception {
+        Map<String, String> options = getOptions();
+        options.put("url", getSysParameter("obconfig_url"));
+        options.put("sys.username", getSysUsername());
+        options.put("sys.password", getSysPassword());
+
+        testSinkToHTable(options);
+    }
+
+    @Test
+    public void testSinkWithODP() throws Exception {
+        createSysUser("proxyro", getSysPassword());
+        try (OceanBaseProxyContainer odpContainer =
+                createOdpContainer(getRsListForODP(), getSysPassword())) {
+            Startables.deepStart(Stream.of(odpContainer)).join();
+
+            Map<String, String> options = getOptions();
+            options.put("odp-mode", "true");
+            options.put("url", odpContainer.getHost() + ":" + odpContainer.getRpcPort());
+
+            testSinkToHTable(options);
+        }
+    }
+
+    private void testSinkToHTable(Map<String, String> options) throws Exception {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
         execEnv.setParallelism(1);
         StreamTableEnvironment tEnv =
@@ -62,7 +85,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
                         + ") with ("
                         + "  'connector'='obkv-hbase',"
                         + "  'table-name'='htable',"
-                        + getOptionsString()
+                        + getOptionsString(options)
                         + ");");
 
         String insertSql =

@@ -86,10 +86,12 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         return DriverManager.getConnection(getJdbcUrl(), getUsername(), getPassword());
     }
 
+    public Connection getSysJdbcConnection() throws SQLException {
+        return DriverManager.getConnection(getJdbcUrl(), getSysUsername(), getSysPassword());
+    }
+
     public String getSysParameter(String parameter) {
-        try (Connection connection =
-                        DriverManager.getConnection(
-                                getJdbcUrl(), getSysUsername(), getSysPassword());
+        try (Connection connection = getSysJdbcConnection();
                 Statement statement = connection.createStatement()) {
             String sql = String.format("SHOW PARAMETERS LIKE '%s'", parameter);
             ResultSet rs = statement.executeQuery(sql);
@@ -102,39 +104,12 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         }
     }
 
-    public String getRsList() throws SQLException {
-        Connection connection = null;
-        try {
-            connection =
-                    DriverManager.getConnection(getJdbcUrl(), getSysUsername(), getSysPassword());
-            Statement statement = connection.createStatement();
-            String sql = "SELECT svr_ip, inner_port FROM oceanbase.__all_server;";
-            ResultSet rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                return rs.getString("svr_ip") + ":" + rs.getString("inner_port");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (connection != null) {
-                connection.isClosed();
-            }
-        }
-        return null;
-    }
-
-    public void createProxyUser() {
-        try (Connection connection =
-                        DriverManager.getConnection(
-                                getJdbcUrl(), getSysUsername(), getSysPassword());
+    public void createSysUser(String user, String password) throws SQLException {
+        assert user != null && password != null;
+        try (Connection connection = getSysJdbcConnection();
                 Statement statement = connection.createStatement()) {
-            String createUserSql = "CREATE USER IF NOT EXISTS 'proxyro' IDENTIFIED BY '123456'";
-            String grantPrivilegesSql = "GRANT ALL PRIVILEGES ON *.* TO 'proxyro'@'%'";
-            statement.execute(createUserSql);
-            statement.execute(grantPrivilegesSql);
-            connection.isClosed();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            statement.execute("CREATE USER '" + user + "' IDENTIFIED BY '" + password + "'");
+            statement.execute("GRANT ALL PRIVILEGES ON *.* TO '" + user + "'@'%'");
         }
     }
 
