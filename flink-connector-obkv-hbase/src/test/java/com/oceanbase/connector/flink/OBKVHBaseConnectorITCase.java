@@ -24,7 +24,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
 import org.testcontainers.lifecycle.Startables;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +44,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     @Test
     public void testSink() throws Exception {
         Map<String, String> options = getOptions();
-        options.put("url", getSysParameter("obconfig_url"));
+        options.put("url", getConfigUrl());
         options.put("sys.username", getSysUsername());
         options.put("sys.password", getSysPassword());
 
@@ -55,8 +54,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     @Test
     public void testSinkWithODP() throws Exception {
         createSysUser("proxyro", getSysPassword());
-        try (OceanBaseProxyContainer odpContainer =
-                createOdpContainer(getRsListForODP(), getSysPassword())) {
+        try (OceanBaseProxyContainer odpContainer = createOdpContainer(getSysPassword())) {
             Startables.deepStart(Stream.of(odpContainer)).join();
 
             Map<String, String> options = getOptions();
@@ -147,11 +145,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
         assertEqualsInAnyOrder(expected2, actual2);
 
         dropTables("htable$family1", "htable$family2");
-    }
-
-    protected List<String> queryHTable(String tableName, RowConverter rowConverter)
-            throws SQLException {
-        return queryTable(tableName, Arrays.asList("K", "Q", "V"), rowConverter);
     }
 
     protected String integer(Integer n) {

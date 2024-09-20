@@ -23,10 +23,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.Duration;
 
 public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
@@ -60,25 +56,16 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     @SuppressWarnings("resource")
-    public OceanBaseProxyContainer createOdpContainer(String rsList, String password) {
+    public OceanBaseProxyContainer createOdpContainer(String password) {
         return new OceanBaseProxyContainer("4.3.1.0-4")
                 .withNetwork(NETWORK)
-                .withClusterName(CLUSTER_NAME)
-                .withRsList(rsList)
+                .withConfigUrl(getConfigUrl())
                 .withPassword(password)
                 .withLogConsumer(new Slf4jLogConsumer(LOG));
     }
 
-    public String getRsListForODP() throws SQLException {
-        try (Connection connection = getSysJdbcConnection();
-                Statement statement = connection.createStatement()) {
-            String sql = "SELECT svr_ip, inner_port FROM oceanbase.__all_server;";
-            ResultSet rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                return rs.getString("svr_ip") + ":" + rs.getString("inner_port");
-            }
-            throw new RuntimeException("Server ip and port not found");
-        }
+    public String getConfigUrl() {
+        return getSysParameter("obconfig_url");
     }
 
     @Override

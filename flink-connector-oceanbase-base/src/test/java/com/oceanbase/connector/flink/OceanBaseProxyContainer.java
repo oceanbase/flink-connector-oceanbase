@@ -32,8 +32,7 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
     private static final int RPC_PORT = 2885;
     private static final String APP_NAME = "flink_oceanbase_test";
 
-    private String clusterName = "obcluster";
-    private String rsList;
+    private String configUrl;
     private String password;
 
     public OceanBaseProxyContainer(String version) {
@@ -43,10 +42,9 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
 
     @Override
     protected void configure() {
-        assert rsList != null && password != null;
+        assert configUrl != null && password != null;
         addEnv("APP_NAME", APP_NAME);
-        addEnv("OB_CLUSTER", clusterName);
-        addEnv("RS_LIST", rsList);
+        addEnv("CONFIG_URL", configUrl);
         addEnv("PROXYRO_PASSWORD", password);
     }
 
@@ -55,13 +53,8 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
                 Arrays.asList(this.getMappedPort(SQL_PORT), this.getMappedPort(RPC_PORT)));
     }
 
-    public OceanBaseProxyContainer withClusterName(String clusterName) {
-        this.clusterName = clusterName;
-        return this;
-    }
-
-    public OceanBaseProxyContainer withRsList(String rsList) {
-        this.rsList = rsList;
+    public OceanBaseProxyContainer withConfigUrl(String configUrl) {
+        this.configUrl = configUrl;
         return this;
     }
 

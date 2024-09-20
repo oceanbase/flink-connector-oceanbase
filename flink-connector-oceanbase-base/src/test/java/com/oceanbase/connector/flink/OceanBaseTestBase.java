@@ -212,6 +212,11 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         }
     }
 
+    public List<String> queryHTable(String tableName, RowConverter rowConverter)
+            throws SQLException {
+        return queryTable(tableName, Arrays.asList("K", "Q", "V"), rowConverter);
+    }
+
     @FunctionalInterface
     public interface RowConverter {
         String convert(ResultSet rs, int columnCount) throws SQLException;
