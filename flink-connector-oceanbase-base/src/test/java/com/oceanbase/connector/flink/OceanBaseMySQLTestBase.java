@@ -59,13 +59,15 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     public OceanBaseProxyContainer createOdpContainer(String password) {
         return new OceanBaseProxyContainer("4.3.1.0-4")
                 .withNetwork(NETWORK)
-                .withConfigUrl(getConfigUrl())
+                .withConfigUrl(getOdpConfigUrl())
                 .withPassword(password)
                 .withLogConsumer(new Slf4jLogConsumer(LOG));
     }
 
-    public String getConfigUrl() {
-        return getSysParameter("obconfig_url");
+    public String getOdpConfigUrl() {
+        return String.format(
+                "http://%s:%d/services?Action=GetObProxyConfig",
+                CONTAINER.getHost(), CONTAINER.getMappedPort(CONFIG_SERVER_PORT));
     }
 
     @Override

@@ -44,7 +44,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     @Test
     public void testSink() throws Exception {
         Map<String, String> options = getOptions();
-        options.put("url", getConfigUrl());
+        options.put("url", getSysParameter("obconfig_url"));
         options.put("sys.username", getSysUsername());
         options.put("sys.password", getSysPassword());
 
