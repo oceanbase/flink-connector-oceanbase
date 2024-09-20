@@ -51,6 +51,16 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
                     .booleanType()
                     .defaultValue(false)
                     .withDescription("When in ODP mode, the url should be odp-ip:odp-port.");
+    public static final ConfigOption<String> ODP_IP =
+            ConfigOptions.key("odp-ip")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("ODP IP, please fill in it when using the ODP mode.");
+    public static final ConfigOption<Integer> ODP_PORT =
+            ConfigOptions.key("odp-port")
+                    .intType()
+                    .noDefaultValue()
+                    .withDescription("ODP port, please fill in it when using the ODP mode.");
 
     public OBKVHBaseConnectorOptions(Map<String, String> config) {
         super(config);
@@ -70,5 +80,13 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
 
     public Boolean getOdpMode() {
         return allConfig.get(ODP_MODE);
+    }
+
+    public String getOdpIP() {
+        return allConfig.get(ODP_IP);
+    }
+
+    public Integer getOdpPort() {
+        return allConfig.get(ODP_PORT);
     }
 }

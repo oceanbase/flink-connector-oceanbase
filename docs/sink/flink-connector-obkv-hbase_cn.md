@@ -72,6 +72,8 @@ CREATE TABLE `htable1$family1`
 
 以 Maven 项目为例，将需要的依赖加入到应用的 pom.xml 文件中，然后使用以下代码
 
+##### obconfig_url模式
+
 ```java
 package com.oceanbase;
 
@@ -113,6 +115,49 @@ public class Main {
 }
 ```
 
+##### odp模式
+
+```java
+package com.oceanbase;
+
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env =
+                StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
+        StreamTableEnvironment tEnv =
+                StreamTableEnvironment.create(
+                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
+
+        tEnv.executeSql(
+                "CREATE TABLE t_sink ( "
+                        + " rowkey STRING,"
+                        + " family1 ROW<column1 STRING, column2 STRING>,"
+                        + " PRIMARY KEY (rowkey) NOT ENFORCED"
+                        + ") with ("
+                        + "  'connector'='obkv-hbase',"
+                        + "  'odp-mode'='true',"
+                        + "  'odp-ip'='127.0.0.1',"
+                        + "  'odp-port'='12881',"
+                        + "  'schema-name'='test',"
+                        + "  'table-name'='htable1',"
+                        + "  'username'='root@test',"
+                        + "  'password'='',"
+                        + ");");
+
+        tEnv.executeSql(
+                        "INSERT INTO t_sink VALUES "
+                                + "('1', ROW('r1f1c1', 'r1f1c2')),"
+                                + "('2', ROW('r2f1c1', 'r2f1c2')),"
+                                + "('2', ROW('r3f1c1', 'r3f1c2'));")
+                .await();
+    }
+}
+```
+
 执行完成后，即可在 OceanBase 中检索验证。
 
 更多信息请参考 [OBKVHBaseConnectorITCase.java](../../flink-connector-obkv-hbase/src/test/java/com/oceanbase/connector/flink/OBKVHBaseConnectorITCase.java)。
@@ -120,6 +165,8 @@ public class Main {
 #### Flink SQL 示例
 
 将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
+
+##### obconfig_url模式
 
 ```sql
 CREATE TABLE t_sink
@@ -131,6 +178,28 @@ CREATE TABLE t_sink
 ) with (
   'connector'='obkv-hbase',
   'url'='http://127.0.0.1:8080/services?...',
+  'schema-name'='test',
+  'table-name'='htable1',
+  'username'='root@test',
+  'password'='',
+  'sys.username'='root',
+  'sys.password'='');
+```
+
+##### odp模式
+
+```sql
+CREATE TABLE t_sink
+(
+  rowkey STRING,
+  family1 ROW <column1 STRING,
+  column2 STRING >,
+  PRIMARY KEY (rowkey) NOT ENFORCED
+) with (
+  'connector'='obkv-hbase',
+  'odp-mode'='true',
+  'odp-ip'='127.0.0.1',
+  'odp-port'='12881',
   'schema-name'='test',
   'table-name'='htable1',
   'username'='root@test',
