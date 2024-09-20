@@ -91,6 +91,6 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
 
     @Override
     protected String getTestQueryString() {
-        return "SELECT 1";
+        return "SHOW PROXYCONFIG LIKE 'obproxy_config_server_url'";
     }
 }
