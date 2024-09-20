@@ -141,7 +141,7 @@ public class Main {
                         + "  'connector'='obkv-hbase',"
                         + "  'odp-mode'='true',"
                         + "  'odp-ip'='127.0.0.1',"
-                        + "  'odp-port'='12881',"
+                        + "  'odp-port'='2885',"
                         + "  'schema-name'='test',"
                         + "  'table-name'='htable1',"
                         + "  'username'='root@test',"
@@ -199,7 +199,7 @@ CREATE TABLE t_sink
   'connector'='obkv-hbase',
   'odp-mode'='true',
   'odp-ip'='127.0.0.1',
-  'odp-port'='12881',
+  'odp-port'='2885',
   'schema-name'='test',
   'table-name'='htable1',
   'username'='root@test',
@@ -228,7 +228,7 @@ Once executed, the records should have been written to OceanBase.
 | table-name               | Yes      |         | String   | The table name of HBase, note that the table name in OceanBase is <code>hbase_table_name$family_name</code>.             |
 | username                 | Yes      |         | String   | The username of non-sys tenant.                                                                                          |
 | password                 | Yes      |         | String   | The password of non-sys tenant.                                                                                          |
-| odp-mode                 | No       |         | Boolean  | If the value of ODP-MODE is true, use the ODP mode to connect to OBKV.                                                   |
+| odp-mode                 | No       | false   | Boolean  | If the value of ODP-MODE is true, use the ODP mode to connect to OBKV.                                                   |
 | odp-ip                   | No       |         | String   | IP address of the ODP. When the value of odp-mode is true, it is required                                                |
 | odp-port                 | No       |         | Integer  | rpc_listen_port of ODP. When the value of odp-mode is true, it is required.                                              |
 | sys.username             | No       |         | String   | The username of sys tenant.Required when using obconfig_url mode                                                         |

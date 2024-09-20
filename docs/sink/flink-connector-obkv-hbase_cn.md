@@ -141,7 +141,7 @@ public class Main {
                         + "  'connector'='obkv-hbase',"
                         + "  'odp-mode'='true',"
                         + "  'odp-ip'='127.0.0.1',"
-                        + "  'odp-port'='12881',"
+                        + "  'odp-port'='2885',"
                         + "  'schema-name'='test',"
                         + "  'table-name'='htable1',"
                         + "  'username'='root@test',"
@@ -199,7 +199,7 @@ CREATE TABLE t_sink
   'connector'='obkv-hbase',
   'odp-mode'='true',
   'odp-ip'='127.0.0.1',
-  'odp-port'='12881',
+  'odp-port'='2885',
   'schema-name'='test',
   'table-name'='htable1',
   'username'='root@test',
@@ -228,7 +228,7 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 | table-name               | 是    |       | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。                        |
 | username                 | 是    |       | String   | 非 sys 租户的用户名。                                                                                    |
 | password                 | 是    |       | String   | 非 sys 租户的密码。                                                                                     |
-| odp-mode                 | 否    |       | Boolean  | 当 odp-mode 的值为 true 时使用 odp 模式连接 obkv。                                                           |
+| odp-mode                 | 否    | false | Boolean  | 当 odp-mode 的值为 true 时使用 odp 模式连接 obkv。                                                           |
 | odp-ip                   | 否    |       | String   | odp 的 ip，当 odp-mode 的值为 true 时为必填项。                                                              |
 | odp-port                 | 否    |       | Integer  | odp 的 rpc_listen_port，当 odp-mode 的值为 true 时为必填项。                                                 |
 | sys.username             | 否    |       | String   | sys 租户的用户名，当使用 obconfig_url 模式时为必填项。                                                             |
