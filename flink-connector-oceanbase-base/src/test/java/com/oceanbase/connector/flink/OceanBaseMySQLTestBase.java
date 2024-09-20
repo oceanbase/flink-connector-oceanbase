@@ -56,11 +56,12 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     @SuppressWarnings("resource")
-    public OceanBaseProxyContainer createOdpContainer(String password) {
+    public OceanBaseProxyContainer createOdpContainer(String proxyroPassword) {
         return new OceanBaseProxyContainer("4.3.1.0-4")
                 .withNetwork(NETWORK)
                 .withConfigUrl(getOdpConfigUrl())
-                .withPassword(password)
+                .withPassword(SYS_PASSWORD)
+                .withProxyroPassword(proxyroPassword)
                 .withLogConsumer(new Slf4jLogConsumer(LOG));
     }
 

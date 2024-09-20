@@ -16,15 +16,12 @@
 
 package com.oceanbase.connector.flink;
 
-import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 
-public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyContainer> {
+public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProxyContainer> {
 
     private static final String IMAGE = "oceanbase/obproxy-ce";
 
@@ -34,6 +31,7 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
 
     private String configUrl;
     private String password;
+    private String proxyroPassword;
 
     public OceanBaseProxyContainer(String version) {
         super(DockerImageName.parse(IMAGE + ":" + version));
@@ -42,15 +40,10 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
 
     @Override
     protected void configure() {
-        assert configUrl != null && password != null;
         addEnv("APP_NAME", APP_NAME);
-        addEnv("CONFIG_URL", configUrl);
-        addEnv("PROXYRO_PASSWORD", password);
-    }
-
-    public @NotNull Set<Integer> getLivenessCheckPortNumbers() {
-        return new HashSet<>(
-                Arrays.asList(this.getMappedPort(SQL_PORT), this.getMappedPort(RPC_PORT)));
+        addEnv("CONFIG_URL", Objects.requireNonNull(configUrl));
+        addEnv("PROXYSYS_PASSWORD", Objects.requireNonNull(password));
+        addEnv("PROXYRO_PASSWORD", Objects.requireNonNull(proxyroPassword));
     }
 
     public OceanBaseProxyContainer withConfigUrl(String configUrl) {
@@ -63,11 +56,41 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
         return this;
     }
 
+    public OceanBaseProxyContainer withProxyroPassword(String proxyroPassword) {
+        this.proxyroPassword = proxyroPassword;
+        return this;
+    }
+
+    @Override
+    public String getUsername() {
+        return "root@proxysys";
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
     public int getSqlPort() {
         return getMappedPort(SQL_PORT);
     }
 
     public int getRpcPort() {
         return getMappedPort(RPC_PORT);
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return "jdbc:mysql://" + getHost() + ":" + getSqlPort();
+    }
+
+    @Override
+    public String getDriverClassName() {
+        return "com.mysql.cj.jdbc.Driver";
+    }
+
+    @Override
+    protected String getTestQueryString() {
+        return "SELECT 1";
     }
 }
