@@ -221,20 +221,23 @@ Once executed, the records should have been written to OceanBase.
 
 ## Configuration
 
-|          Option          | Required | Default |   Type   |                                                 Description                                                  |
-|--------------------------|----------|---------|----------|--------------------------------------------------------------------------------------------------------------|
-| url                      | Yes      |         | String   | The config url, can be queried by <code>SHOW PARAMETERS LIKE 'obconfig_url'</code>.                          |
-| schema-name              | Yes      |         | String   | The database name of OceanBase.                                                                              |
-| table-name               | Yes      |         | String   | The table name of HBase, note that the table name in OceanBase is <code>hbase_table_name$family_name</code>. |
-| username                 | Yes      |         | String   | The username of non-sys tenant.                                                                              |
-| password                 | Yes      |         | String   | The password of non-sys tenant.                                                                              |
-| sys.username             | Yes      |         | String   | The username of sys tenant.                                                                                  |
-| sys.password             | Yes      |         | String   | The password of sys tenant.                                                                                  |
-| hbase.properties         | No       |         | String   | Properties to configure 'obkv-hbase-client-java', multiple values are separated by semicolons.               |
-| sync-write               | No       | false   | Boolean  | Whether to write data synchronously, will not use buffer if it's set to 'true'.                              |
-| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval. Set '0' to disable scheduled flushing.                                                |
-| buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size.                                                                                                 |
-| max-retries              | No       | 3       | Integer  | Max retry times on failure.                                                                                  |
+|          Option          | Required | Default |   Type   |                                                       Description                                                        |
+|--------------------------|----------|---------|----------|--------------------------------------------------------------------------------------------------------------------------|
+| url                      | Yes      |         | String   | The config url, can be queried by <code>SHOW PARAMETERS LIKE 'obconfig_url'</code>.Required when using obconfig_url mode |
+| schema-name              | Yes      |         | String   | The database name of OceanBase.                                                                                          |
+| table-name               | Yes      |         | String   | The table name of HBase, note that the table name in OceanBase is <code>hbase_table_name$family_name</code>.             |
+| username                 | Yes      |         | String   | The username of non-sys tenant.                                                                                          |
+| password                 | Yes      |         | String   | The password of non-sys tenant.                                                                                          |
+| odp-mode                 | No       |         | Boolean  | If the value of ODP-MODE is true, use the ODP mode to connect to OBKV.                                                   |
+| odp-ip                   | No       |         | String   | IP address of the ODP. When the value of odp-mode is true, it is required                                                |
+| odp-port                 | No       |         | Integer  | rpc_listen_port of ODP. When the value of odp-mode is true, it is required.                                              |
+| sys.username             | No       |         | String   | The username of sys tenant.Required when using obconfig_url mode                                                         |
+| sys.password             | No       |         | String   | The password of sys tenant.Required when using obconfig_url mode                                                         |
+| hbase.properties         | No       |         | String   | Properties to configure 'obkv-hbase-client-java', multiple values are separated by semicolons.                           |
+| sync-write               | No       | false   | Boolean  | Whether to write data synchronously, will not use buffer if it's set to 'true'.                                          |
+| buffer-flush.interval    | No       | 1s      | Duration | Buffer flush interval. Set '0' to disable scheduled flushing.                                                            |
+| buffer-flush.buffer-size | No       | 1000    | Integer  | Buffer size.                                                                                                             |
+| max-retries              | No       | 3       | Integer  | Max retry times on failure.                                                                                              |
 
 ## References
 
