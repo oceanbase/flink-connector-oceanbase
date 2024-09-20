@@ -74,7 +74,7 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
         return getMappedPort(SQL_PORT);
     }
 
-    public String getRpcPort() {
-        return String.valueOf(getMappedPort(RPC_PORT));
+    public int getRpcPort() {
+        return getMappedPort(RPC_PORT);
     }
 }
