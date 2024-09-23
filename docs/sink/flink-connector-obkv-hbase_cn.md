@@ -54,6 +54,8 @@ mvn clean package -DskipTests
 
 ### 示例
 
+#### 准备
+
 在 OceanBase 中创建一张表 `htable1$family1`, 该表的名称中， `htable1` 对应 HBase 的表名，`family1` 对应 HBase 中的 column family。
 
 ```mysql
@@ -68,132 +70,36 @@ CREATE TABLE `htable1$family1`
 )
 ```
 
-#### Java 应用示例
-
-以 Maven 项目为例，将需要的依赖加入到应用的 pom.xml 文件中，然后使用以下代码
-
-##### 使用URL连接
-
-```java
-package com.oceanbase;
-
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env =
-                StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
-        StreamTableEnvironment tEnv =
-                StreamTableEnvironment.create(
-                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
-
-        tEnv.executeSql(
-                "CREATE TABLE t_sink ( "
-                        + " rowkey STRING,"
-                        + " family1 ROW<column1 STRING, column2 STRING>,"
-                        + " PRIMARY KEY (rowkey) NOT ENFORCED"
-                        + ") with ("
-                        + "  'connector'='obkv-hbase',"
-                        + "  'url'='http://127.0.0.1:8080/services?...',"
-                        + "  'schema-name'='test',"
-                        + "  'table-name'='htable1',"
-                        + "  'username'='root@test',"
-                        + "  'password'='',"
-                        + "  'sys.username'='root',"
-                        + "  'sys.password'=''"
-                        + ");");
-
-        tEnv.executeSql(
-                        "INSERT INTO t_sink VALUES "
-                                + "('1', ROW('r1f1c1', 'r1f1c2')),"
-                                + "('2', ROW('r2f1c1', 'r2f1c2')),"
-                                + "('2', ROW('r3f1c1', 'r3f1c2'));")
-                .await();
-    }
-}
-```
-
-##### 使用ODP模式连接
-
-```java
-package com.oceanbase;
-
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env =
-                StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
-        StreamTableEnvironment tEnv =
-                StreamTableEnvironment.create(
-                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
-
-        tEnv.executeSql(
-                "CREATE TABLE t_sink ( "
-                        + " rowkey STRING,"
-                        + " family1 ROW<column1 STRING, column2 STRING>,"
-                        + " PRIMARY KEY (rowkey) NOT ENFORCED"
-                        + ") with ("
-                        + "  'connector'='obkv-hbase',"
-                        + "  'odp-mode'='true',"
-                        + "  'odp-ip'='127.0.0.1',"
-                        + "  'odp-port'='2885',"
-                        + "  'schema-name'='test',"
-                        + "  'table-name'='htable1',"
-                        + "  'username'='root@test',"
-                        + "  'password'='',"
-                        + ");");
-
-        tEnv.executeSql(
-                        "INSERT INTO t_sink VALUES "
-                                + "('1', ROW('r1f1c1', 'r1f1c2')),"
-                                + "('2', ROW('r2f1c1', 'r2f1c2')),"
-                                + "('2', ROW('r3f1c1', 'r3f1c2'));")
-                .await();
-    }
-}
-```
-
-执行完成后，即可在 OceanBase 中检索验证。
-
-更多信息请参考 [OBKVHBaseConnectorITCase.java](../../flink-connector-obkv-hbase/src/test/java/com/oceanbase/connector/flink/OBKVHBaseConnectorITCase.java)。
-
 #### Flink SQL 示例
 
 将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
 
-##### 使用URL连接
+##### 使用 Config Url 连接
 
 ```sql
 CREATE TABLE t_sink
 (
   rowkey STRING,
-  family1 ROW <column1 STRING,
-  column2 STRING >,
+  family1 ROW <column1 STRING, column2 STRING >,
   PRIMARY KEY (rowkey) NOT ENFORCED
 ) with (
   'connector'='obkv-hbase',
-  'url'='http://127.0.0.1:8080/services?...',
+  'url'='http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=obcluster',
   'schema-name'='test',
   'table-name'='htable1',
-  'username'='root@test',
-  'password'='',
+  'username'='root@test#obcluster',
+  'password'='654321',
   'sys.username'='root',
-  'sys.password'='');
+  'sys.password'='123456');
 ```
 
-##### 使用ODP模式连接
+##### 使用 ODP 连接
 
 ```sql
 CREATE TABLE t_sink
 (
   rowkey STRING,
-  family1 ROW <column1 STRING,
-  column2 STRING >,
+  family1 ROW <column1 STRING, column2 STRING >,
   PRIMARY KEY (rowkey) NOT ENFORCED
 ) with (
   'connector'='obkv-hbase',
@@ -202,9 +108,11 @@ CREATE TABLE t_sink
   'odp-port'='2885',
   'schema-name'='test',
   'table-name'='htable1',
-  'username'='root@test',
-  'password'='');
+  'username'='root@test#obcluster',
+  'password'='654321');
 ```
+
+##### 写入数据
 
 插入测试数据
 
@@ -219,23 +127,23 @@ VALUES ('1', ROW ('r1f1c1', 'r1f1c2')),
 
 ## 配置项
 
-|           参数名            | 是否必需 |  默认值  |    类型    |                                                描述                                                |
-|--------------------------|------|-------|----------|--------------------------------------------------------------------------------------------------|
-| url                      | 否    |       | String   | 集群的 config url，可以通过 <code>SHOW PARAMETERS LIKE 'obconfig_url'</code> 查询。当使用 obconfig_url 模式时为必填项 |
-| schema-name              | 是    |       | String   | OceanBase 的 db 名。                                                                                |
-| table-name               | 是    |       | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。                        |
-| username                 | 是    |       | String   | 非 sys 租户的用户名。                                                                                    |
-| password                 | 是    |       | String   | 非 sys 租户的密码。                                                                                     |
-| odp-mode                 | 否    | false | Boolean  | 当 odp-mode 的值为 true 时使用 odp 模式连接 obkv。                                                           |
-| odp-ip                   | 否    |       | String   | odp 的 ip，当 odp-mode 的值为 true 时为必填项。                                                              |
-| odp-port                 | 否    |       | Integer  | odp 的 rpc_listen_port，当 odp-mode 的值为 true 时为必填项。                                                 |
-| sys.username             | 否    |       | String   | sys 租户的用户名，当使用 obconfig_url 模式时为必填项。                                                             |
-| sys.password             | 否    |       | String   | sys 租户用户的密码，当使用 obconfig_url 模式时为必填项。                                                            |
-| hbase.properties         | 否    |       | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                                        |
-| sync-write               | 否    | false | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                                           |
-| buffer-flush.interval    | 否    | 1s    | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                                                        |
-| buffer-flush.buffer-size | 否    | 1000  | Integer  | 缓冲区大小。                                                                                           |
-| max-retries              | 否    | 3     | Integer  | 失败重试次数。                                                                                          |
+|           参数名            | 是否必需 |  默认值  |    类型    |                                                 描述                                                  |
+|--------------------------|------|-------|----------|-----------------------------------------------------------------------------------------------------|
+| schema-name              | 是    |       | String   | OceanBase 的 db 名。                                                                                   |
+| table-name               | 是    |       | String   | HBase 表名，注意在 OceanBase 中表名的结构是 <code>hbase_table_name$family_name</code>。                           |
+| username                 | 是    |       | String   | 非 sys 租户的用户名。                                                                                       |
+| password                 | 是    |       | String   | 非 sys 租户的密码。                                                                                        |
+| odp-mode                 | 否    | false | Boolean  | 如果设置为 'true'，连接器将通过 ODP 连接到 OBKV，否则通过 config url 连接。                                                |
+| url                      | 否    |       | String   | 集群的 config url，可以通过 <code>SHOW PARAMETERS LIKE 'obconfig_url'</code> 查询。当 'odp-mode' 为 'false' 时必填。 |
+| sys.username             | 否    |       | String   | sys 租户的用户名，当 'odp-mode' 为 'false' 时必填。                                                              |
+| sys.password             | 否    |       | String   | sys 租户用户的密码，当 'odp-mode' 为 'false' 时必填。                                                             |
+| odp-ip                   | 否    |       | String   | ODP 的 IP，当 'odp-mode' 为 'true' 时必填。                                                                 |
+| odp-port                 | 否    | 2885  | Integer  | ODP 的 RPC 端口，当 'odp-mode' 为 'true' 时必填。                                                             |
+| hbase.properties         | 否    |       | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔。                                                           |
+| sync-write               | 否    | false | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                                              |
+| buffer-flush.interval    | 否    | 1s    | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                                                           |
+| buffer-flush.buffer-size | 否    | 1000  | Integer  | 缓冲区大小。                                                                                              |
+| max-retries              | 否    | 3     | Integer  | 失败重试次数。                                                                                             |
 
 ## 参考信息
 

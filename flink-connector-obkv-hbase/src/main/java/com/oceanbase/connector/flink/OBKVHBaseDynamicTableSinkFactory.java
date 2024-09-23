@@ -28,6 +28,7 @@ import org.apache.flink.table.factories.FactoryUtil;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,8 +51,9 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
                         resolvedSchema.getPrimaryKey().orElse(null));
         Map<String, String> options = context.getCatalogTable().getOptions();
         OptionUtils.printOptions(IDENTIFIER, options);
-        return new OBKVHBaseDynamicTableSink(
-                physicalSchema, new OBKVHBaseConnectorOptions(options));
+        OBKVHBaseConnectorOptions connectorOptions = new OBKVHBaseConnectorOptions(options);
+        validateConnectorSinkOptions(connectorOptions);
+        return new OBKVHBaseDynamicTableSink(physicalSchema, connectorOptions);
     }
 
     @Override
@@ -84,5 +86,21 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OBKVHBaseConnectorOptions.MAX_RETRIES);
         options.add(OBKVHBaseConnectorOptions.HBASE_PROPERTIES);
         return options;
+    }
+
+    private void validateConnectorSinkOptions(OBKVHBaseConnectorOptions connectorOptions) {
+        if (connectorOptions.getOdpMode()) {
+            Objects.requireNonNull(
+                    connectorOptions.getOdpIP(), "'odp-ip' is required if 'odp-mode' is 'true'");
+        } else {
+            Objects.requireNonNull(
+                    connectorOptions.getUrl(), "'url' is required if 'odp-mode' is 'false'");
+            Objects.requireNonNull(
+                    connectorOptions.getUrl(),
+                    "'sys.username' is required if 'odp-mode' is 'false'");
+            Objects.requireNonNull(
+                    connectorOptions.getUrl(),
+                    "'sys.password' is required if 'odp-mode' is 'false'");
+        }
     }
 }
