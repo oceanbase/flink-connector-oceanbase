@@ -84,10 +84,10 @@ CREATE TABLE t_sink
   PRIMARY KEY (rowkey) NOT ENFORCED
 ) with (
   'connector'='obkv-hbase',
-  'url'='http://127.0.0.1:8080/services?...',
+  'url'='http://127.0.0.1:8080/services?Action=ObRootServiceInfo&ObCluster=obcluster',
   'schema-name'='test',
   'table-name'='htable1',
-  'username'='root@test',
+  'username'='root@test#obcluster',
   'password'='654321',
   'sys.username'='root',
   'sys.password'='123456');
@@ -108,7 +108,7 @@ CREATE TABLE t_sink
   'odp-port'='2885',
   'schema-name'='test',
   'table-name'='htable1',
-  'username'='root@test',
+  'username'='root@test#obcluster',
   'password'='654321');
 ```
 
