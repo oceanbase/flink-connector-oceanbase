@@ -223,7 +223,7 @@ Once executed, the records should have been written to OceanBase.
 
 |          Option          | Required | Default |   Type   |                                                       Description                                                        |
 |--------------------------|----------|---------|----------|--------------------------------------------------------------------------------------------------------------------------|
-| url                      | Yes      |         | String   | The config url, can be queried by <code>SHOW PARAMETERS LIKE 'obconfig_url'</code>.Required when using obconfig_url mode |
+| url                      | No      |         | String   | The config url, can be queried by <code>SHOW PARAMETERS LIKE 'obconfig_url'</code>. Required when 'odp-mode' is set to 'false'. |
 | schema-name              | Yes      |         | String   | The database name of OceanBase.                                                                                          |
 | table-name               | Yes      |         | String   | The table name of HBase, note that the table name in OceanBase is <code>hbase_table_name$family_name</code>.             |
 | username                 | Yes      |         | String   | The username of non-sys tenant.                                                                                          |
