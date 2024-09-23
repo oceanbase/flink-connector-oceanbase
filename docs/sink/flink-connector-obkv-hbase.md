@@ -72,7 +72,7 @@ CREATE TABLE `htable1$family1`
 
 Take Maven project for example, add the required dependencies to the pom.xml, and then use the following code.
 
-##### obconfig_url mode
+##### Connect using a URL
 
 ```java
 package com.oceanbase;
@@ -115,7 +115,7 @@ public class Main {
 }
 ```
 
-##### odp mode
+##### Connect using ODP mode
 
 ```java
 package com.oceanbase;
@@ -166,7 +166,7 @@ For more information please refer to [OBKVHBaseConnectorITCase.java](../../flink
 
 Put the JAR files of dependencies to the 'lib' directory of Flink, and then create the destination table with Flink SQL through the sql client.
 
-##### obconfig_url mode
+##### Connect using a URL
 
 ```sql
 CREATE TABLE t_sink
@@ -186,7 +186,7 @@ CREATE TABLE t_sink
   'sys.password'='');
 ```
 
-##### odp mode
+##### Connect using ODP mode
 
 ```sql
 CREATE TABLE t_sink
@@ -203,9 +203,7 @@ CREATE TABLE t_sink
   'schema-name'='test',
   'table-name'='htable1',
   'username'='root@test',
-  'password'='',
-  'sys.username'='root',
-  'sys.password'='');
+  'password'='');
 ```
 
 Insert records by Flink SQL.

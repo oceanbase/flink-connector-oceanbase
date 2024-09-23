@@ -72,7 +72,7 @@ CREATE TABLE `htable1$family1`
 
 以 Maven 项目为例，将需要的依赖加入到应用的 pom.xml 文件中，然后使用以下代码
 
-##### obconfig_url模式
+##### 使用URL连接
 
 ```java
 package com.oceanbase;
@@ -115,7 +115,7 @@ public class Main {
 }
 ```
 
-##### odp模式
+##### 使用ODP模式连接
 
 ```java
 package com.oceanbase;
@@ -166,7 +166,7 @@ public class Main {
 
 将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
 
-##### obconfig_url模式
+##### 使用URL连接
 
 ```sql
 CREATE TABLE t_sink
@@ -186,7 +186,7 @@ CREATE TABLE t_sink
   'sys.password'='');
 ```
 
-##### odp模式
+##### 使用ODP模式连接
 
 ```sql
 CREATE TABLE t_sink
@@ -203,9 +203,7 @@ CREATE TABLE t_sink
   'schema-name'='test',
   'table-name'='htable1',
   'username'='root@test',
-  'password'='',
-  'sys.username'='root',
-  'sys.password'='');
+  'password'='');
 ```
 
 插入测试数据
