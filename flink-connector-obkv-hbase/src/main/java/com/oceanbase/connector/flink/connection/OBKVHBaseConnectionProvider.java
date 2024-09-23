@@ -18,7 +18,6 @@ package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.OBKVHBaseConnectorOptions;
 import com.oceanbase.connector.flink.table.TableId;
-import com.oceanbase.connector.flink.utils.OptionUtils;
 import com.oceanbase.connector.flink.utils.TableCache;
 
 import com.alipay.oceanbase.hbase.OHTableClient;
@@ -66,12 +65,8 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
         Configuration conf = new Configuration();
         if (options.getOdpMode()) {
             conf.setBoolean(OHConstants.HBASE_OCEANBASE_ODP_MODE, options.getOdpMode());
-            conf.set(
-                    OHConstants.HBASE_OCEANBASE_ODP_ADDR,
-                    OptionUtils.getIpAndPort(options.getUrl())[0]);
-            conf.setInt(
-                    OHConstants.HBASE_OCEANBASE_ODP_PORT,
-                    Integer.parseInt(OptionUtils.getIpAndPort(options.getUrl())[1]));
+            conf.set(OHConstants.HBASE_OCEANBASE_ODP_ADDR, options.getOdpIP());
+            conf.setInt(OHConstants.HBASE_OCEANBASE_ODP_PORT, options.getOdpPort());
             conf.set(OHConstants.HBASE_OCEANBASE_DATABASE, databaseName);
         } else {
             String paramUrl = String.format("%s&database=%s", options.getUrl(), databaseName);

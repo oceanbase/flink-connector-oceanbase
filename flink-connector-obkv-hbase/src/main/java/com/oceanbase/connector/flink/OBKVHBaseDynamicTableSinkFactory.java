@@ -62,7 +62,6 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(OBKVHBaseConnectorOptions.URL);
         options.add(OBKVHBaseConnectorOptions.USERNAME);
         options.add(OBKVHBaseConnectorOptions.PASSWORD);
         options.add(OBKVHBaseConnectorOptions.SCHEMA_NAME);
@@ -73,7 +72,10 @@ public class OBKVHBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(OBKVHBaseConnectorOptions.URL);
         options.add(OBKVHBaseConnectorOptions.ODP_MODE);
+        options.add(OBKVHBaseConnectorOptions.ODP_IP);
+        options.add(OBKVHBaseConnectorOptions.ODP_PORT);
         options.add(OBKVHBaseConnectorOptions.SYS_USERNAME);
         options.add(OBKVHBaseConnectorOptions.SYS_PASSWORD);
         options.add(OBKVHBaseConnectorOptions.SYNC_WRITE);

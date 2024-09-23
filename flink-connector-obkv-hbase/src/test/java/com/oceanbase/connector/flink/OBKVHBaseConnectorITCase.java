@@ -59,8 +59,8 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
             Map<String, String> options = getOptions();
             options.put("odp-mode", "true");
-            options.put("url", odpContainer.getHost() + ":" + odpContainer.getRpcPort());
-
+            options.put("odp-ip", odpContainer.getHost());
+            options.put("odp-port", String.valueOf(odpContainer.getRpcPort()));
             testSinkToHTable(options);
         }
     }
