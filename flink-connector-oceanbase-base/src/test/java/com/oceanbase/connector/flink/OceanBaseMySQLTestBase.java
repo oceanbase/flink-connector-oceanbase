@@ -59,9 +59,9 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     public OceanBaseProxyContainer createOdpContainer(String proxyroPassword) {
         return new OceanBaseProxyContainer("4.3.1.0-4")
                 .withNetwork(NETWORK)
+                .withClusterName(CLUSTER_NAME)
                 .withConfigUrl(getOdpConfigUrl())
-                .withPassword(SYS_PASSWORD)
-                .withProxyroPassword(proxyroPassword)
+                .withPassword(proxyroPassword)
                 .withLogConsumer(new Slf4jLogConsumer(LOG));
     }
 

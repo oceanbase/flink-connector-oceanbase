@@ -29,9 +29,9 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
     private static final int RPC_PORT = 2885;
     private static final String APP_NAME = "flink_oceanbase_test";
 
+    private String clusterName = "obcluster";
     private String configUrl;
     private String password;
-    private String proxyroPassword;
 
     public OceanBaseProxyContainer(String version) {
         super(DockerImageName.parse(IMAGE + ":" + version));
@@ -42,8 +42,12 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
     protected void configure() {
         addEnv("APP_NAME", APP_NAME);
         addEnv("CONFIG_URL", Objects.requireNonNull(configUrl));
-        addEnv("PROXYSYS_PASSWORD", Objects.requireNonNull(password));
-        addEnv("PROXYRO_PASSWORD", Objects.requireNonNull(proxyroPassword));
+        addEnv("PROXYRO_PASSWORD", Objects.requireNonNull(password));
+    }
+
+    public OceanBaseProxyContainer withClusterName(String clusterName) {
+        this.clusterName = clusterName;
+        return this;
     }
 
     public OceanBaseProxyContainer withConfigUrl(String configUrl) {
@@ -56,14 +60,9 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
         return this;
     }
 
-    public OceanBaseProxyContainer withProxyroPassword(String proxyroPassword) {
-        this.proxyroPassword = proxyroPassword;
-        return this;
-    }
-
     @Override
     public String getUsername() {
-        return "root@proxysys";
+        return "proxyro@sys#" + clusterName;
     }
 
     @Override
@@ -91,6 +90,6 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
 
     @Override
     protected String getTestQueryString() {
-        return "SHOW PROXYCONFIG LIKE 'obproxy_config_server_url'";
+        return "SELECT 1";
     }
 }
