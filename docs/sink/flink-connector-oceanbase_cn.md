@@ -150,33 +150,228 @@ CREATE TABLE t_sink
 
 ## 配置项
 
-|              参数名               | Table API 必需 | DataStream 必需 |           默认值            |    类型    |                                                                                                           描述                                                                                                           |
-|--------------------------------|--------------|---------------|--------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| url                            | 是            | 是             |                          | String   | 数据库的 JDBC url。                                                                                                                                                                                                         |
-| username                       | 是            | 是             |                          | String   | 连接用户名。                                                                                                                                                                                                                 |
-| password                       | 是            | 是             |                          | String   | 连接密码。                                                                                                                                                                                                                  |
-| schema-name                    | 是            | 不支持           |                          | String   | 连接的 schema 名或 db 名。                                                                                                                                                                                                    |
-| table-name                     | 是            | 不支持           |                          | String   | 表名。                                                                                                                                                                                                                    |
-| driver-class-name              | 否            | 否             | com.mysql.cj.jdbc.Driver | String   | 驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。                                                                                                                                                              |
-| druid-properties               | 否            | 否             |                          | String   | Druid 连接池属性，多个值用分号分隔。                                                                                                                                                                                                  |
-| sync-write                     | 否            | 否             | false                    | Boolean  | 是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。                                                                                                                                                                                 |
-| buffer-flush.interval          | 否            | 否             | 1s                       | Duration | 缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。                                                                                                                                                                                              |
-| buffer-flush.buffer-size       | 否            | 否             | 1000                     | Integer  | 缓冲区大小。                                                                                                                                                                                                                 |
-| max-retries                    | 否            | 否             | 3                        | Integer  | 失败重试次数。                                                                                                                                                                                                                |
-| memstore-check.enabled         | 否            | 否             | true                     | Boolean  | 是否开启内存检查。                                                                                                                                                                                                              |
-| memstore-check.threshold       | 否            | 否             | 0.9                      | Double   | 内存使用的阈值相对最大限制值的比例。                                                                                                                                                                                                     |
-| memstore-check.interval        | 否            | 否             | 30s                      | Duration | 内存使用检查周期。                                                                                                                                                                                                              |
-| partition.enabled              | 否            | 否             | false                    | Boolean  | 是否启用分区计算功能，按照分区来写数据。仅当 'sync-write' 和 'direct-load.enabled' 都为 false 时生效。                                                                                                                                              |
-| direct-load.enabled            | 否            | 否             | false                    | Boolean  | 是否开启旁路导入。需要注意旁路导入需要将 sink 的并发度设置为1。                                                                                                                                                                                    |
-| direct-load.host               | 否            | 否             |                          | String   | 旁路导入使用的域名或 IP 地址，开启旁路导入时为必填项。                                                                                                                                                                                          |
-| direct-load.port               | 否            | 否             | 2882                     | Integer  | 旁路导入使用的 RPC 端口，开启旁路导入时为必填项。                                                                                                                                                                                            |
-| direct-load.parallel           | 否            | 否             | 8                        | Integer  | 旁路导入任务的并发度。                                                                                                                                                                                                            |
-| direct-load.max-error-rows     | 否            | 否             | 0                        | Long     | 旁路导入任务最大可容忍的错误行数目。                                                                                                                                                                                                     |
-| direct-load.dup-action         | 否            | 否             | REPLACE                  | STRING   | 旁路导入任务中主键重复时的处理策略。可以是 'STOP_ON_DUP'（本次导入失败），'REPLACE'（替换）或 'IGNORE'（忽略）。                                                                                                                                               |
-| direct-load.timeout            | 否            | 否             | 7d                       | Duration | 旁路导入任务的超时时间。                                                                                                                                                                                                           |
-| direct-load.heartbeat-timeout  | 否            | 否             | 60s                      | Duration | 旁路导入任务客户端的心跳超时时间。                                                                                                                                                                                                      |
-| direct-load.heartbeat-interval | 否            | 否             | 10s                      | Duration | 旁路导入任务客户端的心跳间隔时间。                                                                                                                                                                                                      |
-| direct-load.load-method        | 否            | 否             | full                     | String   | 旁路导入导入模式：full、inc、inc_replace。full：全量旁路导入，默认值。inc：普通增量旁路导入，会进行主键冲突检查，observer-4.3.2及以上支持，暂时不支持dupAction为REPLACE。inc_replace: 特殊replace模式的增量旁路导入，不会进行主键冲突检查，直接覆盖旧数据（相当于replace的效果），dupAction参数会被忽略，observer-4.3.2及以上支持。 |
+<div class="highlight">
+    <table class="colwidths-auto docutils">
+        <thead>
+            <tr>
+                <th class="text-left" style="width: 10%">参数名</th>
+                <th class="text-left" style="width: 8%">Table API 必需</th>
+                <th class="text-left" style="width: 7%">DataStream 必需</th>
+                <th class="text-left" style="width: 10%">默认值</th>
+                <th class="text-left" style="width: 15%">类型</th>
+                <th class="text-left" style="width: 50%">描述</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>url</td>
+                <td>是</td>
+                <td>是</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>数据库的 JDBC url。</td>
+            </tr>
+            <tr>
+                <td>username</td>
+                <td>是</td>
+                <td>是</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>连接用户名。</td>
+            </tr>
+            <tr>
+                <td>password</td>
+                <td>是</td>
+                <td>是</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>连接密码。</td>
+            </tr>
+            <tr>
+                <td>schema-name</td>
+                <td>是</td>
+                <td>不支持</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>连接的 schema 名或 db 名。</td>
+            </tr>
+            <tr>
+                <td>table-name</td>
+                <td>是</td>
+                <td>不支持</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>表名。</td>
+            </tr>
+            <tr>
+                <td>driver-class-name</td>
+                <td>否</td>
+                <td>否</td>
+                <td>com.mysql.cj.jdbc.Driver</td>
+                <td>String</td>
+                <td>驱动类名，默认为 'com.mysql.cj.jdbc.Driver'，如果设置了其他值，需要手动引入对应的依赖。</td>
+            </tr>
+            <tr>
+                <td>druid-properties</td>
+                <td>否</td>
+                <td>否</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>Druid 连接池属性，多个值用分号分隔。</td>
+            </tr>
+            <tr>
+                <td>sync-write</td>
+                <td>否</td>
+                <td>否</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>是否开启同步写，设置为 true 时将不使用 buffer 直接写入数据库。</td>
+            </tr>
+            <tr>
+                <td>buffer-flush.interval</td>
+                <td>否</td>
+                <td>否</td>
+                <td>1s</td>
+                <td>Duration</td>
+                <td>缓冲区刷新周期。设置为 '0' 时将关闭定期刷新。</td>
+            </tr>
+            <tr>
+                <td>buffer-flush.buffer-size</td>
+                <td>否</td>
+                <td>否</td>
+                <td>1000</td>
+                <td>Integer</td>
+                <td>缓冲区大小。</td>
+            </tr>
+            <tr>
+                <td>max-retries</td>
+                <td>否</td>
+                <td>否</td>
+                <td>3</td>
+                <td>Integer</td>
+                <td>失败重试次数。</td>
+            </tr>
+            <tr>
+                <td>memstore-check.enabled</td>
+                <td>否</td>
+                <td>否</td>
+                <td>true</td>
+                <td>Boolean</td>
+                <td>是否开启内存检查。</td>
+            </tr>
+            <tr>
+                <td>memstore-check.threshold</td>
+                <td>否</td>
+                <td>否</td>
+                <td>0.9</td>
+                <td>Double</td>
+                <td>内存使用的阈值相对最大限制值的比例。</td>
+            </tr>
+            <tr>
+                <td>memstore-check.interval</td>
+                <td>否</td>
+                <td>否</td>
+                <td>30s</td>
+                <td>Duration</td>
+                <td>内存使用检查周期。</td>
+            </tr>
+            <tr>
+                <td>partition.enabled</td>
+                <td>否</td>
+                <td>否</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>是否启用分区计算功能，按照分区来写数据。仅当 'sync-write' 和 'direct-load.enabled' 都为 false 时生效。</td>
+            </tr>
+            <tr>
+                <td>direct-load.enabled</td>
+                <td>否</td>
+                <td>否</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>是否开启旁路导入。需要注意旁路导入需要将 sink 的并发度设置为1。</td>
+            </tr>
+            <tr>
+                <td>direct-load.host</td>
+                <td>否</td>
+                <td>否</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>旁路导入使用的域名或 IP 地址，开启旁路导入时为必填项。</td>
+            </tr>
+            <tr>
+                <td>direct-load.port</td>
+                <td>否</td>
+                <td>否</td>
+                <td>2882</td>
+                <td>Integer</td>
+                <td>旁路导入使用的 RPC 端口，开启旁路导入时为必填项。</td>
+            </tr>
+            <tr>
+                <td>direct-load.parallel</td>
+                <td>否</td>
+                <td>否</td>
+                <td>8</td>
+                <td>Integer</td>
+                <td>旁路导入任务的并发度。</td>
+            </tr>
+            <tr>
+                <td>direct-load.max-error-rows</td>
+                <td>否</td>
+                <td>否</td>
+                <td>0</td>
+                <td>Long</td>
+                <td>旁路导入任务最大可容忍的错误行数目。</td>
+            </tr>
+            <tr>
+                <td>direct-load.dup-action</td>
+                <td>否</td>
+                <td>否</td>
+                <td>REPLACE</td>
+                <td>String</td>
+                <td>旁路导入任务中主键重复时的处理策略。可以是 <code>STOP_ON_DUP</code>（本次导入失败），<code>REPLACE</code>（替换）或 <code>IGNORE</code>（忽略）。</td>
+            </tr>
+            <tr>
+                <td>direct-load.timeout</td>
+                <td>否</td>
+                <td>否</td>
+                <td>7d</td>
+                <td>Duration</td>
+                <td>旁路导入任务的超时时间。</td>
+            </tr>
+            <tr>
+                <td>direct-load.heartbeat-timeout</td>
+                <td>否</td>
+                <td>否</td>
+                <td>60s</td>
+                <td>Duration</td>
+                <td>旁路导入任务客户端的心跳超时时间。</td>
+            </tr>
+            <tr>
+                <td>direct-load.heartbeat-interval</td>
+                <td>否</td>
+                <td>否</td>
+                <td>10s</td>
+                <td>Duration</td>
+                <td>旁路导入任务客户端的心跳间隔时间。</td>
+            </tr>
+            <tr>
+                <td>direct-load.load-method</td>
+                <td>否</td>
+                <td>否</td>
+                <td>full</td>
+                <td>String</td>
+                <td>旁路导入导入模式：<code>full</code>, <code>inc</code>, <code>inc_replace</code>。
+                <ul>
+                    <li><code>full</code>：全量旁路导入，默认值。</li>
+                    <li><code>inc</code>：普通增量旁路导入，会进行主键冲突检查，observer-4.3.2及以上支持，暂时不支持direct-load.dup-action为REPLACE。</li>
+                    <li><code>inc_replace</code>: 特殊replace模式的增量旁路导入，不会进行主键冲突检查，直接覆盖旧数据（相当于replace的效果），direct-load.dup-action参数会被忽略，observer-4.3.2及以上支持。</li>
+                </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
 ## 参考信息
 
