@@ -23,6 +23,7 @@ import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseVersion;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+import com.oceanbase.connector.flink.directload.DirectLoader;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 import com.oceanbase.connector.flink.table.TableId;
@@ -34,10 +35,9 @@ import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 
+import com.alipay.oceanbase.rpc.direct_load.ObDirectLoadBucket;
 import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObj;
 import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObjType;
-import com.alipay.oceanbase.rpc.table.ObDirectLoadBucket;
-import com.alipay.oceanbase.rpc.table.ObTableDirectLoad;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -71,7 +71,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     private final OceanBaseDialect dialect;
 
     private final TableCache<OceanBaseTablePartInfo> tablePartInfoCache;
-    private final TableCache<ObTableDirectLoad> directLoadCache;
+    private final TableCache<DirectLoader> directLoadCache;
 
     private volatile long lastCheckMemStoreTime;
 
@@ -99,7 +99,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                     getTableDirectLoad(record.getTableId()).commit();
                     break;
                 case ROLLBACK:
-                    getTableDirectLoad(record.getTableId()).abort();
+                    getTableDirectLoad(record.getTableId()).close();
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -231,12 +231,12 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                             .map(f -> toObObj(record.getFieldValue(f)))
                             .toArray(ObObj[]::new));
         }
-        getTableDirectLoad(tableId).insert(bucket);
+        getTableDirectLoad(tableId).write(bucket);
     }
 
-    private ObTableDirectLoad getTableDirectLoad(TableId tableId) {
+    private DirectLoader getTableDirectLoad(TableId tableId) {
         return directLoadCache.get(
-                tableId.identifier(), () -> connectionProvider.getDirectLoad(tableId));
+                tableId.identifier(), () -> connectionProvider.getDirectLoadStatement(tableId));
     }
 
     private ObObj toObObj(Object value) {
@@ -393,8 +393,8 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             tablePartInfoCache.clear();
         }
         if (directLoadCache != null) {
-            for (ObTableDirectLoad directLoad : directLoadCache.getAll()) {
-                directLoad.getTable().close();
+            for (DirectLoader directLoad : directLoadCache.getAll()) {
+                directLoad.close();
             }
             directLoadCache.clear();
         }

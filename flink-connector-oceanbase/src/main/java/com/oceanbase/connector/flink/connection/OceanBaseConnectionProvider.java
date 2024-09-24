@@ -20,13 +20,12 @@ import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
+import com.oceanbase.connector.flink.directload.DirectLoader;
+import com.oceanbase.connector.flink.directload.DirectLoaderBuilder;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.utils.OceanBaseJdbcUtils;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.alipay.oceanbase.rpc.table.ObDirectLoadParameter;
-import com.alipay.oceanbase.rpc.table.ObTable;
-import com.alipay.oceanbase.rpc.table.ObTableDirectLoad;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,7 +171,7 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         return userInfo;
     }
 
-    public ObTableDirectLoad getDirectLoad(TableId tableId) {
+    public DirectLoader getDirectLoadStatement(TableId tableId) {
         int count = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableId.identifier());
         if (count != 0) {
             throw new RuntimeException(
@@ -182,32 +181,25 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
                             + count
                             + " rows");
         }
-        ObTable table = getDirectLoadTable(tableId.getSchemaName());
-        return new ObTableDirectLoad(table, tableId.getTableName(), getDirectLoadParameter(), true);
-    }
+        DirectLoader directLoader =
+                new DirectLoaderBuilder()
+                        .host(options.getDirectLoadHost())
+                        .port(options.getDirectLoadPort())
+                        .user(getUserInfo().getUser())
+                        .password(options.getPassword())
+                        .tenant(getUserInfo().getTenant())
+                        .schema(options.getSchemaName())
+                        .table(tableId.getTableName())
+                        .duplicateKeyAction(options.getDirectLoadDupAction())
+                        .maxErrorCount(options.getDirectLoadMaxErrorRows())
+                        .directLoadMethod(options.getDirectLoadLoadMethod())
+                        .timeout(options.getDirectLoadTimeout())
+                        .heartBeatTimeout(options.getDirectLoadHeartbeatTimeout())
+                        .heartBeatInterval(options.getDirectLoadHeartbeatInterval())
+                        .parallel(options.getDirectLoadParallel())
+                        .build();
 
-    private ObTable getDirectLoadTable(String schemaName) {
-        try {
-            return new ObTable.Builder(options.getDirectLoadHost(), options.getDirectLoadPort())
-                    .setLoginInfo(
-                            getUserInfo().getTenant(),
-                            getUserInfo().getUser(),
-                            options.getPassword(),
-                            schemaName)
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get ObTable", e);
-        }
-    }
-
-    private ObDirectLoadParameter getDirectLoadParameter() {
-        ObDirectLoadParameter parameter = new ObDirectLoadParameter();
-        parameter.setParallel(options.getDirectLoadParallel());
-        parameter.setMaxErrorRowCount(options.getDirectLoadMaxErrorRows());
-        parameter.setDupAction(options.getDirectLoadDupAction());
-        parameter.setTimeout(options.getDirectLoadTimeout());
-        parameter.setHeartBeatTimeout(options.getDirectLoadHeartbeatTimeout());
-        return parameter;
+        return directLoader;
     }
 
     @Override

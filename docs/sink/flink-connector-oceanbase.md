@@ -148,31 +148,228 @@ CREATE TABLE t_sink
 
 ## Configuration
 
-|            Option             | Required by Table API | Required by DataStream |         Default          |   Type   |                                                                 Description                                                                  |
-|-------------------------------|-----------------------|------------------------|--------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| url                           | Yes                   | Yes                    |                          | String   | JDBC url.                                                                                                                                    |
-| username                      | Yes                   | Yes                    |                          | String   | The username.                                                                                                                                |
-| password                      | Yes                   | Yes                    |                          | String   | The password.                                                                                                                                |
-| schema-name                   | Yes                   | Not supported          |                          | String   | The schema name or database name.                                                                                                            |
-| table-name                    | Yes                   | Not supported          |                          | String   | The table name.                                                                                                                              |
-| driver-class-name             | No                    | No                     | com.mysql.cj.jdbc.Driver | String   | The driver class name, use 'com.mysql.cj.jdbc.Driver' by default. If other value is set, you need to introduce the driver manually.          |
-| druid-properties              | No                    | No                     |                          | String   | Druid connection pool properties, multiple values are separated by semicolons.                                                               |
-| sync-write                    | No                    | No                     | false                    | Boolean  | Whether to write data synchronously, will not use buffer if it's set to 'true'.                                                              |
-| buffer-flush.interval         | No                    | No                     | 1s                       | Duration | Buffer flush interval. Set '0' to disable scheduled flushing.                                                                                |
-| buffer-flush.buffer-size      | No                    | No                     | 1000                     | Integer  | Buffer size.                                                                                                                                 |
-| max-retries                   | No                    | No                     | 3                        | Integer  | Max retry times on failure.                                                                                                                  |
-| memstore-check.enabled        | No                    | No                     | true                     | Boolean  | Whether enable memstore check.                                                                                                               |
-| memstore-check.threshold      | No                    | No                     | 0.9                      | Double   | Memstore usage threshold ratio relative to the limit value.                                                                                  |
-| memstore-check.interval       | No                    | No                     | 30s                      | Duration | Memstore check interval.                                                                                                                     |
-| partition.enabled             | No                    | No                     | false                    | Boolean  | Whether to enable partition calculation and flush records by partitions. Only works when 'sync-write' and 'direct-load.enabled' are 'false'. |
-| direct-load.enabled           | No                    | No                     | false                    | Boolean  | Whether to enable direct load. Note that direct load task requires the sink parallelism to be 1.                                             |
-| direct-load.host              | No                    | No                     |                          | String   | The hostname or IP address used in direct load task. Required when 'direct-load.enabled' is true.                                            |
-| direct-load.port              | No                    | No                     | 2882                     | Integer  | The rpc port used in direct load task. Required when 'direct-load.enabled' is true.                                                          |
-| direct-load.parallel          | No                    | No                     | 8                        | Integer  | Parallelism of direct load task.                                                                                                             |
-| direct-load.max-error-rows    | No                    | No                     | 0                        | Long     | Maximum tolerable number of error rows of direct load task.                                                                                  |
-| direct-load.dup-action        | No                    | No                     | REPLACE                  | STRING   | Action when there is duplicated record of direct load task. Can be 'STOP_ON_DUP', 'REPLACE' or 'IGNORE'.                                     |
-| direct-load.timeout           | No                    | No                     | 7d                       | Duration | Timeout for direct load task.                                                                                                                |
-| direct-load.heartbeat-timeout | No                    | No                     | 30s                      | Duration | Client heartbeat timeout in direct load task.                                                                                                |
+<div class="highlight">
+    <table class="colwidths-auto docutils">
+        <thead>
+            <tr>
+                <th class="text-left" style="width: 10%">Option</th>
+                <th class="text-left" style="width: 8%">Required by Table API</th>
+                <th class="text-left" style="width: 7%">Required by DataStream</th>
+                <th class="text-left" style="width: 10%">Default</th>
+                <th class="text-left" style="width: 15%">Type</th>
+                <th class="text-left" style="width: 50%">Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>url</td>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>JDBC url.</td>
+            </tr>
+            <tr>
+                <td>username</td>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>The username.</td>
+            </tr>
+            <tr>
+                <td>password</td>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>The password.</td>
+            </tr>
+            <tr>
+                <td>schema-name</td>
+                <td>Yes</td>
+                <td>Not supported</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>The schema name or database name.</td>
+            </tr>
+            <tr>
+                <td>table-name</td>
+                <td>Yes</td>
+                <td>Not supported</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>The table name.</td>
+            </tr>
+            <tr>
+                <td>driver-class-name</td>
+                <td>No</td>
+                <td>No</td>
+                <td>com.mysql.cj.jdbc.Driver</td>
+                <td>String</td>
+                <td>The driver class name, use 'com.mysql.cj.jdbc.Driver' by default. If other value is set, you need to introduce the driver manually.</td>
+            </tr>
+            <tr>
+                <td>druid-properties</td>
+                <td>No</td>
+                <td>No</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>Druid connection pool properties, multiple values are separated by semicolons.</td>
+            </tr>
+            <tr>
+                <td>sync-write</td>
+                <td>No</td>
+                <td>No</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>Whether to write data synchronously, will not use buffer if it's set to 'true'.</td>
+            </tr>
+            <tr>
+                <td>buffer-flush.interval</td>
+                <td>No</td>
+                <td>No</td>
+                <td>1s</td>
+                <td>Duration</td>
+                <td>Buffer flush interval. Set '0' to disable scheduled flushing.</td>
+            </tr>
+            <tr>
+                <td>buffer-flush.buffer-size</td>
+                <td>No</td>
+                <td>No</td>
+                <td>1000</td>
+                <td>Integer</td>
+                <td>Buffer size.</td>
+            </tr>
+            <tr>
+                <td>max-retries</td>
+                <td>No</td>
+                <td>No</td>
+                <td>3</td>
+                <td>Integer</td>
+                <td>Max retry times on failure.</td>
+            </tr>
+            <tr>
+                <td>memstore-check.enabled</td>
+                <td>No</td>
+                <td>No</td>
+                <td>true</td>
+                <td>Boolean</td>
+                <td>Whether enable memstore check.</td>
+            </tr>
+            <tr>
+                <td>memstore-check.threshold</td>
+                <td>No</td>
+                <td>No</td>
+                <td>0.9</td>
+                <td>Double</td>
+                <td>Memstore usage threshold ratio relative to the limit value.</td>
+            </tr>
+            <tr>
+                <td>memstore-check.interval</td>
+                <td>No</td>
+                <td>No</td>
+                <td>30s</td>
+                <td>Duration</td>
+                <td>Memstore check interval.</td>
+            </tr>
+            <tr>
+                <td>partition.enabled</td>
+                <td>No</td>
+                <td>No</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>Whether to enable partition calculation and flush records by partitions. Only works when 'sync-write' and 'direct-load.enabled' are 'false'.</td>
+            </tr>
+            <tr>
+                <td>direct-load.enabled</td>
+                <td>No</td>
+                <td>No</td>
+                <td>false</td>
+                <td>Boolean</td>
+                <td>Whether to enable direct load. Note that direct load task requires the sink parallelism to be 1.</td>
+            </tr>
+            <tr>
+                <td>direct-load.host</td>
+                <td>No</td>
+                <td>No</td>
+                <td style="word-wrap: break-word;"></td>
+                <td>String</td>
+                <td>The hostname or IP address used in direct load task. Required when 'direct-load.enabled' is true.</td>
+            </tr>
+            <tr>
+                <td>direct-load.port</td>
+                <td>No</td>
+                <td>No</td>
+                <td>2882</td>
+                <td>Integer</td>
+                <td>The rpc port used in direct load task. Required when 'direct-load.enabled' is true.</td>
+            </tr>
+            <tr>
+                <td>direct-load.parallel</td>
+                <td>No</td>
+                <td>No</td>
+                <td>8</td>
+                <td>Integer</td>
+                <td>Parallelism of direct load task.</td>
+            </tr>
+            <tr>
+                <td>direct-load.max-error-rows</td>
+                <td>No</td>
+                <td>No</td>
+                <td>0</td>
+                <td>Long</td>
+                <td>Maximum tolerable number of error rows of direct load task.</td>
+            </tr>
+            <tr>
+                <td>direct-load.dup-action</td>
+                <td>No</td>
+                <td>No</td>
+                <td>REPLACE</td>
+                <td>String</td>
+                <td>Action when there is duplicated record of direct load task. Can be <code>STOP_ON_DUP</code>, <code>REPLACE</code> or <code>IGNORE</code>.</td>
+            </tr>
+            <tr>
+                <td>direct-load.timeout</td>
+                <td>No</td>
+                <td>No</td>
+                <td>7d</td>
+                <td>Duration</td>
+                <td>Timeout for direct load task.</td>
+            </tr>
+            <tr>
+                <td>direct-load.heartbeat-timeout</td>
+                <td>No</td>
+                <td>No</td>
+                <td>60s</td>
+                <td>Duration</td>
+                <td>Client heartbeat timeout in direct load task.</td>
+            </tr>
+            <tr>
+                <td>direct-load.heartbeat-interval</td>
+                <td>No</td>
+                <td>No</td>
+                <td>10s</td>
+                <td>Duration</td>
+                <td>Client heartbeat interval in direct load task.</td>
+            </tr>
+            <tr>
+                <td>direct-load.load-method</td>
+                <td>No</td>
+                <td>No</td>
+                <td>full</td>
+                <td>String</td>
+                <td>The direct-load load mode: <code>full</code>, <code>inc</code>, <code>inc_replace</code>.
+                <ul>
+                    <li><code>full</code>: full direct load, default value.</li>
+                    <li><code>inc</code>: normal incremental direct load, primary key conflict check will be performed, observer-4.3.2 and above support, direct-load.dup-action REPLACE is not supported for the time being.</li>
+                    <li><code>inc_replace</code>: special replace mode incremental direct load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), direct-load.dup-action parameter will be ignored, observer-4.3.2 and above support.</li>
+                </ul>
+                </td>
+             </tr>
+        </tbody>
+    </table>
+</div>
 
 ## References
 

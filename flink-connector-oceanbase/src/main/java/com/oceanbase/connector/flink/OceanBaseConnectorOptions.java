@@ -21,7 +21,7 @@ import com.oceanbase.connector.flink.utils.OptionUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
-import com.alipay.oceanbase.rpc.protocol.payload.impl.direct_load.ObLoadDupActionType;
+import com.alipay.oceanbase.rpc.protocol.payload.impl.ObLoadDupActionType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -115,8 +115,24 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
     public static final ConfigOption<Duration> DIRECT_LOAD_HEARTBEAT_TIMEOUT =
             ConfigOptions.key("direct-load.heartbeat-timeout")
                     .durationType()
-                    .defaultValue(Duration.ofSeconds(30))
+                    .defaultValue(Duration.ofSeconds(60))
                     .withDescription("Client heartbeat timeout in direct load task.");
+
+    public static final ConfigOption<Duration> DIRECT_LOAD_HEARTBEAT_INTERVAL =
+            ConfigOptions.key("direct-load.heartbeat-interval")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(10))
+                    .withDescription("Client heartbeat interval in direct load task.");
+
+    public static final ConfigOption<String> DIRECT_LOAD_LOAD_METHOD =
+            ConfigOptions.key("direct-load.load-method")
+                    .stringType()
+                    .defaultValue("full")
+                    .withDescription(
+                            "Direct load load mode: full, inc, inc_replace.\n"
+                                    + "full: full direct load, default value.\n"
+                                    + "inc: normal incremental direct load, primary key conflict check will be performed, observer-4.3.2 and above support, dupAction REPLACE is not supported for the time being.\n"
+                                    + "inc_replace: special replace mode incremental direct load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), dupAction parameter will be ignored, observer-4.3.2 and above support.");
 
     public static final ConfigOption<Boolean> TABLE_ORACLE_TENANT_CASE_INSENSITIVE =
             ConfigOptions.key("table.oracle-tenant-case-insensitive")
@@ -178,11 +194,19 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
     }
 
     public long getDirectLoadTimeout() {
-        return allConfig.get(DIRECT_LOAD_TIMEOUT).toNanos() / 1000;
+        return allConfig.get(DIRECT_LOAD_TIMEOUT).toMillis();
     }
 
     public long getDirectLoadHeartbeatTimeout() {
-        return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toNanos() / 1000;
+        return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toMillis();
+    }
+
+    public long getDirectLoadHeartbeatInterval() {
+        return allConfig.get(DIRECT_LOAD_HEARTBEAT_INTERVAL).toMillis();
+    }
+
+    public String getDirectLoadLoadMethod() {
+        return allConfig.get(DIRECT_LOAD_LOAD_METHOD);
     }
 
     public boolean getTableOracleTenantCaseInsensitive() {
