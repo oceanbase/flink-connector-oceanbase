@@ -21,8 +21,12 @@ import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.hadoop.hbase.util.Bytes;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.testcontainers.lifecycle.Startables;
+import org.testcontainers.containers.GenericContainer;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -32,6 +36,36 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        CONFIG_SERVER.start();
+
+        CONTAINER
+                .withEnv(
+                        "OB_CONFIGSERVER_ADDRESS",
+                        "http://" + getContainerIP(CONFIG_SERVER) + ":8080")
+                .start();
+
+        String password = "test";
+        createSysUser("proxyro", password);
+        ODP.withPassword(password).withRsList(getContainerIP(CONTAINER) + ":2882").start();
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        Stream.of(CONFIG_SERVER, CONTAINER, ODP).forEach(GenericContainer::stop);
+    }
+
+    @Before
+    public void before() {
+        initialize("sql/htable.sql");
+    }
+
+    @After
+    public void after() throws Exception {
+        dropTables("htable$family1", "htable$family2");
+    }
 
     @Override
     public Map<String, String> getOptions() {
@@ -54,17 +88,12 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     @Test
     public void testSinkWithODP() throws Exception {
-        createSysUser("proxyro", getSysPassword());
-        try (OceanBaseProxyContainer odpContainer =
-                createOdpContainer(getRsListForODP(), getSysPassword())) {
-            Startables.deepStart(Stream.of(odpContainer)).join();
+        Map<String, String> options = getOptions();
+        options.put("odp-mode", "true");
+        options.put("odp-ip", ODP.getHost());
+        options.put("odp-port", String.valueOf(ODP.getRpcPort()));
 
-            Map<String, String> options = getOptions();
-            options.put("odp-mode", "true");
-            options.put("odp-ip", odpContainer.getHost());
-            options.put("odp-port", String.valueOf(odpContainer.getRpcPort()));
-            testSinkToHTable(options);
-        }
+        testSinkToHTable(options);
     }
 
     private void testSinkToHTable(Map<String, String> options) throws Exception {
@@ -73,8 +102,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(
                         execEnv, EnvironmentSettings.newInstance().inStreamingMode().build());
-
-        initialize("sql/htable.sql");
 
         tEnv.executeSql(
                 "CREATE TEMPORARY TABLE target ("
@@ -145,8 +172,6 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
         List<String> actual2 = queryHTable("htable$family2", rowConverter);
         assertEqualsInAnyOrder(expected2, actual2);
-
-        dropTables("htable$family1", "htable$family2");
     }
 
     protected List<String> queryHTable(String tableName, RowConverter rowConverter)

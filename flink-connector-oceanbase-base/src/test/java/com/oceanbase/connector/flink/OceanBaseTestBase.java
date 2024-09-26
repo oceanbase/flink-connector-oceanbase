@@ -86,33 +86,6 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         return DriverManager.getConnection(getJdbcUrl(), getUsername(), getPassword());
     }
 
-    public Connection getSysJdbcConnection() throws SQLException {
-        return DriverManager.getConnection(getJdbcUrl(), getSysUsername(), getSysPassword());
-    }
-
-    public String getSysParameter(String parameter) {
-        try (Connection connection = getSysJdbcConnection();
-                Statement statement = connection.createStatement()) {
-            String sql = String.format("SHOW PARAMETERS LIKE '%s'", parameter);
-            ResultSet rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                return rs.getString("VALUE");
-            }
-            throw new RuntimeException("Parameter '" + parameter + "' not found");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void createSysUser(String user, String password) throws SQLException {
-        assert user != null && password != null;
-        try (Connection connection = getSysJdbcConnection();
-                Statement statement = connection.createStatement()) {
-            statement.execute("CREATE USER '" + user + "' IDENTIFIED BY '" + password + "'");
-            statement.execute("GRANT ALL PRIVILEGES ON *.* TO '" + user + "'@'%'");
-        }
-    }
-
     public void initialize(String sqlFile) {
         final URL file = getClass().getClassLoader().getResource(sqlFile);
         assertNotNull("Cannot locate " + sqlFile, file);

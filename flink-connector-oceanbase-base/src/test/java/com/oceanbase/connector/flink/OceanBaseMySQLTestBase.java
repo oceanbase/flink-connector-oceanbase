@@ -16,14 +16,17 @@
 
 package com.oceanbase.connector.flink;
 
-import org.junit.ClassRule;
+import com.github.dockerjava.api.model.ContainerNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -44,14 +47,23 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
 
     private static final Network NETWORK = Network.newNetwork();
 
-    @ClassRule
+    @SuppressWarnings("resource")
+    public static final GenericContainer<?> CONFIG_SERVER =
+            new GenericContainer<>("oceanbase/ob-configserver:1.0.0-2")
+                    .withNetwork(NETWORK)
+                    .withExposedPorts(CONFIG_SERVER_PORT)
+                    .waitingFor(
+                            new HttpWaitStrategy()
+                                    .forPort(CONFIG_SERVER_PORT)
+                                    .forPath("/services?Action=GetObProxyConfig"))
+                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+
     public static final OceanBaseCEContainer CONTAINER =
             new OceanBaseCEContainer("oceanbase/oceanbase-ce:latest")
-                    .withMode(OceanBaseCEContainer.Mode.MINI)
                     .withNetwork(NETWORK)
+                    .withMode(OceanBaseCEContainer.Mode.MINI)
                     .withTenantName(TEST_TENANT)
                     .withPassword(TEST_PASSWORD)
-                    .withExposedPorts(SQL_PORT, RPC_PORT, CONFIG_SERVER_PORT)
                     .withEnv("OB_CLUSTER_NAME", CLUSTER_NAME)
                     .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
                     .withEnv("OB_DATAFILE_SIZE", "2G")
@@ -59,25 +71,55 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withStartupTimeout(Duration.ofMinutes(4))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    @SuppressWarnings("resource")
-    public OceanBaseProxyContainer createOdpContainer(String rsList, String password) {
-        return new OceanBaseProxyContainer("4.3.1.0-4")
-                .withNetwork(NETWORK)
-                .withClusterName(CLUSTER_NAME)
-                .withRsList(rsList)
-                .withPassword(password)
-                .withLogConsumer(new Slf4jLogConsumer(LOG));
+    public static final OceanBaseProxyContainer ODP =
+            new OceanBaseProxyContainer("4.3.1.0-4")
+                    .withNetwork(NETWORK)
+                    .withClusterName(CLUSTER_NAME)
+                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+
+    public static String getContainerIP(GenericContainer<?> container) {
+        String ip =
+                container.getContainerInfo().getNetworkSettings().getNetworks().values().stream()
+                        .findFirst()
+                        .map(ContainerNetwork::getIpAddress)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "Can't get IP address of container: " + container));
+        LOG.info("Docker image: {}, container IP: {}", container.getDockerImageName(), ip);
+        return ip;
     }
 
-    public String getRsListForODP() throws SQLException {
+    public static Connection getSysJdbcConnection() throws SQLException {
+        String jdbcUrl =
+                "jdbc:mysql://"
+                        + CONTAINER.getHost()
+                        + ":"
+                        + CONTAINER.getMappedPort(SQL_PORT)
+                        + "/?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
+        return DriverManager.getConnection(jdbcUrl, "root", SYS_PASSWORD);
+    }
+
+    public static String getSysParameter(String parameter) {
         try (Connection connection = getSysJdbcConnection();
                 Statement statement = connection.createStatement()) {
-            String sql = "SELECT svr_ip, inner_port FROM oceanbase.__all_server;";
+            String sql = String.format("SHOW PARAMETERS LIKE '%s'", parameter);
             ResultSet rs = statement.executeQuery(sql);
             if (rs.next()) {
-                return rs.getString("svr_ip") + ":" + rs.getString("inner_port");
+                return rs.getString("VALUE");
             }
-            throw new RuntimeException("Server ip and port not found");
+            throw new RuntimeException("Parameter '" + parameter + "' not found");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void createSysUser(String user, String password) throws SQLException {
+        assert user != null && password != null;
+        try (Connection connection = getSysJdbcConnection();
+                Statement statement = connection.createStatement()) {
+            statement.execute("CREATE USER '" + user + "' IDENTIFIED BY '" + password + "'");
+            statement.execute("GRANT ALL PRIVILEGES ON *.* TO '" + user + "'@'%'");
         }
     }
 
