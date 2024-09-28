@@ -73,7 +73,7 @@ under the License.
                                     <include>io.netty:*</include>
                                     <include>commons-logging:commons-logging</include>
                                     <include>org.apache.hadoop:hadoop-core</include>
-                                    <include>org.apache.hbase:hbase</include>
+                                    <include>org.apache.hbase:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
