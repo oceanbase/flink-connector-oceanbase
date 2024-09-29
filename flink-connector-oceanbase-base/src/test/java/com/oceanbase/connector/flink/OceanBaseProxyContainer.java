@@ -61,7 +61,7 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
 
     @Override
     public String getUsername() {
-        return "proxyro";
+        return "proxyro@sys#" + clusterName;
     }
 
     @Override
