@@ -16,15 +16,10 @@
 
 package com.oceanbase.connector.flink;
 
-import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyContainer> {
+public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProxyContainer> {
 
     private static final String IMAGE = "oceanbase/obproxy-ce";
 
@@ -50,9 +45,33 @@ public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyCont
         addEnv("PROXYRO_PASSWORD", password);
     }
 
-    public @NotNull Set<Integer> getLivenessCheckPortNumbers() {
-        return new HashSet<>(
-                Arrays.asList(this.getMappedPort(SQL_PORT), this.getMappedPort(RPC_PORT)));
+    @Override
+    public String getDriverClassName() {
+        return "com.mysql.cj.jdbc.Driver";
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return "jdbc:mysql://"
+                + getHost()
+                + ":"
+                + getSqlPort()
+                + "/?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
+    }
+
+    @Override
+    public String getUsername() {
+        return "proxyro";
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    protected String getTestQueryString() {
+        return "SELECT 1";
     }
 
     public OceanBaseProxyContainer withClusterName(String clusterName) {
