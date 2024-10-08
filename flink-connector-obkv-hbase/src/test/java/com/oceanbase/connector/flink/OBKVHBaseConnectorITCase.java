@@ -42,7 +42,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
         CONFIG_SERVER.start();
 
         String configServerAddress = getConfigServerAddress(CONFIG_SERVER);
-        String configUrlForODP = configServerAddress + "/services?Action=GetObProxyConfig";
+        String configUrlForODP = constructConfigUrlForODP(configServerAddress);
 
         CONTAINER.withEnv("OB_CONFIGSERVER_ADDRESS", configServerAddress).start();
 

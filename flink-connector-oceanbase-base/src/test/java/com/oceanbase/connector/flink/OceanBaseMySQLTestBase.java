@@ -39,6 +39,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     private static final int SQL_PORT = 2881;
     private static final int RPC_PORT = 2882;
     private static final int CONFIG_SERVER_PORT = 8080;
+    private static final String CONFIG_URL_PATH = "/services?Action=GetObProxyConfig";
 
     private static final String CLUSTER_NAME = "flink-oceanbase-ci";
     private static final String TEST_TENANT = "flink";
@@ -55,7 +56,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .waitingFor(
                             new HttpWaitStrategy()
                                     .forPort(CONFIG_SERVER_PORT)
-                                    .forPath("/services?Action=GetObProxyConfig"))
+                                    .forPath(CONFIG_URL_PATH))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     public static final OceanBaseCEContainer CONTAINER =
@@ -92,6 +93,10 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     public static String getConfigServerAddress(GenericContainer<?> container) {
         String ip = getContainerIP(container);
         return "http://" + ip + ":" + CONFIG_SERVER_PORT;
+    }
+
+    public static String constructConfigUrlForODP(String address) {
+        return address + CONFIG_URL_PATH;
     }
 
     public static Connection getSysJdbcConnection() throws SQLException {
