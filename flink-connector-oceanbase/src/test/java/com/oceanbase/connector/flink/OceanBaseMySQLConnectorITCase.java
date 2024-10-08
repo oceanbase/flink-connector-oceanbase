@@ -42,6 +42,8 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.RowKind;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -53,6 +55,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        CONTAINER.start();
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        CONTAINER.stop();
+    }
 
     @Test
     public void testSink() throws Exception {
