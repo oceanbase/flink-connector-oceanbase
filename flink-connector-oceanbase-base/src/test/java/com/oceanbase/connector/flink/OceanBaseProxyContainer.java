@@ -16,12 +16,12 @@
 
 package com.oceanbase.connector.flink;
 
-import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Objects;
 
-public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProxyContainer> {
+public class OceanBaseProxyContainer extends GenericContainer<OceanBaseProxyContainer> {
 
     private static final String IMAGE = "oceanbase/obproxy-ce";
 
@@ -29,7 +29,6 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
     private static final int RPC_PORT = 2885;
     private static final String APP_NAME = "flink_oceanbase_test";
 
-    private String clusterName = "obcluster";
     private String configUrl;
     private String password;
 
@@ -43,40 +42,6 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
         addEnv("APP_NAME", APP_NAME);
         addEnv("CONFIG_URL", Objects.requireNonNull(configUrl));
         addEnv("PROXYRO_PASSWORD", Objects.requireNonNull(password));
-    }
-
-    @Override
-    public String getDriverClassName() {
-        return "com.mysql.cj.jdbc.Driver";
-    }
-
-    @Override
-    public String getJdbcUrl() {
-        return "jdbc:mysql://"
-                + getHost()
-                + ":"
-                + getSqlPort()
-                + "/?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
-    }
-
-    @Override
-    public String getUsername() {
-        return "proxyro@sys#" + clusterName;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    @Override
-    protected String getTestQueryString() {
-        return "SELECT 1";
-    }
-
-    public OceanBaseProxyContainer withClusterName(String clusterName) {
-        this.clusterName = clusterName;
-        return this;
     }
 
     public OceanBaseProxyContainer withConfigUrl(String configUrl) {

@@ -74,7 +74,6 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     public static final OceanBaseProxyContainer ODP =
             new OceanBaseProxyContainer("4.3.1.0-4")
                     .withNetwork(NETWORK)
-                    .withClusterName(CLUSTER_NAME)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     public static String getContainerIP(GenericContainer<?> container) {
