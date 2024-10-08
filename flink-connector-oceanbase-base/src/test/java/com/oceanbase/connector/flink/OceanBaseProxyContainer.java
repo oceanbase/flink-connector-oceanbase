@@ -19,6 +19,8 @@ package com.oceanbase.connector.flink;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Objects;
+
 public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProxyContainer> {
 
     private static final String IMAGE = "oceanbase/obproxy-ce";
@@ -28,7 +30,7 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
     private static final String APP_NAME = "flink_oceanbase_test";
 
     private String clusterName = "obcluster";
-    private String rsList;
+    private String configUrl;
     private String password;
 
     public OceanBaseProxyContainer(String version) {
@@ -38,11 +40,9 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
 
     @Override
     protected void configure() {
-        assert rsList != null && password != null;
         addEnv("APP_NAME", APP_NAME);
-        addEnv("OB_CLUSTER", clusterName);
-        addEnv("RS_LIST", rsList);
-        addEnv("PROXYRO_PASSWORD", password);
+        addEnv("CONFIG_URL", Objects.requireNonNull(configUrl));
+        addEnv("PROXYRO_PASSWORD", Objects.requireNonNull(password));
     }
 
     @Override
@@ -79,8 +79,8 @@ public class OceanBaseProxyContainer extends JdbcDatabaseContainer<OceanBaseProx
         return this;
     }
 
-    public OceanBaseProxyContainer withRsList(String rsList) {
-        this.rsList = rsList;
+    public OceanBaseProxyContainer withConfigUrl(String configUrl) {
+        this.configUrl = configUrl;
         return this;
     }
 

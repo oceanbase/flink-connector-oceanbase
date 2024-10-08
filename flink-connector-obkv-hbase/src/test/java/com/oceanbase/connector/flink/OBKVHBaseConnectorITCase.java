@@ -41,15 +41,15 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     public static void setup() throws Exception {
         CONFIG_SERVER.start();
 
-        CONTAINER
-                .withEnv(
-                        "OB_CONFIGSERVER_ADDRESS",
-                        "http://" + getContainerIP(CONFIG_SERVER) + ":8080")
-                .start();
+        String configServerAddress = getConfigServerAddress(CONFIG_SERVER);
+        String configUrlForODP = configServerAddress + "/services?Action=GetObProxyConfig";
+
+        CONTAINER.withEnv("OB_CONFIGSERVER_ADDRESS", configServerAddress).start();
 
         String password = "test";
         createSysUser("proxyro", password);
-        ODP.withPassword(password).withRsList(getContainerIP(CONTAINER) + ":2882").start();
+
+        ODP.withPassword(password).withConfigUrl(configUrlForODP).start();
     }
 
     @AfterClass

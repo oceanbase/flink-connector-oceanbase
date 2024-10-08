@@ -90,6 +90,11 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
         return ip;
     }
 
+    public static String getConfigServerAddress(GenericContainer<?> container) {
+        String ip = getContainerIP(container);
+        return "http://" + ip + ":" + CONFIG_SERVER_PORT;
+    }
+
     public static Connection getSysJdbcConnection() throws SQLException {
         String jdbcUrl =
                 "jdbc:mysql://"
