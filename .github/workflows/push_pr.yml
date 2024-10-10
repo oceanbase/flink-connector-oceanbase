@@ -28,4 +28,4 @@ jobs:
   flink-connector-obkv-directload:
     uses: ./.github/workflows/test.yml
     with:
-      module: flink-connector-obkv-directload
+      module: flink-connector-directload

@@ -27,7 +27,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
-/** The connector options of {@linkplain flink-connector-obkv-directload} module. */
+/** The connector options of {@linkplain flink-connector-directload} module. */
 public class OBKVDirectLoadConnectorOptions implements Serializable {
     private static final long serialVersionUID = 1L;
 

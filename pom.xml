@@ -31,10 +31,11 @@ under the License.
     <modules>
         <module>flink-connector-oceanbase-base</module>
         <module>flink-connector-obkv-hbase</module>
-        <module>flink-connector-obkv-directload</module>
+        <module>flink-connector-directload</module>
         <module>flink-connector-oceanbase</module>
         <module>flink-sql-connector-obkv-hbase</module>
         <module>flink-sql-connector-oceanbase</module>
+        <module>flink-sql-connector-directload</module>
     </modules>
 
     <properties>

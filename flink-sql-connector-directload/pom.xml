@@ -21,27 +21,13 @@ under the License.
         <version>${revision}</version>
     </parent>
 
-    <artifactId>flink-connector-obkv-directload</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>flink-sql-connector-directload</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>flink-connector-oceanbase</artifactId>
+            <artifactId>flink-connector-directload</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>obkv-table-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>flink-connector-oceanbase-base</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
