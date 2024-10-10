@@ -32,8 +32,10 @@ under the License.
         <module>flink-connector-oceanbase-base</module>
         <module>flink-connector-obkv-hbase</module>
         <module>flink-connector-oceanbase</module>
+        <module>flink-connector-oceanbase-directload</module>
         <module>flink-sql-connector-obkv-hbase</module>
         <module>flink-sql-connector-oceanbase</module>
+        <module>flink-sql-connector-oceanbase-directload</module>
     </modules>
 
     <properties>
