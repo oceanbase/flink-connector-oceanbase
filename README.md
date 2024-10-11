@@ -17,10 +17,11 @@ Prerequisites
 
 This repository contains connectors as following:
 
-|          Connector          | OceanBase Compatible Mode |               Supported Features                |
-|-----------------------------|---------------------------|-------------------------------------------------|
-| Flink Connector: OceanBase  | MySQL, Oracle             | [Sink](docs/sink/flink-connector-oceanbase.md)  |
-| Flink Connector: OBKV HBase | OBKV HBase                | [Sink](docs/sink/flink-connector-obkv-hbase.md) |
+|               Connector                | OceanBase Compatible Mode |                    Supported Features                     |
+|----------------------------------------|---------------------------|-----------------------------------------------------------|
+| Flink Connector: OceanBase             | MySQL, Oracle             | [Sink](docs/sink/flink-connector-oceanbase.md)            |
+| Flink Connector: OceanBase Direct Load | MySQL                     | [Sink](docs/sink/flink-connector-oceanbase-directload.md) |
+| Flink Connector: OBKV HBase            | OBKV HBase                | [Sink](docs/sink/flink-connector-obkv-hbase.md)           |
 
 ### Other External Projects
 
