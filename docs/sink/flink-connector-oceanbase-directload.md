@@ -4,7 +4,7 @@ English | [简体中文](flink-connector-oceanbase-directload_cn.md)
 
 This Flink Connector based on the direct-load feature of OceanBase. It can write data to OceanBase through direct-load in Flink.
 
-For OceanBase's direct-load feature, see the [obkv-table-client-java](https://github.com/oceanbase/obkv-table-client-java) project.
+For OceanBase's direct-load feature, see the [direct-load document](https://en.oceanbase.com/docs/common-oceanbase-database-10000000001375568).
 
 ## Getting Started
 
@@ -296,7 +296,7 @@ Once executed, the records should have been written to OceanBase.
                 <td>Yes</td>
                 <td style="word-wrap: break-word;"></td>
                 <td>String</td>
-                <td>The username.</td>
+                <td>The name of the database user, like 'root'. NOTE: Not the connection username like 'root@sys'.</td>
             </tr>
             <tr>
                 <td>tenant-name</td>

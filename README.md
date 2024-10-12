@@ -17,11 +17,11 @@ Prerequisites
 
 This repository contains connectors as following:
 
-|               Connector                | OceanBase Compatible Mode |                    Supported Features                     |
-|----------------------------------------|---------------------------|-----------------------------------------------------------|
-| Flink Connector: OceanBase             | MySQL, Oracle             | [Sink](docs/sink/flink-connector-oceanbase.md)            |
-| Flink Connector: OceanBase Direct Load | MySQL                     | [Sink](docs/sink/flink-connector-oceanbase-directload.md) |
-| Flink Connector: OBKV HBase            | OBKV HBase                | [Sink](docs/sink/flink-connector-obkv-hbase.md)           |
+|               Connector                |                                                                   Description                                                                    |                         Document                          |
+|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| Flink Connector: OceanBase             | This Connector uses the JDBC driver supported by OceanBase to write data to OceanBase, and supports MySQL and Oracle compatibility modes.        | [Sink](docs/sink/flink-connector-oceanbase.md)            |
+| Flink Connector: OceanBase Direct Load | This Connector uses the [direct load](https://en.oceanbase.com/docs/common-oceanbase-database-10000000001375568) API to write data to OceanBase. | [Sink](docs/sink/flink-connector-oceanbase-directload.md) |
+| Flink Connector: OBKV HBase            | This Connector uses the [OBKV HBase API](https://github.com/oceanbase/obkv-hbase-client-java) to write data to OceanBase.                        | [Sink](docs/sink/flink-connector-obkv-hbase.md)           |
 
 ### Other External Projects
 

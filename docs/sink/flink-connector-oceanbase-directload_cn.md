@@ -4,7 +4,7 @@
 
 本项目是一个基于 OceanBase 旁路导入功能的 Flink Connector，可以在 Flink 中通过旁路导入的方式将数据写入到 OceanBase。
 
-关于 OceanBase 的旁路导入功能，见 [obkv-table-client-java](https://github.com/oceanbase/obkv-table-client-java)项目。
+关于 OceanBase 的旁路导入功能，见 [旁路导入文档](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001428636)。
 
 ## 开始上手
 
@@ -295,7 +295,7 @@ public class MultiNode {
                 <td>是</td>
                 <td style="word-wrap: break-word;"></td>
                 <td>String</td>
-                <td>用户名。</td>
+                <td>数据库用户名，比如 'root'。注意：而不是像 'root@sys' 格式的连接用户名。</td>
             </tr>
             <tr>
                 <td>tenant-name</td>
