@@ -25,7 +25,7 @@ jobs:
     with:
       module: flink-connector-obkv-hbase
 
-  flink-connector-obkv-directload:
+  flink-connector-oceanbase-directload:
     uses: ./.github/workflows/test.yml
     with:
       module: flink-connector-oceanbase-directload

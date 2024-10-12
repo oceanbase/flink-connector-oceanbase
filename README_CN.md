@@ -17,10 +17,11 @@
 
 本仓库提供了如下 Connector：
 
-|          Connector          | OceanBase 兼容模式 |                       支持的功能                        |
-|-----------------------------|----------------|----------------------------------------------------|
-| Flink Connector: OceanBase  | MySQL, Oracle  | [Sink](docs/sink/flink-connector-oceanbase_cn.md)  |
-| Flink Connector: OBKV HBase | OBKV HBase     | [Sink](docs/sink/flink-connector-obkv-hbase_cn.md) |
+|               Connector                |                                                         描述                                                         |                             使用文档                             |
+|----------------------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| Flink Connector: OceanBase             | 该Connector通过OceanBase支持的JDBC驱动将数据写入OceanBase，支持MySQL 和 Oracle 兼容模式。                                                | [Sink](docs/sink/flink-connector-oceanbase_cn.md)            |
+| Flink Connector: OceanBase Direct Load | 该Connector通过[旁路导入](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001428636)API将数据写入OceanBase。 | [Sink](docs/sink/flink-connector-oceanbase-directload_cn.md) |
+| Flink Connector: OBKV HBase            | 该Connector通过[OBKV HBase API](https://github.com/oceanbase/obkv-hbase-client-java)将数据写入OceanBase。                   | [Sink](docs/sink/flink-connector-obkv-hbase_cn.md)           |
 
 ### 其他外部项目
 
