@@ -23,21 +23,16 @@ import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseVersion;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
-import com.oceanbase.connector.flink.directload.DirectLoader;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
-import com.oceanbase.connector.flink.table.TransactionRecord;
 import com.oceanbase.connector.flink.utils.TableCache;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 
-import com.alipay.oceanbase.rpc.direct_load.ObDirectLoadBucket;
-import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObj;
-import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObjType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -45,15 +40,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,7 +62,6 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
     private final OceanBaseDialect dialect;
 
     private final TableCache<OceanBaseTablePartInfo> tablePartInfoCache;
-    private final TableCache<DirectLoader> directLoadCache;
 
     private volatile long lastCheckMemStoreTime;
 
@@ -85,35 +75,10 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         this.connectionProvider = connectionProvider;
         this.dialect = connectionProvider.getDialect();
         this.tablePartInfoCache = new TableCache<>();
-        this.directLoadCache = new TableCache<>();
-    }
-
-    @Override
-    public void flush(@Nonnull TransactionRecord record) throws Exception {
-        if (options.getDirectLoadEnabled()) {
-            switch (record.getType()) {
-                case BEGIN:
-                    getTableDirectLoad(record.getTableId()).begin();
-                    break;
-                case COMMIT:
-                    getTableDirectLoad(record.getTableId()).commit();
-                    break;
-                case ROLLBACK:
-                    getTableDirectLoad(record.getTableId()).close();
-                    break;
-                default:
-                    throw new IllegalArgumentException(
-                            "Unsupported transaction record type: " + record.getType());
-            }
-        }
     }
 
     @Override
     public synchronized void flush(@Nonnull SchemaChangeRecord record) throws Exception {
-        if (options.getDirectLoadEnabled()) {
-            throw new UnsupportedOperationException();
-        }
-
         try (Connection connection = connectionProvider.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.execute(record.getSql());
@@ -145,9 +110,7 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                     }
                 });
         if (!upsertBatch.isEmpty()) {
-            if (options.getDirectLoadEnabled()) {
-                directLoad(tableId, tableInfo.getFieldNames(), upsertBatch);
-            } else if (CollectionUtils.isEmpty(tableInfo.getKey())) {
+            if (CollectionUtils.isEmpty(tableInfo.getKey())) {
                 flush(
                         dialect.getInsertIntoStatement(
                                 tableId.getSchemaName(),
@@ -172,10 +135,6 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             if (CollectionUtils.isEmpty(tableInfo.getKey())) {
                 throw new RuntimeException(
                         "There should be no delete records when the table does not contain PK");
-            }
-            if (options.getDirectLoadEnabled()) {
-                throw new RuntimeException(
-                        "There should be no delete records when direct load is enabled");
             }
 
             flush(
@@ -220,41 +179,6 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
             ResultSet resultSet = statement.executeQuery(queryMemStoreSql);
             return resultSet.next();
         }
-    }
-
-    private void directLoad(TableId tableId, List<String> fields, List<DataChangeRecord> records)
-            throws Exception {
-        ObDirectLoadBucket bucket = new ObDirectLoadBucket();
-        for (DataChangeRecord record : records) {
-            bucket.addRow(
-                    fields.stream()
-                            .map(f -> toObObj(record.getFieldValue(f)))
-                            .toArray(ObObj[]::new));
-        }
-        getTableDirectLoad(tableId).write(bucket);
-    }
-
-    private DirectLoader getTableDirectLoad(TableId tableId) {
-        return directLoadCache.get(
-                tableId.identifier(), () -> connectionProvider.getDirectLoadStatement(tableId));
-    }
-
-    private ObObj toObObj(Object value) {
-        Object obObjValue = toObObjValue(value);
-        return new ObObj(ObObjType.valueOfType(obObjValue).getDefaultObjMeta(), obObjValue);
-    }
-
-    private Object toObObjValue(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Time) {
-            return new Timestamp(((Time) obj).getTime());
-        }
-        if (obj instanceof BigDecimal || obj instanceof BigInteger) {
-            return obj.toString();
-        }
-        return obj;
     }
 
     private void flush(String sql, List<String> statementFields, List<DataChangeRecord> records)
@@ -391,12 +315,6 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
         connectionProvider.close();
         if (tablePartInfoCache != null) {
             tablePartInfoCache.clear();
-        }
-        if (directLoadCache != null) {
-            for (DirectLoader directLoad : directLoadCache.getAll()) {
-                directLoad.close();
-            }
-            directLoadCache.clear();
         }
     }
 }

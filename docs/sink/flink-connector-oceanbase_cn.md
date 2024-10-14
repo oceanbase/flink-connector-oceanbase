@@ -283,91 +283,13 @@ CREATE TABLE t_sink
                 <td>Boolean</td>
                 <td>是否启用分区计算功能，按照分区来写数据。仅当 'sync-write' 和 'direct-load.enabled' 都为 false 时生效。</td>
             </tr>
-            <tr>
-                <td>direct-load.enabled</td>
+             <tr>
+                <td>table.oracle-tenant-case-insensitive</td>
                 <td>否</td>
                 <td>否</td>
-                <td>false</td>
+                <td>true</td>
                 <td>Boolean</td>
-                <td>是否开启旁路导入。需要注意旁路导入需要将 sink 的并发度设置为1。</td>
-            </tr>
-            <tr>
-                <td>direct-load.host</td>
-                <td>否</td>
-                <td>否</td>
-                <td style="word-wrap: break-word;"></td>
-                <td>String</td>
-                <td>旁路导入使用的域名或 IP 地址，开启旁路导入时为必填项。</td>
-            </tr>
-            <tr>
-                <td>direct-load.port</td>
-                <td>否</td>
-                <td>否</td>
-                <td>2882</td>
-                <td>Integer</td>
-                <td>旁路导入使用的 RPC 端口，开启旁路导入时为必填项。</td>
-            </tr>
-            <tr>
-                <td>direct-load.parallel</td>
-                <td>否</td>
-                <td>否</td>
-                <td>8</td>
-                <td>Integer</td>
-                <td>旁路导入任务的并发度。</td>
-            </tr>
-            <tr>
-                <td>direct-load.max-error-rows</td>
-                <td>否</td>
-                <td>否</td>
-                <td>0</td>
-                <td>Long</td>
-                <td>旁路导入任务最大可容忍的错误行数目。</td>
-            </tr>
-            <tr>
-                <td>direct-load.dup-action</td>
-                <td>否</td>
-                <td>否</td>
-                <td>REPLACE</td>
-                <td>String</td>
-                <td>旁路导入任务中主键重复时的处理策略。可以是 <code>STOP_ON_DUP</code>（本次导入失败），<code>REPLACE</code>（替换）或 <code>IGNORE</code>（忽略）。</td>
-            </tr>
-            <tr>
-                <td>direct-load.timeout</td>
-                <td>否</td>
-                <td>否</td>
-                <td>7d</td>
-                <td>Duration</td>
-                <td>旁路导入任务的超时时间。</td>
-            </tr>
-            <tr>
-                <td>direct-load.heartbeat-timeout</td>
-                <td>否</td>
-                <td>否</td>
-                <td>60s</td>
-                <td>Duration</td>
-                <td>旁路导入任务客户端的心跳超时时间。</td>
-            </tr>
-            <tr>
-                <td>direct-load.heartbeat-interval</td>
-                <td>否</td>
-                <td>否</td>
-                <td>10s</td>
-                <td>Duration</td>
-                <td>旁路导入任务客户端的心跳间隔时间。</td>
-            </tr>
-            <tr>
-                <td>direct-load.load-method</td>
-                <td>否</td>
-                <td>否</td>
-                <td>full</td>
-                <td>String</td>
-                <td>旁路导入导入模式：<code>full</code>, <code>inc</code>, <code>inc_replace</code>。
-                <ul>
-                    <li><code>full</code>：全量旁路导入，默认值。</li>
-                    <li><code>inc</code>：普通增量旁路导入，会进行主键冲突检查，observer-4.3.2及以上支持，暂时不支持direct-load.dup-action为REPLACE。</li>
-                    <li><code>inc_replace</code>: 特殊replace模式的增量旁路导入，不会进行主键冲突检查，直接覆盖旧数据（相当于replace的效果），direct-load.dup-action参数会被忽略，observer-4.3.2及以上支持。</li>
-                </ul>
-                </td>
+                <td>默认情况下，在 Oracle 租户下，Schema名和列名不区分大小写。</td>
             </tr>
         </tbody>
     </table>

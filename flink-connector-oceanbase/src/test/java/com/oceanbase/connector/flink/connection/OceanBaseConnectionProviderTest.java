@@ -18,7 +18,8 @@ package com.oceanbase.connector.flink.connection;
 
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 
-import com.google.common.collect.ImmutableMap;
+import org.apache.flink.shaded.guava31.com.google.common.collect.ImmutableMap;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

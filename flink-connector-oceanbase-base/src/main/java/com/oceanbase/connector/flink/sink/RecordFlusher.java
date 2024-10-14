@@ -18,7 +18,6 @@ package com.oceanbase.connector.flink.sink;
 
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
-import com.oceanbase.connector.flink.table.TransactionRecord;
 
 import javax.annotation.Nonnull;
 
@@ -26,8 +25,6 @@ import java.io.Serializable;
 import java.util.List;
 
 public interface RecordFlusher extends AutoCloseable, Serializable {
-
-    default void flush(@Nonnull TransactionRecord record) throws Exception {}
 
     default void flush(@Nonnull SchemaChangeRecord record) throws Exception {}
 
