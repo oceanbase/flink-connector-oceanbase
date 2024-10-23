@@ -20,9 +20,6 @@ import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
-import com.oceanbase.connector.flink.directload.DirectLoader;
-import com.oceanbase.connector.flink.directload.DirectLoaderBuilder;
-import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.utils.OceanBaseJdbcUtils;
 
 import com.alibaba.druid.pool.DruidDataSource;
@@ -169,37 +166,6 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
             userInfo = user;
         }
         return userInfo;
-    }
-
-    public DirectLoader getDirectLoadStatement(TableId tableId) {
-        int count = OceanBaseJdbcUtils.getTableRowsCount(this::getConnection, tableId.identifier());
-        if (count != 0) {
-            throw new RuntimeException(
-                    "Direct load can only work on empty table, while table "
-                            + tableId.identifier()
-                            + " has "
-                            + count
-                            + " rows");
-        }
-        DirectLoader directLoader =
-                new DirectLoaderBuilder()
-                        .host(options.getDirectLoadHost())
-                        .port(options.getDirectLoadPort())
-                        .user(getUserInfo().getUser())
-                        .password(options.getPassword())
-                        .tenant(getUserInfo().getTenant())
-                        .schema(options.getSchemaName())
-                        .table(tableId.getTableName())
-                        .duplicateKeyAction(options.getDirectLoadDupAction())
-                        .maxErrorCount(options.getDirectLoadMaxErrorRows())
-                        .directLoadMethod(options.getDirectLoadLoadMethod())
-                        .timeout(options.getDirectLoadTimeout())
-                        .heartBeatTimeout(options.getDirectLoadHeartbeatTimeout())
-                        .heartBeatInterval(options.getDirectLoadHeartbeatInterval())
-                        .parallel(options.getDirectLoadParallel())
-                        .build();
-
-        return directLoader;
     }
 
     @Override

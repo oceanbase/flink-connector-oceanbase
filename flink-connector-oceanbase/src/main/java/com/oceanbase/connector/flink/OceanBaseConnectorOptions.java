@@ -21,8 +21,6 @@ import com.oceanbase.connector.flink.utils.OptionUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
-import com.alipay.oceanbase.rpc.protocol.payload.impl.ObLoadDupActionType;
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
@@ -70,70 +68,6 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
                     .withDescription(
                             "Whether to enable partition calculation and flush records by partitions. Default value is 'false'.");
 
-    public static final ConfigOption<Boolean> DIRECT_LOAD_ENABLED =
-            ConfigOptions.key("direct-load.enabled")
-                    .booleanType()
-                    .defaultValue(false)
-                    .withDescription("Whether to enable direct load.");
-
-    public static final ConfigOption<String> DIRECT_LOAD_HOST =
-            ConfigOptions.key("direct-load.host")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Hostname used in direct load.");
-
-    public static final ConfigOption<Integer> DIRECT_LOAD_PORT =
-            ConfigOptions.key("direct-load.port")
-                    .intType()
-                    .defaultValue(2882)
-                    .withDescription("Rpc port number used in direct load.");
-
-    public static final ConfigOption<Integer> DIRECT_LOAD_PARALLEL =
-            ConfigOptions.key("direct-load.parallel")
-                    .intType()
-                    .defaultValue(8)
-                    .withDescription("Parallelism of direct load.");
-
-    public static final ConfigOption<Long> DIRECT_LOAD_MAX_ERROR_ROWS =
-            ConfigOptions.key("direct-load.max-error-rows")
-                    .longType()
-                    .defaultValue(0L)
-                    .withDescription("Maximum tolerable number of error rows.");
-
-    public static final ConfigOption<ObLoadDupActionType> DIRECT_LOAD_DUP_ACTION =
-            ConfigOptions.key("direct-load.dup-action")
-                    .enumType(ObLoadDupActionType.class)
-                    .defaultValue(ObLoadDupActionType.REPLACE)
-                    .withDescription("Action when there is duplicated record in direct load.");
-
-    public static final ConfigOption<Duration> DIRECT_LOAD_TIMEOUT =
-            ConfigOptions.key("direct-load.timeout")
-                    .durationType()
-                    .defaultValue(Duration.ofDays(7))
-                    .withDescription("Timeout for direct load task.");
-
-    public static final ConfigOption<Duration> DIRECT_LOAD_HEARTBEAT_TIMEOUT =
-            ConfigOptions.key("direct-load.heartbeat-timeout")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(60))
-                    .withDescription("Client heartbeat timeout in direct load task.");
-
-    public static final ConfigOption<Duration> DIRECT_LOAD_HEARTBEAT_INTERVAL =
-            ConfigOptions.key("direct-load.heartbeat-interval")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(10))
-                    .withDescription("Client heartbeat interval in direct load task.");
-
-    public static final ConfigOption<String> DIRECT_LOAD_LOAD_METHOD =
-            ConfigOptions.key("direct-load.load-method")
-                    .stringType()
-                    .defaultValue("full")
-                    .withDescription(
-                            "Direct load load mode: full, inc, inc_replace.\n"
-                                    + "full: full direct load, default value.\n"
-                                    + "inc: normal incremental direct load, primary key conflict check will be performed, observer-4.3.2 and above support, dupAction REPLACE is not supported for the time being.\n"
-                                    + "inc_replace: special replace mode incremental direct load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), dupAction parameter will be ignored, observer-4.3.2 and above support.");
-
     public static final ConfigOption<Boolean> TABLE_ORACLE_TENANT_CASE_INSENSITIVE =
             ConfigOptions.key("table.oracle-tenant-case-insensitive")
                     .booleanType()
@@ -167,46 +101,6 @@ public class OceanBaseConnectorOptions extends ConnectorOptions {
 
     public boolean getPartitionEnabled() {
         return allConfig.get(PARTITION_ENABLED);
-    }
-
-    public boolean getDirectLoadEnabled() {
-        return allConfig.get(DIRECT_LOAD_ENABLED);
-    }
-
-    public String getDirectLoadHost() {
-        return allConfig.get(DIRECT_LOAD_HOST);
-    }
-
-    public int getDirectLoadPort() {
-        return allConfig.get(DIRECT_LOAD_PORT);
-    }
-
-    public int getDirectLoadParallel() {
-        return allConfig.get(DIRECT_LOAD_PARALLEL);
-    }
-
-    public long getDirectLoadMaxErrorRows() {
-        return allConfig.get(DIRECT_LOAD_MAX_ERROR_ROWS);
-    }
-
-    public ObLoadDupActionType getDirectLoadDupAction() {
-        return allConfig.get(DIRECT_LOAD_DUP_ACTION);
-    }
-
-    public long getDirectLoadTimeout() {
-        return allConfig.get(DIRECT_LOAD_TIMEOUT).toMillis();
-    }
-
-    public long getDirectLoadHeartbeatTimeout() {
-        return allConfig.get(DIRECT_LOAD_HEARTBEAT_TIMEOUT).toMillis();
-    }
-
-    public long getDirectLoadHeartbeatInterval() {
-        return allConfig.get(DIRECT_LOAD_HEARTBEAT_INTERVAL).toMillis();
-    }
-
-    public String getDirectLoadLoadMethod() {
-        return allConfig.get(DIRECT_LOAD_LOAD_METHOD);
     }
 
     public boolean getTableOracleTenantCaseInsensitive() {

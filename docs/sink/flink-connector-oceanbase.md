@@ -282,91 +282,13 @@ CREATE TABLE t_sink
                 <td>Whether to enable partition calculation and flush records by partitions. Only works when 'sync-write' and 'direct-load.enabled' are 'false'.</td>
             </tr>
             <tr>
-                <td>direct-load.enabled</td>
+                <td>table.oracle-tenant-case-insensitive</td>
                 <td>No</td>
                 <td>No</td>
-                <td>false</td>
+                <td>true</td>
                 <td>Boolean</td>
-                <td>Whether to enable direct load. Note that direct load task requires the sink parallelism to be 1.</td>
+                <td>By default, under the Oracle tenant, schema names and column names are case-insensitive.</td>
             </tr>
-            <tr>
-                <td>direct-load.host</td>
-                <td>No</td>
-                <td>No</td>
-                <td style="word-wrap: break-word;"></td>
-                <td>String</td>
-                <td>The hostname or IP address used in direct load task. Required when 'direct-load.enabled' is true.</td>
-            </tr>
-            <tr>
-                <td>direct-load.port</td>
-                <td>No</td>
-                <td>No</td>
-                <td>2882</td>
-                <td>Integer</td>
-                <td>The rpc port used in direct load task. Required when 'direct-load.enabled' is true.</td>
-            </tr>
-            <tr>
-                <td>direct-load.parallel</td>
-                <td>No</td>
-                <td>No</td>
-                <td>8</td>
-                <td>Integer</td>
-                <td>Parallelism of direct load task.</td>
-            </tr>
-            <tr>
-                <td>direct-load.max-error-rows</td>
-                <td>No</td>
-                <td>No</td>
-                <td>0</td>
-                <td>Long</td>
-                <td>Maximum tolerable number of error rows of direct load task.</td>
-            </tr>
-            <tr>
-                <td>direct-load.dup-action</td>
-                <td>No</td>
-                <td>No</td>
-                <td>REPLACE</td>
-                <td>String</td>
-                <td>Action when there is duplicated record of direct load task. Can be <code>STOP_ON_DUP</code>, <code>REPLACE</code> or <code>IGNORE</code>.</td>
-            </tr>
-            <tr>
-                <td>direct-load.timeout</td>
-                <td>No</td>
-                <td>No</td>
-                <td>7d</td>
-                <td>Duration</td>
-                <td>Timeout for direct load task.</td>
-            </tr>
-            <tr>
-                <td>direct-load.heartbeat-timeout</td>
-                <td>No</td>
-                <td>No</td>
-                <td>60s</td>
-                <td>Duration</td>
-                <td>Client heartbeat timeout in direct load task.</td>
-            </tr>
-            <tr>
-                <td>direct-load.heartbeat-interval</td>
-                <td>No</td>
-                <td>No</td>
-                <td>10s</td>
-                <td>Duration</td>
-                <td>Client heartbeat interval in direct load task.</td>
-            </tr>
-            <tr>
-                <td>direct-load.load-method</td>
-                <td>No</td>
-                <td>No</td>
-                <td>full</td>
-                <td>String</td>
-                <td>The direct-load load mode: <code>full</code>, <code>inc</code>, <code>inc_replace</code>.
-                <ul>
-                    <li><code>full</code>: full direct load, default value.</li>
-                    <li><code>inc</code>: normal incremental direct load, primary key conflict check will be performed, observer-4.3.2 and above support, direct-load.dup-action REPLACE is not supported for the time being.</li>
-                    <li><code>inc_replace</code>: special replace mode incremental direct load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), direct-load.dup-action parameter will be ignored, observer-4.3.2 and above support.</li>
-                </ul>
-                </td>
-             </tr>
         </tbody>
     </table>
 </div>

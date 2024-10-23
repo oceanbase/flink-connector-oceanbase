@@ -83,14 +83,7 @@ public class OceanBaseDynamicTableSinkFactory implements DynamicTableSinkFactory
         options.add(OceanBaseConnectorOptions.MEMSTORE_THRESHOLD);
         options.add(OceanBaseConnectorOptions.MEMSTORE_CHECK_INTERVAL);
         options.add(OceanBaseConnectorOptions.PARTITION_ENABLED);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_ENABLED);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_HOST);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_PORT);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_PARALLEL);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_MAX_ERROR_ROWS);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_DUP_ACTION);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_TIMEOUT);
-        options.add(OceanBaseConnectorOptions.DIRECT_LOAD_HEARTBEAT_TIMEOUT);
+        options.add(OceanBaseConnectorOptions.TABLE_ORACLE_TENANT_CASE_INSENSITIVE);
         return options;
     }
 }
