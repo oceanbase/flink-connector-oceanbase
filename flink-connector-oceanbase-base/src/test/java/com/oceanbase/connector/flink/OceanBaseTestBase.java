@@ -16,6 +16,8 @@
 
 package com.oceanbase.connector.flink;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -86,7 +88,7 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
         return DriverManager.getConnection(getJdbcUrl(), getUsername(), getPassword());
     }
 
-    public void initialize(String sqlFile) {
+    public void initialize(String sqlFile) throws SQLException, IOException, URISyntaxException {
         final URL file = getClass().getClassLoader().getResource(sqlFile);
         assertNotNull("Cannot locate " + sqlFile, file);
 
@@ -109,8 +111,6 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
             for (String stmt : statements) {
                 statement.execute(stmt);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -188,5 +188,19 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
     @FunctionalInterface
     public interface RowConverter {
         String convert(ResultSet rs, int columnCount) throws SQLException;
+    }
+
+    public String integer(Integer n) {
+        if (n == null) {
+            return "CAST(NULL AS INT)";
+        }
+        return n.toString();
+    }
+
+    public String string(String s) {
+        if (s == null) {
+            return "CAST(NULL AS STRING)";
+        }
+        return "'" + s + "'";
     }
 }

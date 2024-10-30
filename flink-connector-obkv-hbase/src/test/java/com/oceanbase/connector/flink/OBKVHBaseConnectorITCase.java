@@ -26,7 +26,10 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -37,19 +40,24 @@ import java.util.stream.Stream;
 
 public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectorITCase.class);
+
     @BeforeClass
     public static void setup() throws Exception {
-        CONFIG_SERVER.start();
+        CONFIG_SERVER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
 
-        String configServerAddress = getConfigServerAddress(CONFIG_SERVER);
-        String configUrlForODP = constructConfigUrlForODP(configServerAddress);
-
-        CONTAINER.withEnv("OB_CONFIGSERVER_ADDRESS", configServerAddress).start();
+        CONTAINER
+                .withEnv("OB_CONFIGSERVER_ADDRESS", getConfigServerAddress())
+                .withLogConsumer(new Slf4jLogConsumer(LOG))
+                .start();
 
         String password = "test";
         createSysUser("proxyro", password);
 
-        ODP.withPassword(password).withConfigUrl(configUrlForODP).start();
+        ODP.withPassword(password)
+                .withConfigUrl(getConfigUrlForODP())
+                .withLogConsumer(new Slf4jLogConsumer(LOG))
+                .start();
     }
 
     @AfterClass
@@ -58,7 +66,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     }
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         initialize("sql/htable.sql");
     }
 
@@ -177,19 +185,5 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
     protected List<String> queryHTable(String tableName, RowConverter rowConverter)
             throws SQLException {
         return queryTable(tableName, Arrays.asList("K", "Q", "V"), rowConverter);
-    }
-
-    protected String integer(Integer n) {
-        if (n == null) {
-            return "CAST(NULL AS INT)";
-        }
-        return n.toString();
-    }
-
-    protected String string(String s) {
-        if (s == null) {
-            return "CAST(NULL AS STRING)";
-        }
-        return "'" + s + "'";
     }
 }

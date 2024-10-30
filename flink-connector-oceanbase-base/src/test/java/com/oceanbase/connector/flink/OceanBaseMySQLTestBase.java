@@ -16,12 +16,14 @@
 
 package com.oceanbase.connector.flink;
 
+import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
+
 import com.github.dockerjava.api.model.ContainerNetwork;
+import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
@@ -46,7 +48,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     private static final String SYS_PASSWORD = "123456";
     private static final String TEST_PASSWORD = "654321";
 
-    private static final Network NETWORK = Network.newNetwork();
+    @ClassRule public static final Network NETWORK = Network.newNetwork();
 
     @SuppressWarnings("resource")
     public static final GenericContainer<?> CONFIG_SERVER =
@@ -56,8 +58,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .waitingFor(
                             new HttpWaitStrategy()
                                     .forPort(CONFIG_SERVER_PORT)
-                                    .forPath(CONFIG_URL_PATH))
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+                                    .forPath(CONFIG_URL_PATH));
 
     public static final OceanBaseCEContainer CONTAINER =
             new OceanBaseCEContainer("oceanbase/oceanbase-ce:latest")
@@ -69,13 +70,10 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                     .withEnv("OB_SYS_PASSWORD", SYS_PASSWORD)
                     .withEnv("OB_DATAFILE_SIZE", "2G")
                     .withEnv("OB_LOG_DISK_SIZE", "4G")
-                    .withStartupTimeout(Duration.ofMinutes(4))
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+                    .withStartupTimeout(Duration.ofMinutes(4));
 
     public static final OceanBaseProxyContainer ODP =
-            new OceanBaseProxyContainer("4.3.1.0-4")
-                    .withNetwork(NETWORK)
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+            new OceanBaseProxyContainer("4.3.1.0-4").withNetwork(NETWORK);
 
     public static String getContainerIP(GenericContainer<?> container) {
         String ip =
@@ -90,13 +88,34 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
         return ip;
     }
 
-    public static String getConfigServerAddress(GenericContainer<?> container) {
-        String ip = getContainerIP(container);
-        return "http://" + ip + ":" + CONFIG_SERVER_PORT;
+    private static String configServerAddress;
+    private static String obServerIP;
+    private static OceanBaseUserInfo userInfo;
+
+    public static String getConfigServerAddress() {
+        if (configServerAddress == null) {
+            String ip = getContainerIP(CONFIG_SERVER);
+            configServerAddress = "http://" + ip + ":" + CONFIG_SERVER_PORT;
+        }
+        return configServerAddress;
     }
 
-    public static String constructConfigUrlForODP(String address) {
-        return address + CONFIG_URL_PATH;
+    public static String getOBServerIP() {
+        if (obServerIP == null) {
+            obServerIP = getContainerIP(CONTAINER);
+        }
+        return obServerIP;
+    }
+
+    public static OceanBaseUserInfo getUserInfo() {
+        if (userInfo == null) {
+            userInfo = OceanBaseUserInfo.parse(CONTAINER.getUsername());
+        }
+        return userInfo;
+    }
+
+    public static String getConfigUrlForODP() {
+        return getConfigServerAddress() + CONFIG_URL_PATH;
     }
 
     public static Connection getSysJdbcConnection() throws SQLException {

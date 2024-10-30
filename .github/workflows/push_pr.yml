@@ -29,3 +29,8 @@ jobs:
     uses: ./.github/workflows/test.yml
     with:
       module: flink-connector-oceanbase-directload
+
+  flink-connector-oceanbase-e2e-tests:
+    uses: ./.github/workflows/test.yml
+    with:
+      module: flink-connector-oceanbase-e2e-tests
