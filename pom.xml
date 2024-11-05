@@ -18,9 +18,9 @@ under the License.
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.zentol.flink</groupId>
+        <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-parent</artifactId>
-        <version>1.0</version>
+        <version>1.1.0</version>
     </parent>
 
     <groupId>com.oceanbase</groupId>
@@ -36,15 +36,14 @@ under the License.
         <module>flink-sql-connector-obkv-hbase</module>
         <module>flink-sql-connector-oceanbase</module>
         <module>flink-sql-connector-oceanbase-directload</module>
+        <module>flink-connector-oceanbase-e2e-tests</module>
     </modules>
 
     <properties>
         <revision>1.4-SNAPSHOT</revision>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.18.0</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <shaded.prefix>com.oceanbase.connector.flink.shaded</shaded.prefix>
     </properties>
 
     <dependencyManagement>
@@ -129,6 +128,11 @@ under the License.
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>3.4.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -138,12 +142,6 @@ under the License.
             <artifactId>flink-table-api-java-bridge</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.4.2</version>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -300,6 +298,10 @@ under the License.
                         <enabled>true</enabled>
                     </upToDateChecking>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -25,22 +25,40 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.flink.shaded.guava31.com.google.common.collect.ImmutableMap;
 
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
+public class OBDirectLoadITCase extends OceanBaseMySQLTestBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OBDirectLoadITCase.class);
+
     @BeforeClass
-    public static void setup() throws Exception {
-        CONTAINER.start();
+    public static void setup() {
+        CONTAINER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         CONTAINER.stop();
+    }
+
+    @Before
+    public void before() throws Exception {
+        initialize("sql/products.sql");
+    }
+
+    @After
+    public void after() throws Exception {
+        dropTables("products");
     }
 
     @Test
@@ -49,8 +67,6 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
         env.setParallelism(1);
         env.setRuntimeMode(RuntimeExecutionMode.BATCH);
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
-
-        initialize("sql/mysql/products.sql");
 
         String createTableSql =
                 String.format(
@@ -72,8 +88,8 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
                                 + ");",
                         getHost(),
                         getRpcPort(),
-                        getUsername().split("@")[0],
-                        getUsername().split("@")[1],
+                        getUserInfo().getUser(),
+                        getUserInfo().getTenant(),
                         getPassword());
         tEnv.executeSql(createTableSql);
 
@@ -107,14 +123,10 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
         List<String> actual = queryTable("products");
 
         assertEqualsInAnyOrder(expected, actual);
-
-        dropTables("products");
     }
 
     @Test
     public void testMultiNodeDirectLoadSink() throws Exception {
-        initialize("sql/mysql/products.sql");
-
         // 1. get DirectLoader and execution id.
         DirectLoader directLoad = getDirectLoad();
         String executionId = directLoad.begin();
@@ -147,8 +159,8 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
                                 + ");",
                         getHost(),
                         getRpcPort(),
-                        getUsername().split("@")[0],
-                        getUsername().split("@")[1],
+                        getUserInfo().getUser(),
+                        getUserInfo().getTenant(),
                         getPassword(),
                         executionId,
                         true);
@@ -187,8 +199,6 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
         List<String> actual = queryTable("products");
 
         assertEqualsInAnyOrder(expected, actual);
-
-        dropTables("products");
     }
 
     private DirectLoader getDirectLoad() {
@@ -203,9 +213,9 @@ public class OBKVDirectLoadMySQLModeITCase extends OceanBaseMySQLTestBase {
                         OBDirectLoadConnectorOptions.TABLE_NAME.key(),
                         "products",
                         OBDirectLoadConnectorOptions.USERNAME.key(),
-                        getUsername().split("@")[0],
+                        getUserInfo().getUser(),
                         OBDirectLoadConnectorOptions.TENANT_NAME.key(),
-                        getUsername().split("@")[1],
+                        getUserInfo().getTenant(),
                         OBDirectLoadConnectorOptions.PASSWORD.key(),
                         getPassword());
         OBDirectLoadConnectorOptions connectorOptions = new OBDirectLoadConnectorOptions(configMap);
