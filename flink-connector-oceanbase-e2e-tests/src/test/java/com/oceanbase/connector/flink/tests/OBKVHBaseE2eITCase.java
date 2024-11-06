@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +57,7 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
     @Override
     protected String getFlinkDockerImageTag() {
         // the hbase packages are not compatible with jdk 11
-        return String.format("flink:%s-scala_2.12-java8", flinkVersion);
+        return super.getFlinkDockerImageTag() + "-java8";
     }
 
     @Before
@@ -130,7 +129,6 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
                         integer(null)));
 
         submitSQLJob(sqlLines, getResource(SINK_CONNECTOR_NAME));
-        waitUntilJobRunning(Duration.ofSeconds(30));
 
         List<String> expected1 = Arrays.asList("1,q1,1", "3,q1,3", "4,q1,4");
         List<String> expected2 = Arrays.asList("1,q2,1", "1,q3,1", "2,q2,2", "4,q2,4");

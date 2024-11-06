@@ -18,21 +18,10 @@ package com.oceanbase.connector.flink.tests.utils;
 
 import com.oceanbase.connector.flink.OceanBaseMySQLTestBase;
 
-import org.apache.flink.api.common.JobStatus;
-import org.apache.flink.api.common.time.Deadline;
-import org.apache.flink.client.deployment.StandaloneClusterId;
-import org.apache.flink.client.program.rest.RestClusterClient;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.RestOptions;
-import org.apache.flink.runtime.client.JobStatusMessage;
-import org.apache.flink.table.api.ValidationException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Container;
@@ -46,23 +35,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.flink.util.Preconditions.checkState;
-
-@RunWith(Parameterized.class)
 public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlinkContainerTestEnvironment.class);
 
+    private static final String FLINK_VERSION = System.getProperty("flink_version");
     private static final String MODULE_DIRECTORY = System.getProperty("moduleDir", "");
 
     private static final int JOB_MANAGER_REST_PORT = 8081;
@@ -70,18 +54,11 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
     private static final String INTER_CONTAINER_JM_ALIAS = "jobmanager";
     private static final String INTER_CONTAINER_TM_ALIAS = "taskmanager";
 
-    @Parameterized.Parameter public String flinkVersion;
-
-    @Parameterized.Parameters
-    public static List<String> getFlinkVersion() {
-        return Arrays.asList("1.16.3", "1.17.2", "1.18.1", "1.19.1", "1.20.0");
-    }
-
     protected String getFlinkDockerImageTag() {
-        return String.format("flink:%s-scala_2.12", flinkVersion);
+        return String.format("flink:%s-scala_2.12", FLINK_VERSION);
     }
 
-    public String getFlinkProperties() {
+    protected String getFlinkProperties() {
         return String.join(
                 "\n",
                 Arrays.asList(
@@ -234,55 +211,5 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         String containerPath = "/tmp/" + path.getFileName();
         container.copyFileToContainer(MountableFile.forHostPath(path), containerPath);
         return containerPath;
-    }
-
-    /**
-     * Get {@link RestClusterClient} connected to this FlinkContainer.
-     *
-     * <p>This method lazily initializes the REST client on-demand.
-     */
-    public RestClusterClient<StandaloneClusterId> getRestClusterClient() {
-        checkState(
-                jobManager.isRunning(),
-                "Cluster client should only be retrieved for a running cluster");
-        try {
-            final Configuration clientConfiguration = new Configuration();
-            clientConfiguration.set(RestOptions.ADDRESS, jobManager.getHost());
-            clientConfiguration.set(
-                    RestOptions.PORT, jobManager.getMappedPort(JOB_MANAGER_REST_PORT));
-            return new RestClusterClient<>(clientConfiguration, StandaloneClusterId.getInstance());
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Failed to create client for Flink container cluster", e);
-        }
-    }
-
-    public void waitUntilJobRunning(Duration timeout) {
-        try (RestClusterClient<?> clusterClient = getRestClusterClient()) {
-            Deadline deadline = Deadline.fromNow(timeout);
-            while (deadline.hasTimeLeft()) {
-                Collection<JobStatusMessage> jobStatusMessages;
-                try {
-                    jobStatusMessages = clusterClient.listJobs().get(10, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    LOG.warn("Error when fetching job status.", e);
-                    continue;
-                }
-                if (jobStatusMessages != null && !jobStatusMessages.isEmpty()) {
-                    JobStatusMessage message = jobStatusMessages.iterator().next();
-                    JobStatus jobStatus = message.getJobState();
-                    if (jobStatus.isTerminalState()) {
-                        throw new ValidationException(
-                                String.format(
-                                        "Job has been terminated! JobName: %s, JobID: %s, Status: %s",
-                                        message.getJobName(),
-                                        message.getJobId(),
-                                        message.getJobState()));
-                    } else if (jobStatus == JobStatus.RUNNING) {
-                        return;
-                    }
-                }
-            }
-        }
     }
 }
