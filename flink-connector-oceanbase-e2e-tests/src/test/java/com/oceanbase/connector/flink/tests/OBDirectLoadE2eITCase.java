@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -109,7 +108,6 @@ public class OBDirectLoadE2eITCase extends FlinkContainerTestEnvironment {
                         + "       (109, 'spare tire', '24 inch spare tire', 22.2);");
 
         submitSQLJob(sqlLines, getResource(SINK_CONNECTOR_NAME));
-        waitUntilJobRunning(Duration.ofSeconds(30));
 
         List<String> expected =
                 Arrays.asList(
