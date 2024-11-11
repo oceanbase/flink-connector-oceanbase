@@ -6,12 +6,25 @@ on:
       module:
         required: true
         type: string
+      maven_opts:
+        required: false
+        type: string
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space on Ubuntu runner
+        uses: kfir4444/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
       - name: Check out repository code
         uses: actions/checkout@v4
 
@@ -26,4 +39,4 @@ jobs:
         run: mvn install -DskipTests=true
 
       - name: Maven test
-        run: mvn verify -pl :${{ inputs.module }} -am
+        run: mvn verify -pl :${{ inputs.module }} -am ${{ inputs.maven_opts }}

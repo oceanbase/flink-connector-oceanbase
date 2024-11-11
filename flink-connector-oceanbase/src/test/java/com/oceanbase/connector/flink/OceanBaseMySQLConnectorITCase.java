@@ -45,6 +45,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,13 +59,15 @@ import static org.junit.Assert.assertTrue;
 
 public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseMySQLConnectorITCase.class);
+
     @BeforeClass
-    public static void setup() throws Exception {
-        CONTAINER.start();
+    public static void setup() {
+        CONTAINER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         CONTAINER.stop();
     }
 
