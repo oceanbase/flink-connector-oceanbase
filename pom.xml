@@ -36,6 +36,7 @@ under the License.
         <module>flink-sql-connector-obkv-hbase</module>
         <module>flink-sql-connector-oceanbase</module>
         <module>flink-sql-connector-oceanbase-directload</module>
+        <module>flink-connector-oceanbase-tools-cdc</module>
     </modules>
 
     <properties>
@@ -44,6 +45,8 @@ under the License.
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.18.0</flink.version>
+        <ojdbc.version>19.3.0.0</ojdbc.version>
+        <flink.sql.cdc.version>3.1.1</flink.sql.cdc.version>
         <scala.binary.version>2.12</scala.binary.version>
     </properties>
 
@@ -110,7 +113,7 @@ under the License.
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>obkv-table-client</artifactId>
-                <version>1.2.14-SNAPSHOT</version>
+                <version>1.2.13</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
