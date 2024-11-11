@@ -31,6 +31,11 @@ under the License.
         </dependency>
 
         <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>flink-connector-oceanbase-base</artifactId>
             <version>${project.version}</version>

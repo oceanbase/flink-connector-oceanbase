@@ -27,8 +27,9 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
-/** The connector options of {@linkplain flink-connector-oceanbase-directload} module. */
+/** The connector options of flink-connector-oceanbase-directload connector. */
 public class OBDirectLoadConnectorOptions implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     public static final ConfigOption<String> HOST =

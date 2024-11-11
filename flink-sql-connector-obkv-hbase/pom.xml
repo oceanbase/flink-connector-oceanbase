@@ -74,20 +74,21 @@ under the License.
                                     <include>commons-logging:commons-logging</include>
                                     <include>org.apache.hadoop:hadoop-core</include>
                                     <include>org.apache.hbase:*</include>
+                                    <include>com.lmax:disruptor</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
                                     <pattern>com.google</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.com.google</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>io.netty</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.io.netty</shadedPattern>
+                                    <shadedPattern>${shaded.prefix}.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.hadoop</pattern>
-                                    <shadedPattern>com.oceanbase.connector.flink.shaded.org.apache.hadoop</shadedPattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.hadoop</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>${shaded.prefix}.io.netty</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
