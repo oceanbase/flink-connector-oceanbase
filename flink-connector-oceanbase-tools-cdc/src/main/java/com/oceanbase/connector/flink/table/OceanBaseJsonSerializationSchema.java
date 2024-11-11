@@ -1,0 +1,116 @@
+/*
+ * Copyright 2024 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.oceanbase.connector.flink.table;
+
+import org.apache.flink.table.data.ArrayData;
+import org.apache.flink.table.data.DecimalData;
+import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.types.logical.LogicalType;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class OceanBaseJsonSerializationSchema extends AbstractRecordSerializationSchema<String> {
+
+    private static final long serialVersionUID = 1L;
+    private static final Logger log =
+            LoggerFactory.getLogger(OceanBaseJsonSerializationSchema.class);
+
+    private final TableInfo tableInfo;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public OceanBaseJsonSerializationSchema(TableInfo tableInfo) {
+        this.tableInfo = tableInfo;
+    }
+
+    @Override
+    public Record serialize(String rowDataStr) {
+        try {
+            JsonNode rowDataNode = objectMapper.readTree(rowDataStr);
+            DataChangeRecord.Type type;
+            String op = rowDataNode.path("op").asText();
+            if ("r".equals(op) || "c".equals(op)) {
+                type = DataChangeRecord.Type.UPSERT;
+            } else if ("d".equals(op)) {
+                type = DataChangeRecord.Type.DELETE;
+            } else {
+                throw new IllegalArgumentException("Unknown operation type: " + op);
+            }
+            int size = tableInfo.getFieldNames().size();
+            Object[] values = new Object[size];
+            for (int i = 0; i < size; i++) {
+                String fieldName = tableInfo.getFieldNames().get(i);
+                JsonNode fieldNode = rowDataNode.path("after").path(fieldName);
+                values[i] = objectMapper.convertValue(fieldNode, new TypeReference<Object>() {});
+            }
+
+            return new DataChangeRecord(tableInfo, type, values);
+        } catch (IOException e) {
+            log.error("Failed to parse rowData JSON: {}", rowDataStr, e);
+            return null;
+        }
+    }
+
+    @Override
+    protected SerializationRuntimeConverter createNotNullConverter(LogicalType type) {
+        switch (type.getTypeRoot()) {
+            case BOOLEAN:
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case INTERVAL_YEAR_MONTH:
+            case BIGINT:
+            case INTERVAL_DAY_TIME:
+            case FLOAT:
+            case DOUBLE:
+            case BINARY:
+            case VARBINARY:
+                return data -> data;
+            case CHAR:
+            case VARCHAR:
+                return Object::toString;
+            case DATE:
+                return data -> Date.valueOf(LocalDate.ofEpochDay((int) data));
+            case TIME_WITHOUT_TIME_ZONE:
+                return data -> Time.valueOf(LocalTime.ofNanoOfDay((int) data * 1_000_000L));
+            case TIMESTAMP_WITHOUT_TIME_ZONE:
+                return data -> ((TimestampData) data).toTimestamp();
+            case DECIMAL:
+                return data -> ((DecimalData) data).toBigDecimal();
+            case ARRAY:
+                return data -> {
+                    ArrayData arrayData = (ArrayData) data;
+                    return IntStream.range(0, arrayData.size())
+                            .mapToObj(i -> arrayData.getString(i).toString())
+                            .collect(Collectors.joining(","));
+                };
+            default:
+                throw new UnsupportedOperationException("Unsupported type:" + type);
+        }
+    }
+}
