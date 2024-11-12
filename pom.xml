@@ -37,12 +37,15 @@ under the License.
         <module>flink-sql-connector-oceanbase</module>
         <module>flink-sql-connector-oceanbase-directload</module>
         <module>flink-connector-oceanbase-e2e-tests</module>
+        <module>flink-connector-oceanbase-tools-cdc</module>
     </modules>
 
     <properties>
         <revision>1.4-SNAPSHOT</revision>
         <flink.version>1.18.0</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <ojdbc.version>19.3.0.0</ojdbc.version>
+        <flink.sql.cdc.version>3.1.1</flink.sql.cdc.version>
         <shaded.prefix>com.oceanbase.connector.flink.shaded</shaded.prefix>
     </properties>
 
