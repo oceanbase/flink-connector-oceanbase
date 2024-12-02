@@ -68,12 +68,10 @@ under the License.
                                 <includes>
                                     <include>com.oceanbase:*</include>
                                     <include>com.alibaba:*</include>
-                                    <include>com.alipay.sofa:bolt</include>
-                                    <include>com.alipay.sofa.common:sofa-common-tools</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>commons-lang:commons-lang</include>
+                                    <include>com.alipay.*:*</include>
+                                    <include>com.google.*:*</include>
+                                    <include>commons-*:*</include>
                                     <include>io.netty:*</include>
-                                    <include>com.lmax:disruptor</include>
                                 </includes>
                             </artifactSet>
                             <relocations>

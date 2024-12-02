@@ -68,16 +68,13 @@ under the License.
                                 <includes>
                                     <include>com.oceanbase:*</include>
                                     <include>com.alibaba:*</include>
-                                    <include>com.alipay.sofa:bolt</include>
-                                    <include>com.alipay.sofa.common:sofa-common-tools</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>commons-lang:commons-lang</include>
-                                    <include>mysql:mysql-connector-java</include>
+                                    <include>com.alipay.*:*</include>
+                                    <include>com.google.*:*</include>
+                                    <include>commons-*:*</include>
                                     <include>io.netty:*</include>
-                                    <include>commons-logging:commons-logging</include>
-                                    <include>org.apache.hadoop:hadoop-core</include>
-                                    <include>org.apache.hbase:*</include>
-                                    <include>com.lmax:disruptor</include>
+                                    <include>org.apache.hadoop*:*</include>
+                                    <include>org.apache.hbase*:*</include>
+                                    <include>mysql:mysql-connector-java</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
