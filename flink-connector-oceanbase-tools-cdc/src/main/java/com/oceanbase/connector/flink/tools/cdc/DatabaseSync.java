@@ -17,8 +17,8 @@ package com.oceanbase.connector.flink.tools.cdc; // Licensed to the Apache Softw
 
 import com.oceanbase.connector.flink.connection.OceanBaseToolsConnectProvider;
 import com.oceanbase.connector.flink.tools.catalog.OceanBaseSchemaFactory;
-import com.oceanbase.connector.flink.tools.catalog.OceanBaseSystem;
 import com.oceanbase.connector.flink.tools.catalog.TableSchema;
+import com.oceanbase.connector.flink.tools.catalog.oceanBaseSinkOperate;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.ConfigOption;
@@ -74,7 +74,6 @@ public abstract class DatabaseSync {
     protected String multiToOneTarget;
     protected String tablePrefix;
     protected String tableSuffix;
-    protected boolean singleSink;
     protected final Map<String, String> tableMapping = new HashMap<>();
     public static final ConfigOption<Integer> SINK_PARALLELISM = FactoryUtil.SINK_PARALLELISM;
 
@@ -101,9 +100,10 @@ public abstract class DatabaseSync {
     }
 
     public void build() throws Exception {
-        OceanBaseSystem oceanbaseSystem = new OceanBaseSystem(sinkConfig);
+        oceanBaseSinkOperate oceanBaseSinkOperate = new oceanBaseSinkOperate(sinkConfig);
         OceanBaseToolsConnectProvider oceanBaseConnectionProvider =
-                new OceanBaseToolsConnectProvider(oceanbaseSystem.getOceanBaseConnectorOptions());
+                new OceanBaseToolsConnectProvider(
+                        oceanBaseSinkOperate.getOceanBaseConnectorOptions());
         List<SourceSchema> schemaList = getSchemaList();
         Preconditions.checkState(
                 !schemaList.isEmpty(),
@@ -142,7 +142,7 @@ public abstract class DatabaseSync {
             }
         }
         if (createTableOnly) {
-            System.out.println("Create table finished.");
+            LOG.info("Create table finished.");
             System.exit(0);
         }
         LOG.info("table mapping: {}", tableMapping);
@@ -157,7 +157,7 @@ public abstract class DatabaseSync {
             int sinkParallel = sinkConfig.getInteger(SINK_PARALLELISM, sideOutput.getParallelism());
             String uidName = getUidName(targetDbSet, dbTbl);
             sideOutput
-                    .sinkTo(oceanbaseSystem.createGenericOceanBaseSink(dbTbl.f0, dbTbl.f1))
+                    .sinkTo(oceanBaseSinkOperate.createGenericOceanBaseSink(dbTbl.f0, dbTbl.f1))
                     .setParallelism(sinkParallel)
                     .name(uidName)
                     .uid(uidName);
@@ -227,7 +227,7 @@ public abstract class DatabaseSync {
         String[] origins = multiToOneOrigin.split("\\|");
         String[] targets = multiToOneTarget.split("\\|");
         if (origins.length != targets.length) {
-            System.out.println(
+            LOG.error(
                     "param error : multi to one params length are not equal,please check your params.");
             System.exit(1);
         }
@@ -236,7 +236,7 @@ public abstract class DatabaseSync {
                 multiToOneRulesPattern.put(Pattern.compile(origins[i]), targets[i]);
             }
         } catch (Exception e) {
-            System.out.println("param error : Your regular expression is incorrect,please check.");
+            LOG.error("param error : Your regular expression is incorrect,please check.");
             System.exit(1);
         }
         return multiToOneRulesPattern;

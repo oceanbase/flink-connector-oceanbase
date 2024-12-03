@@ -58,11 +58,9 @@ public class DatabaseSyncConfig {
     public static final String EXCLUDING_TABLES = "excluding-tables";
     public static final String MULTI_TO_ONE_ORIGIN = "multi-to-one-origin";
     public static final String MULTI_TO_ONE_TARGET = "multi-to-one-target";
-    public static final String SCHEMA_CHANGE_MODE = "schema-change-mode";
     public static final String CREATE_TABLE_ONLY = "create-table-only";
     public static final String IGNORE_DEFAULT_VALUE = "ignore-default-value";
     public static final String IGNORE_INCOMPATIBLE = "ignore-incompatible";
-    public static final String SINGLE_SINK = "single-sink";
     ////////// oceanbase-table-conf //////////
     public static final String TABLE_CONF = "table-conf";
 

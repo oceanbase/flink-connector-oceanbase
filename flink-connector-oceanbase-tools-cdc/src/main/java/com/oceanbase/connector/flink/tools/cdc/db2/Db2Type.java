@@ -58,18 +58,17 @@ public class Db2Type {
             case DOUBLE:
                 return OceanBaseType.DOUBLE;
             case DATE:
-                return OceanBaseType.DATE_V2;
+                return OceanBaseType.DATE;
             case DECFLOAT:
             case DECIMAL:
             case NUMERIC:
                 if (precision != null && precision > 0 && precision <= 38) {
                     if (scale != null && scale >= 0) {
-                        return String.format(
-                                "%s(%s,%s)", OceanBaseType.DECIMAL_V3, precision, scale);
+                        return String.format("%s(%s,%s)", OceanBaseType.DECIMAL, precision, scale);
                     }
-                    return String.format("%s(%s,%s)", OceanBaseType.DECIMAL_V3, precision, 0);
+                    return String.format("%s(%s,%s)", OceanBaseType.DECIMAL, precision, 0);
                 } else {
-                    return OceanBaseType.STRING;
+                    return OceanBaseType.VARCHAR;
                 }
             case CHARACTER:
             case CHAR:
@@ -77,17 +76,16 @@ public class Db2Type {
             case LONG_VARCHAR:
                 Preconditions.checkNotNull(precision);
                 return precision * 3 > 65533
-                        ? OceanBaseType.STRING
+                        ? OceanBaseType.VARCHAR
                         : String.format("%s(%s)", OceanBaseType.VARCHAR, precision * 3);
             case TIMESTAMP:
                 return String.format(
-                        "%s(%s)",
-                        OceanBaseType.DATETIME_V2, Math.min(scale == null ? 0 : scale, 6));
+                        "%s(%s)", OceanBaseType.TIMESTAMP, Math.min(scale == null ? 0 : scale, 6));
             case TIME:
             case VARGRAPHIC:
                 // Currently, the Flink CDC connector does not support the XML data type from DB2.
                 // Case XML:
-                return OceanBaseType.STRING;
+                return OceanBaseType.VARCHAR;
             default:
                 throw new UnsupportedOperationException("Unsupported DB2 Type: " + db2Type);
         }

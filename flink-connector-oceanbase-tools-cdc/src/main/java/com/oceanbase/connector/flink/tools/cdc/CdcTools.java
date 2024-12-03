@@ -50,18 +50,23 @@ public class CdcTools {
         String[] opArgs = Arrays.copyOfRange(args, 1, args.length);
         MultipleParameterTool params = MultipleParameterTool.fromArgs(opArgs);
         switch (operation) {
+                // mysql is synchronized as a data source
             case DatabaseSyncConfig.MYSQL_SYNC_DATABASE:
                 createMySQLSyncDatabase(params);
                 break;
+                // oracle is synchronized as a data source
             case DatabaseSyncConfig.ORACLE_SYNC_DATABASE:
                 createOracleSyncDatabase(params);
                 break;
+                // postgres is synchronized as a data source
             case DatabaseSyncConfig.POSTGRES_SYNC_DATABASE:
                 createPostgresSyncDatabase(params);
                 break;
+                // sqlserver is synchronized as a data source
             case DatabaseSyncConfig.SQLSERVER_SYNC_DATABASE:
                 createSqlServerSyncDatabase(params);
                 break;
+                // db2 is synchronized as a data source
             case DatabaseSyncConfig.DB2_SYNC_DATABASE:
                 createDb2SyncDatabase(params);
                 break;
@@ -128,7 +133,6 @@ public class CdcTools {
         boolean createTableOnly = params.has(DatabaseSyncConfig.CREATE_TABLE_ONLY);
         boolean ignoreDefaultValue = params.has(DatabaseSyncConfig.IGNORE_DEFAULT_VALUE);
         boolean ignoreIncompatible = params.has(DatabaseSyncConfig.IGNORE_INCOMPATIBLE);
-        boolean singleSink = params.has(DatabaseSyncConfig.SINGLE_SINK);
 
         Preconditions.checkArgument(params.has(DatabaseSyncConfig.SINK_CONF));
         Map<String, String> sinkMap = getConfigMap(params, DatabaseSyncConfig.SINK_CONF);

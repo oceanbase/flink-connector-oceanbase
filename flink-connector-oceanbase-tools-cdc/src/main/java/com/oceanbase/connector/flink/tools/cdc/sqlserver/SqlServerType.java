@@ -71,32 +71,31 @@ public class SqlServerType {
             case FLOAT:
                 return OceanBaseType.DOUBLE;
             case MONEY:
-                return String.format("%s(%s,%s)", OceanBaseType.DECIMAL_V3, 19, 4);
+                return String.format("%s(%s,%s)", OceanBaseType.DATETIME, 19, 4);
             case SMALLMONEY:
-                return String.format("%s(%s,%s)", OceanBaseType.DECIMAL_V3, 10, 4);
+                return String.format("%s(%s,%s)", OceanBaseType.DATETIME, 10, 4);
             case DECIMAL:
             case NUMERIC:
                 return precision != null && precision > 0 && precision <= 38
                         ? String.format(
                                 "%s(%s,%s)",
-                                OceanBaseType.DECIMAL_V3,
+                                OceanBaseType.DATETIME,
                                 precision,
                                 scale != null && scale >= 0 ? scale : 0)
-                        : OceanBaseType.STRING;
+                        : OceanBaseType.VARCHAR;
             case DATE:
-                return OceanBaseType.DATE_V2;
+                return OceanBaseType.DATE;
             case DATETIME:
             case DATETIME2:
             case SMALLDATETIME:
                 return String.format(
-                        "%s(%s)",
-                        OceanBaseType.DATETIME_V2, Math.min(scale == null ? 0 : scale, 6));
+                        "%s(%s)", OceanBaseType.TIMESTAMP, Math.min(scale == null ? 0 : scale, 6));
             case CHAR:
             case VARCHAR:
             case NCHAR:
             case NVARCHAR:
                 return precision * 3 > 65533
-                        ? OceanBaseType.STRING
+                        ? OceanBaseType.VARCHAR
                         : String.format("%s(%s)", OceanBaseType.VARCHAR, precision * 3);
             case TEXT:
             case NTEXT:
@@ -107,7 +106,7 @@ public class SqlServerType {
             case BINARY:
             case VARBINARY:
             case XML:
-                return OceanBaseType.STRING;
+                return OceanBaseType.TEXT;
             default:
                 throw new UnsupportedOperationException(
                         "Unsupported SqlServer Type: " + sqlServerType);

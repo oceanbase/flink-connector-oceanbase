@@ -15,9 +15,14 @@
  */
 package com.oceanbase.connector.flink.tools.catalog; // Licensed to the Apache Software Foundation
 
+import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+
 import org.apache.flink.util.Preconditions;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +39,9 @@ import java.util.stream.Collectors;
  */
 public class OceanBaseSchemaFactory {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseSchemaFactory.class);
+    private static final OceanBaseDialect dialect = new OceanBaseMySQLDialect();
+
     public static TableSchema createTableSchema(
             String database,
             String table,
@@ -46,7 +54,6 @@ public class OceanBaseSchemaFactory {
         tableSchema.setFields(columnFields);
         tableSchema.setKeys(buildKeys(pkKeys, columnFields));
         tableSchema.setTableComment(tableComment);
-        tableSchema.setDistributeKeys(buildDistributeKeys(pkKeys, columnFields));
         return tableSchema;
     }
 
@@ -75,9 +82,9 @@ public class OceanBaseSchemaFactory {
 
     public static String generateCreateTableDDL(TableSchema schema) {
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
-        sb.append(identifier(schema.getDatabase()))
+        sb.append(dialect.quoteIdentifier(schema.getDatabase()))
                 .append(".")
-                .append(identifier(schema.getTable()))
+                .append(dialect.quoteIdentifier(schema.getTable()))
                 .append(" (");
 
         Map<String, FieldSchema> fields = schema.getFields();
@@ -89,13 +96,13 @@ public class OceanBaseSchemaFactory {
             buildColumn(sb, field, keys.contains(entry.getKey()));
         }
 
-        sb = sb.deleteCharAt(sb.length() - 1); // 删除最后一个逗号
+        sb = sb.deleteCharAt(sb.length() - 1);
         // Append primary key constraint
         if (!keys.isEmpty()) {
             sb.append("PRIMARY KEY (")
                     .append(
                             keys.stream()
-                                    .map(OceanBaseSchemaFactory::identifier)
+                                    .map(dialect::quoteIdentifier)
                                     .collect(Collectors.joining(",")))
                     .append(")");
         }
@@ -107,12 +114,14 @@ public class OceanBaseSchemaFactory {
         }
         sb.append(";");
 
-        System.out.println("Generated DDL: " + sb);
+        LOG.info("Generated DDL: {}", sb);
         return sb.toString();
     }
 
     private static void buildColumn(StringBuilder sb, FieldSchema field, boolean isKey) {
-        sb.append(identifier(field.getName())).append(" ").append(field.getTypeString());
+        sb.append(dialect.quoteIdentifier(field.getName()))
+                .append(" ")
+                .append(field.getTypeString());
 
         if (!isKey && field.getNullable()) {
             sb.append(" NULL");
@@ -129,13 +138,6 @@ public class OceanBaseSchemaFactory {
         }
 
         sb.append(", ");
-    }
-
-    public static String identifier(String name) {
-        if (name.startsWith("`") && name.endsWith("`")) {
-            return name;
-        }
-        return "`" + name + "`";
     }
 
     public static String quoteDefaultValue(String defaultValue) {
@@ -157,6 +159,6 @@ public class OceanBaseSchemaFactory {
     public static String quoteTableIdentifier(String tableIdentifier) {
         String[] dbTable = tableIdentifier.split("\\.");
         Preconditions.checkArgument(dbTable.length == 2);
-        return identifier(dbTable[0]) + "." + identifier(dbTable[1]);
+        return dialect.quoteIdentifier(dbTable[0]) + "." + dialect.quoteIdentifier(dbTable[1]);
     }
 }

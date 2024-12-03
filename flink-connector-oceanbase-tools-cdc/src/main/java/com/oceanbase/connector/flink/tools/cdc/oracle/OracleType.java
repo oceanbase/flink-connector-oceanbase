@@ -32,8 +32,6 @@ public class OracleType {
     private static final String INTERVAL = "INTERVAL";
     private static final String RAW = "RAW";
     private static final String LONG_RAW = "LONG RAW";
-    private static final String ROWID = "ROWID";
-    private static final String UROWID = "UROWID";
     private static final String CHAR = "CHAR";
     private static final String NCHAR = "NCHAR";
     private static final String CLOB = "CLOB";
@@ -47,7 +45,7 @@ public class OracleType {
         if (oracleType.startsWith(INTERVAL)) {
             oracleType = oracleType.substring(0, 8);
         } else if (oracleType.startsWith(TIMESTAMP)) {
-            return String.format("%s(%s)", OceanBaseType.DATETIME_V2, Math.min(scale, 6));
+            return String.format("%s(%s)", OceanBaseType.TIMESTAMP, Math.min(scale, 6));
         }
         switch (oracleType) {
             case NUMBER:
@@ -61,11 +59,8 @@ public class OracleType {
                         return OceanBaseType.INT;
                     } else if (precision < 19) {
                         return OceanBaseType.BIGINT;
-                    } else if (precision < 39) {
-                        // LARGEINT supports up to 38 numbers.
-                        return OceanBaseType.LARGEINT;
                     } else {
-                        return OceanBaseType.STRING;
+                        return OceanBaseType.LARGEINT;
                     }
                 }
                 // scale > 0
@@ -75,22 +70,22 @@ public class OracleType {
                 return precision != null && precision <= 38
                         ? String.format(
                                 "%s(%s,%s)",
-                                OceanBaseType.DECIMAL_V3,
+                                OceanBaseType.TIMESTAMP,
                                 precision,
                                 scale != null && scale >= 0 ? scale : 0)
-                        : OceanBaseType.STRING;
+                        : OceanBaseType.VARCHAR;
             case FLOAT:
                 return OceanBaseType.DOUBLE;
             case DATE:
                 // can save date and time with second precision
-                return OceanBaseType.DATETIME_V2;
+                return OceanBaseType.DATE;
             case CHAR:
             case VARCHAR2:
             case NCHAR:
             case NVARCHAR2:
                 Preconditions.checkNotNull(precision);
                 return precision * 3 > 65533
-                        ? OceanBaseType.STRING
+                        ? OceanBaseType.VARCHAR
                         : String.format("%s(%s)", OceanBaseType.VARCHAR, precision * 3);
             case LONG:
             case RAW:
@@ -100,7 +95,7 @@ public class OracleType {
             case CLOB:
             case NCLOB:
             case XMLTYPE:
-                return OceanBaseType.STRING;
+                return OceanBaseType.TEXT;
             case BFILE:
             case BINARY_FLOAT:
             case BINARY_DOUBLE:

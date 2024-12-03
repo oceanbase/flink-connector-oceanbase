@@ -21,8 +21,6 @@ import com.oceanbase.connector.flink.tools.catalog.TableSchema;
 
 import org.apache.flink.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +46,6 @@ public abstract class SourceSchema {
     public abstract String convertToOceanBaseType(
             String fieldType, Integer precision, Integer scale);
 
-    public abstract String getCdcTableName();
-
     public String getTableIdentifier() {
         return getString(databaseName, schemaName, tableName);
     }
@@ -74,26 +70,8 @@ public abstract class SourceSchema {
     public TableSchema convertTableSchema(Map<String, String> tableProps) {
         TableSchema tableSchema = new TableSchema();
         tableSchema.setFields(this.fields);
-        tableSchema.setKeys(buildKeys());
         tableSchema.setTableComment(this.tableComment);
-        tableSchema.setDistributeKeys(buildDistributeKeys());
-        tableSchema.setProperties(tableProps);
         return tableSchema;
-    }
-
-    private List<String> buildKeys() {
-        return buildDistributeKeys();
-    }
-
-    private List<String> buildDistributeKeys() {
-        if (!this.primaryKeys.isEmpty()) {
-            return primaryKeys;
-        }
-        if (!this.fields.isEmpty()) {
-            Map.Entry<String, FieldSchema> firstField = this.fields.entrySet().iterator().next();
-            return Collections.singletonList(firstField.getKey());
-        }
-        return new ArrayList<>();
     }
 
     public String getDatabaseName() {

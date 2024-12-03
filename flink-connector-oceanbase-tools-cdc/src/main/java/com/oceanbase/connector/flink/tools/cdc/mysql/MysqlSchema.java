@@ -31,9 +31,4 @@ public class MysqlSchema extends JdbcSourceSchema {
     public String convertToOceanBaseType(String fieldType, Integer precision, Integer scale) {
         return MysqlType.toOceanBaseType(fieldType, precision, scale);
     }
-
-    @Override
-    public String getCdcTableName() {
-        return databaseName + "\\." + tableName;
-    }
 }

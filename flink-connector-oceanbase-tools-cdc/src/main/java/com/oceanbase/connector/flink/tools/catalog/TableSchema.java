@@ -22,16 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 public class TableSchema {
-    public static final String DORIS_TABLE_REGEX = "^[a-zA-Z][a-zA-Z0-9-_]*$";
     private String database;
     private String table;
     private String tableComment;
     private Map<String, FieldSchema> fields;
     private List<String> keys = new ArrayList<>();
-    private List<String> distributeKeys = new ArrayList<>();
     private Map<String, String> properties = new HashMap<>();
-
-    private Integer tableBuckets;
 
     public String getDatabase() {
         return database;
@@ -51,10 +47,6 @@ public class TableSchema {
 
     public List<String> getKeys() {
         return keys;
-    }
-
-    public List<String> getDistributeKeys() {
-        return distributeKeys;
     }
 
     public Map<String, String> getProperties() {
@@ -81,20 +73,8 @@ public class TableSchema {
         this.keys = keys;
     }
 
-    public void setDistributeKeys(List<String> distributeKeys) {
-        this.distributeKeys = distributeKeys;
-    }
-
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
-    }
-
-    public void setTableBuckets(Integer tableBuckets) {
-        this.tableBuckets = tableBuckets;
-    }
-
-    public Integer getTableBuckets() {
-        return tableBuckets;
     }
 
     @Override
@@ -113,12 +93,8 @@ public class TableSchema {
                 + fields
                 + ", keys="
                 + String.join(",", keys)
-                + ", distributeKeys="
-                + String.join(",", distributeKeys)
                 + ", properties="
                 + properties
-                + ", tableBuckets="
-                + tableBuckets
                 + '}';
     }
 }

@@ -39,11 +39,6 @@ public class Db2Schema extends JdbcSourceSchema {
     }
 
     @Override
-    public String getCdcTableName() {
-        return schemaName + "\\." + tableName;
-    }
-
-    @Override
     public LinkedHashMap<String, FieldSchema> getColumnInfo(
             DatabaseMetaData metaData, String databaseName, String schemaName, String tableName)
             throws SQLException {

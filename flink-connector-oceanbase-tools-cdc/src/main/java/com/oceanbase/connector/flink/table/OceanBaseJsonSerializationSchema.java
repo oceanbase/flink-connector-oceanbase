@@ -18,8 +18,14 @@ package com.oceanbase.connector.flink.table;
 
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
+import org.apache.flink.table.data.MapData;
+import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.types.logical.BooleanType;
+import org.apache.flink.table.types.logical.IntType;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.VarCharType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,13 +38,14 @@ import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class OceanBaseJsonSerializationSchema extends AbstractRecordSerializationSchema<String> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger log =
+    private static final Logger LOG =
             LoggerFactory.getLogger(OceanBaseJsonSerializationSchema.class);
 
     private final TableInfo tableInfo;
@@ -71,8 +78,9 @@ public class OceanBaseJsonSerializationSchema extends AbstractRecordSerializatio
 
             return new DataChangeRecord(tableInfo, type, values);
         } catch (IOException e) {
-            log.error("Failed to parse rowData JSON: {}", rowDataStr, e);
-            return null;
+            String errorMessage = "Failed to parse rowData JSON: " + rowDataStr;
+            LOG.error(errorMessage, e);
+            throw new RuntimeException(errorMessage);
         }
     }
 
@@ -100,6 +108,14 @@ public class OceanBaseJsonSerializationSchema extends AbstractRecordSerializatio
                 return data -> Time.valueOf(LocalTime.ofNanoOfDay((int) data * 1_000_000L));
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return data -> ((TimestampData) data).toTimestamp();
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return data -> ((TimestampData) data).toInstant().toString();
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return data ->
+                        ((TimestampData) data)
+                                .toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toString();
             case DECIMAL:
                 return data -> ((DecimalData) data).toBigDecimal();
             case ARRAY:
@@ -108,6 +124,48 @@ public class OceanBaseJsonSerializationSchema extends AbstractRecordSerializatio
                     return IntStream.range(0, arrayData.size())
                             .mapToObj(i -> arrayData.getString(i).toString())
                             .collect(Collectors.joining(","));
+                };
+            case MAP:
+                return data -> {
+                    MapData mapData = (MapData) data;
+                    ArrayData keyArray = mapData.keyArray();
+                    ArrayData valueArray = mapData.valueArray();
+                    return "{"
+                            + IntStream.range(0, keyArray.size())
+                                    .mapToObj(
+                                            i ->
+                                                    "\""
+                                                            + keyArray.getString(i).toString()
+                                                            + "\":\""
+                                                            + valueArray.getString(i).toString()
+                                                            + "\"")
+                                    .collect(Collectors.joining(","))
+                            + "}";
+                };
+            case ROW:
+                return data -> {
+                    RowData rowData = (RowData) data;
+                    RowType rowType = (RowType) type;
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("{");
+                    for (int i = 0; i < rowData.getArity(); i++) {
+                        if (i > 0) {
+                            sb.append(",");
+                        }
+                        String fieldName = rowType.getFieldNames().get(i);
+                        LogicalType fieldType = rowType.getFields().get(i).getType();
+                        sb.append("\"").append(fieldName).append("\":");
+                        if (fieldType instanceof VarCharType) {
+                            sb.append("\"").append(rowData.getString(i).toString()).append("\"");
+                        } else if (fieldType instanceof IntType) {
+                            sb.append(rowData.getInt(i));
+                        } else if (fieldType instanceof BooleanType) {
+                            sb.append(rowData.getBoolean(i));
+                        }
+                        // Add more types as needed
+                    }
+                    sb.append("}");
+                    return sb.toString();
                 };
             default:
                 throw new UnsupportedOperationException("Unsupported type:" + type);

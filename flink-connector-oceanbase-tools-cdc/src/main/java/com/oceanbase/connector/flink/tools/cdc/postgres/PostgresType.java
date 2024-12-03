@@ -69,7 +69,7 @@ public class PostgresType {
     public static String toOceanBaseType(String postgresType, Integer precision, Integer scale) {
         postgresType = postgresType.toLowerCase();
         if (postgresType.startsWith("_")) {
-            return OceanBaseType.STRING;
+            return OceanBaseType.VARCHAR;
         }
         switch (postgresType) {
             case INT2:
@@ -85,10 +85,10 @@ public class PostgresType {
                 return precision != null && precision > 0 && precision <= 38
                         ? String.format(
                                 "%s(%s,%s)",
-                                OceanBaseType.DECIMAL_V3,
+                                OceanBaseType.DECIMAL,
                                 precision,
                                 scale != null && scale >= 0 ? scale : 0)
-                        : OceanBaseType.STRING;
+                        : OceanBaseType.VARCHAR;
             case FLOAT4:
                 return OceanBaseType.FLOAT;
             case FLOAT8:
@@ -96,19 +96,18 @@ public class PostgresType {
             case TIMESTAMP:
             case TIMESTAMPTZ:
                 return String.format(
-                        "%s(%s)",
-                        OceanBaseType.DATETIME_V2, Math.min(scale == null ? 0 : scale, 6));
+                        "%s(%s)", OceanBaseType.TIMESTAMP, Math.min(scale == null ? 0 : scale, 6));
             case DATE:
-                return OceanBaseType.DATE_V2;
+                return OceanBaseType.DATE;
             case BOOL:
                 return OceanBaseType.BOOLEAN;
             case BIT:
-                return precision == 1 ? OceanBaseType.BOOLEAN : OceanBaseType.STRING;
+                return precision == 1 ? OceanBaseType.BOOLEAN : OceanBaseType.VARCHAR;
             case BPCHAR:
             case VARCHAR:
                 Preconditions.checkNotNull(precision);
                 return precision * 3 > 65533
-                        ? OceanBaseType.STRING
+                        ? OceanBaseType.VARCHAR
                         : String.format("%s(%s)", OceanBaseType.VARCHAR, precision * 3);
             case POINT:
             case LINE:
@@ -127,7 +126,7 @@ public class PostgresType {
             case VARBIT:
             case UUID:
             case BYTEA:
-                return OceanBaseType.STRING;
+                return OceanBaseType.VARCHAR;
             case JSON:
             case JSONB:
                 return OceanBaseType.JSONB;

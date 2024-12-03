@@ -18,28 +18,16 @@ package com.oceanbase.connector.flink.tools.catalog;
 
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.BigIntType;
-import org.apache.flink.table.types.logical.BinaryType;
 import org.apache.flink.table.types.logical.BooleanType;
 import org.apache.flink.table.types.logical.CharType;
-import org.apache.flink.table.types.logical.DateType;
-import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.DoubleType;
 import org.apache.flink.table.types.logical.FloatType;
 import org.apache.flink.table.types.logical.IntType;
-import org.apache.flink.table.types.logical.LocalZonedTimestampType;
 import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.MapType;
-import org.apache.flink.table.types.logical.MultisetType;
-import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.SmallIntType;
-import org.apache.flink.table.types.logical.TimeType;
-import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.table.types.logical.TinyIntType;
-import org.apache.flink.table.types.logical.VarBinaryType;
 import org.apache.flink.table.types.logical.VarCharType;
-import org.apache.flink.table.types.logical.ZonedTimestampType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeDefaultVisitor;
 
 import java.sql.Types;
@@ -50,10 +38,10 @@ import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.*;
 public class OceanBaseTypeMapper {
 
     /** Max size of char type of OceanBase. */
-    public static final int MAX_CHAR_SIZE = 255;
+    public static final int MAX_CHAR_SIZE = 256;
 
     /** Max size of varchar type of OceanBase. */
-    public static final int MAX_VARCHAR_SIZE = 65533;
+    public static final int MAX_VARCHAR_SIZE = 262144;
     /* Max precision of datetime type of OceanBase. */
     public static final int MAX_SUPPORTED_DATE_TIME_PRECISION = 6;
 
@@ -154,29 +142,8 @@ public class OceanBaseTypeMapper {
         }
 
         @Override
-        public String visit(VarCharType varCharType) {
-            // Flink varchar length max value is int, it may overflow after multiplying by 3
-            long length = varCharType.getLength() * 3L;
-            return length >= MAX_VARCHAR_SIZE ? STRING : String.format("%s(%s)", VARCHAR, length);
-        }
-
-        @Override
         public String visit(BooleanType booleanType) {
             return BOOLEAN;
-        }
-
-        @Override
-        public String visit(VarBinaryType varBinaryType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(DecimalType decimalType) {
-            int precision = decimalType.getPrecision();
-            int scale = decimalType.getScale();
-            return precision <= 38
-                    ? String.format("%s(%s,%s)", DECIMAL_V3, precision, Math.max(scale, 0))
-                    : OceanBaseType.STRING;
         }
 
         @Override
@@ -207,62 +174,6 @@ public class OceanBaseTypeMapper {
         @Override
         public String visit(DoubleType doubleType) {
             return DOUBLE;
-        }
-
-        @Override
-        public String visit(DateType dateType) {
-            return DATE_V2;
-        }
-
-        @Override
-        public String visit(TimestampType timestampType) {
-            int precision = timestampType.getPrecision();
-            return String.format(
-                    "%s(%s)", OceanBaseType.DATETIME_V2, Math.min(Math.max(precision, 0), 6));
-        }
-
-        @Override
-        public String visit(ZonedTimestampType timestampType) {
-            int precision = timestampType.getPrecision();
-            return String.format(
-                    "%s(%s)", OceanBaseType.DATETIME_V2, Math.min(Math.max(precision, 0), 6));
-        }
-
-        @Override
-        public String visit(LocalZonedTimestampType localZonedTimestampType) {
-            int precision = localZonedTimestampType.getPrecision();
-            return String.format(
-                    "%s(%s)", OceanBaseType.DATETIME_V2, Math.min(Math.max(precision, 0), 6));
-        }
-
-        @Override
-        public String visit(TimeType timeType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(ArrayType arrayType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(MapType mapType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(RowType rowType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(MultisetType multisetType) {
-            return STRING;
-        }
-
-        @Override
-        public String visit(BinaryType binaryType) {
-            return STRING;
         }
 
         @Override

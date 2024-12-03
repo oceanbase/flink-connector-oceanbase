@@ -39,14 +39,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OceanBase System Operate. */
+/** OceanBase Sink Operate. */
 @Public
-public class OceanBaseSystem implements Serializable {
+public class oceanBaseSinkOperate implements Serializable {
     private static final long serialVersionUID = 1L;
     protected Configuration sinkConfig;
     private final OceanBaseConnectorOptions connectorOptions;
 
-    public OceanBaseSystem(Configuration cdcSinkConfig) {
+    public oceanBaseSinkOperate(Configuration cdcSinkConfig) {
         sinkConfig = cdcSinkConfig;
         this.connectorOptions = getOceanBaseConnectorOptions();
     }
@@ -59,11 +59,6 @@ public class OceanBaseSystem implements Serializable {
     @Deprecated
     public static String quoteComment(String comment) {
         return OceanBaseSchemaFactory.quoteComment(comment);
-    }
-
-    @Deprecated
-    public static String identifier(String name) {
-        return OceanBaseSchemaFactory.identifier(name);
     }
 
     @Deprecated

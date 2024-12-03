@@ -17,29 +17,11 @@
 package com.oceanbase.connector.flink.tools.catalog;
 
 public class FieldSchema {
-    private String name;
-    private String typeString;
-    private String defaultValue;
-    private String comment;
-
-    public Boolean getNullable() {
-        return nullable;
-    }
-
-    public void setNullable(Boolean nullable) {
-        this.nullable = nullable;
-    }
-
-    private Boolean nullable;
-
-    public FieldSchema() {}
-
-    public FieldSchema(String name, String typeString, String comment, Boolean nullable) {
-        this.name = name;
-        this.typeString = typeString;
-        this.comment = comment;
-        this.nullable = nullable;
-    }
+    private final String name;
+    private final String typeString;
+    private final String defaultValue;
+    private final String comment;
+    private final Boolean nullable;
 
     public FieldSchema(
             String name, String typeString, String defaultValue, String comment, Boolean nullable) {
@@ -54,32 +36,20 @@ public class FieldSchema {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getTypeString() {
         return typeString;
-    }
-
-    public void setTypeString(String typeString) {
-        this.typeString = typeString;
     }
 
     public String getComment() {
         return comment;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
     public String getDefaultValue() {
         return defaultValue;
     }
 
-    public void setDefaultValue(String defaultValue) {
-        this.defaultValue = defaultValue;
+    public Boolean getNullable() {
+        return nullable;
     }
 
     @Override

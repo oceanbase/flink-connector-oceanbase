@@ -36,9 +36,4 @@ public class SqlServerSchema extends JdbcSourceSchema {
     public String convertToOceanBaseType(String fieldType, Integer precision, Integer scale) {
         return SqlServerType.toOceanBaseType(fieldType, precision, scale);
     }
-
-    @Override
-    public String getCdcTableName() {
-        return schemaName + "\\." + tableName;
-    }
 }
