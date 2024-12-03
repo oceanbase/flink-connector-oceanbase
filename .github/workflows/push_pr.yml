@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - test
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -29,6 +30,10 @@ jobs:
     uses: ./.github/workflows/test.yml
     with:
       module: flink-connector-oceanbase-directload
+  flink-connector-oceanbase-tools-cdc:
+    uses: ./.github/workflows/test.yml
+    with:
+      module: flink-connector-oceanbase-tools-cdc
 
   flink-connector-oceanbase-e2e-tests:
     strategy:
