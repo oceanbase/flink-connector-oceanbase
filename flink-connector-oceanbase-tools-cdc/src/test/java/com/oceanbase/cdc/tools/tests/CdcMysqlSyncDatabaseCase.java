@@ -51,12 +51,13 @@ import java.util.stream.Stream;
 public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
     private static final Logger LOG = LoggerFactory.getLogger(CdcMysqlSyncDatabaseCase.class);
 
-    private static final String MYSQL_HOST = "mysql_cdc";
+    private static final String MYSQL_HOST = "localhost";
     private static final Integer MYSQL_PORT = 3306;
-    private static final String MYSQL_USER_NAME = "mysqluser";
+    private static final String MYSQL_USER_NAME = "root";
     private static final String MYSQL_USER_PASSWORD = "mysqlpw";
     private static final String MYSQL_DATABASE = "mysql_cdc";
     private static final String MYSQL_TABLE_NAME = "test_history_text";
+    static StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
     @BeforeClass
     public static void setup() {
@@ -70,20 +71,19 @@ public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
 
     @AfterClass
     public static void tearDown() {
-        Stream.of(CONFIG_SERVER, CONTAINER, MYSQL_CONTAINER).forEach(GenericContainer::stop);
+        Stream.of(MYSQL_CONTAINER).forEach(GenericContainer::stop);
     }
 
     private static final MySqlContainer MYSQL_CONTAINER =
             new MySqlContainer()
                     .withConfigurationOverride("docker/server-gtids/my.cnf")
-                    .withSetupSQL("docker/setup.sql")
-                    .withSetupSQL("sql/batch.sql")
-                    .withNetwork(NETWORK)
+                    .withSetupSQL("sql/cdc.sql")
+                    // .withNetwork(NETWORK)
                     .withNetworkAliases(MYSQL_HOST)
                     .withExposedPorts(MYSQL_PORT)
                     .withDatabaseName(MYSQL_DATABASE)
-                    .withUsername(MYSQL_USER_NAME)
                     .withPassword(MYSQL_USER_PASSWORD)
+                    .withEnv("TZ", "Asia/Shanghai")
                     .withLogConsumer(
                             new Slf4jLogConsumer(
                                     DockerLoggerFactory.getLogger("mysql-docker-image")));
@@ -95,9 +95,7 @@ public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
     }
 
     private static void extractedCdcSync() throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         // env.setParallelism(1);
-
         Map<String, String> flinkMap = new HashMap<>();
         flinkMap.put("execution.checkpointing.interval", "10s");
         flinkMap.put("pipeline.operator-chaining", "false");
@@ -111,8 +109,10 @@ public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
         Map<String, String> mysqlConfig = new HashMap<>();
         mysqlConfig.put(MySqlSourceOptions.DATABASE_NAME.key(), MYSQL_DATABASE);
         mysqlConfig.put(MySqlSourceOptions.HOSTNAME.key(), MYSQL_HOST);
-        mysqlConfig.put(MySqlSourceOptions.PORT.key(), "3306");
-        mysqlConfig.put(MySqlSourceOptions.USERNAME.key(), MYSQL_USER_PASSWORD);
+        mysqlConfig.put(
+                MySqlSourceOptions.PORT.key(),
+                String.valueOf(MYSQL_CONTAINER.getMappedPort(MYSQL_PORT)));
+        mysqlConfig.put(MySqlSourceOptions.USERNAME.key(), MYSQL_USER_NAME);
         mysqlConfig.put(MySqlSourceOptions.PASSWORD.key(), MYSQL_USER_PASSWORD);
         // add jdbc properties for MySQL
         mysqlConfig.put("jdbc.properties.use_ssl", "false");
@@ -143,25 +143,33 @@ public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
                 .setCreateTableOnly(false)
                 .create();
         databaseSync.build();
-        env.execute(String.format("MySQL-Doris Database Sync: %s", MYSQL_DATABASE));
+        env.executeAsync(String.format("MySQL-Doris Database Sync: %s", MYSQL_DATABASE));
+        checkResult();
+        env.close();
     }
 
-    void checkResult() {
+    static void checkResult() {
         String sourceSql = String.format("select * from %s order by 1", MYSQL_TABLE_NAME);
         String sinkSql = String.format("select * from %s order by 1", MYSQL_TABLE_NAME);
         try (Statement sourceStatement =
                         getConnection(
-                                        MYSQL_HOST,
-                                        MYSQL_CONTAINER.getMappedPort(MYSQL_PORT),
+                                        getJdbcUrl(
+                                                MYSQL_HOST,
+                                                MYSQL_CONTAINER.getMappedPort(MYSQL_PORT),
+                                                MYSQL_DATABASE),
                                         MYSQL_USER_NAME,
                                         MYSQL_USER_PASSWORD)
-                                .createStatement();
+                                .createStatement(
+                                        ResultSet.TYPE_SCROLL_INSENSITIVE,
+                                        ResultSet.CONCUR_READ_ONLY);
                 Statement sinkStatement =
                         getConnection(
                                         CONTAINER.getJdbcUrl(),
                                         CONTAINER.getUsername(),
                                         CONTAINER.getPassword())
-                                .createStatement();
+                                .createStatement(
+                                        ResultSet.TYPE_SCROLL_INSENSITIVE,
+                                        ResultSet.CONCUR_READ_ONLY);
                 ResultSet sourceResultSet = sourceStatement.executeQuery(sourceSql);
                 ResultSet sinkResultSet = sinkStatement.executeQuery(sinkSql)) {
             Assertions.assertEquals(
@@ -191,25 +199,24 @@ public class CdcMysqlSyncDatabaseCase extends OceanBaseMySQLTestBase {
         }
     }
 
-    String[] getFieldNames() {
+    static String[] getFieldNames() {
         return new String[] {
             "itemid", "clock", "value", "ns",
         };
     }
 
-    public static Connection getConnection(
-            String host, Integer port, String userName, String password) throws SQLException {
-        String jdbcUrl =
-                "jdbc:mysql://"
-                        + host
-                        + ":"
-                        + port
-                        + "/?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
-        return DriverManager.getConnection(jdbcUrl, userName, password);
-    }
-
     public static Connection getConnection(String jdbcUrl, String userName, String password)
             throws SQLException {
         return DriverManager.getConnection(jdbcUrl, userName, password);
+    }
+
+    public static String getJdbcUrl(String host, Integer port, String schema) {
+        return "jdbc:mysql://"
+                + host
+                + ":"
+                + port
+                + "/"
+                + schema
+                + "?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
     }
 }

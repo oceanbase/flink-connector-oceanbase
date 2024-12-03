@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * Docker container for MySQL. The difference between this class and {@link
- * org.testcontainers.containers.MySQLContainer} is that TC MySQLContainer has problems when
+ * org.testcontainers.containers.MySqlContainer} is that TC MySQLContainer has problems when
  * overriding mysql conf file, i.e. my.cnf.
  */
 @SuppressWarnings("MagicNumber")
@@ -43,7 +43,7 @@ public class MySqlContainer extends JdbcDatabaseContainer<MySqlContainer> {
     private String password = "test";
 
     public MySqlContainer() {
-        super(DockerImageName.parse(IMAGE + ":" + 8.0));
+        super(DockerImageName.parse(IMAGE + ":" + "8.0.20"));
         addExposedPort(MYSQL_PORT);
     }
 
@@ -67,8 +67,6 @@ public class MySqlContainer extends JdbcDatabaseContainer<MySqlContainer> {
         if (password != null && !password.isEmpty()) {
             addEnv("MYSQL_PASSWORD", password);
             addEnv("MYSQL_ROOT_PASSWORD", password);
-        } else if (MYSQL_ROOT_USER.equalsIgnoreCase(username)) {
-            addEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "yes");
         } else {
             throw new ContainerLaunchException(
                     "Empty password can be used only with the root user");
