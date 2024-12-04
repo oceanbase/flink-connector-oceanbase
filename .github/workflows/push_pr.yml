@@ -33,7 +33,7 @@ jobs:
   flink-connector-oceanbase-tools-cdc:
     uses: ./.github/workflows/test.yml
     with:
-      module: flink-connector-oceanbas-tools-cdc
+      module: flink-connector-oceanbase-tools-cdc
 
   flink-connector-oceanbase-e2e-tests:
     strategy:
