@@ -30,6 +30,11 @@ jobs:
     with:
       module: flink-connector-oceanbase-directload
 
+  flink-connector-oceanbase-tools-cdc:
+    uses: ./.github/workflows/test.yml
+    with:
+      module: flink-connector-oceanbas-tools-cdc
+
   flink-connector-oceanbase-e2e-tests:
     strategy:
       matrix:
