@@ -196,6 +196,7 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                     copyAndGetContainerPath(jobManager, jar.toAbsolutePath().toString());
             commands.add(containerPath);
         }
+        commands.add("-Dsofa.middleware.log.disable=true");
 
         Container.ExecResult execResult =
                 jobManager.execInContainer("bash", "-c", String.join(" ", commands));
