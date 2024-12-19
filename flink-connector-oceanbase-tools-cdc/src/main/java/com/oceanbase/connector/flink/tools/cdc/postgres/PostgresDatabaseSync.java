@@ -228,7 +228,7 @@ public class PostgresDatabaseSync extends DatabaseSync {
     }
 
     @Override
-    protected String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
+    public String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
 
         if (!initialJdbcUrl.startsWith("?")) {
             return super.getJdbcUrlTemplate(initialJdbcUrl, jdbcProperties);
