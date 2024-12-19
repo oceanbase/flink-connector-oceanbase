@@ -223,7 +223,7 @@ public class Db2DatabaseSync extends DatabaseSync {
     }
 
     @Override
-    protected String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
+    public String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
         StringBuilder jdbcUrlBuilder = new StringBuilder(initialJdbcUrl);
         boolean firstParam = true;
         for (Map.Entry<Object, Object> entry : jdbcProperties.entrySet()) {
