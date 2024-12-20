@@ -145,7 +145,7 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
                 .setCreateTableOnly(false)
                 .create();
         databaseSync.build();
-        env.executeAsync(String.format("MySQL-Doris Database Sync: %s", MYSQL_DATABASE));
+        env.executeAsync(String.format("MySQL-OceanBase Database Sync: %s", MYSQL_DATABASE));
     }
 
     static void checkResult() {
