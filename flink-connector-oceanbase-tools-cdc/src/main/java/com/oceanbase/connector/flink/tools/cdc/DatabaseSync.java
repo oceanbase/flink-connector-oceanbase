@@ -17,7 +17,7 @@ package com.oceanbase.connector.flink.tools.cdc; // Licensed to the Apache Softw
 
 import com.oceanbase.connector.flink.connection.OceanBaseToolsConnectProvider;
 import com.oceanbase.connector.flink.tools.catalog.OceanBaseSchemaFactory;
-import com.oceanbase.connector.flink.tools.catalog.OceanBaseSinkOperate;
+import com.oceanbase.connector.flink.tools.catalog.OceanBaseSinkBuild;
 import com.oceanbase.connector.flink.tools.catalog.TableSchema;
 
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -100,10 +100,10 @@ public abstract class DatabaseSync {
     }
 
     public void build() throws Exception {
-        OceanBaseSinkOperate oceanBaseSinkOperate = new OceanBaseSinkOperate(sinkConfig);
+        OceanBaseSinkBuild oceanBaseSinkBuild = new OceanBaseSinkBuild(sinkConfig);
         OceanBaseToolsConnectProvider oceanBaseConnectionProvider =
                 new OceanBaseToolsConnectProvider(
-                        oceanBaseSinkOperate.getOceanBaseConnectorOptions());
+                        oceanBaseSinkBuild.getOceanBaseConnectorOptions());
         List<SourceSchema> schemaList = getSchemaList();
         Preconditions.checkState(
                 !schemaList.isEmpty(),
@@ -157,7 +157,7 @@ public abstract class DatabaseSync {
             int sinkParallel = sinkConfig.getInteger(SINK_PARALLELISM, sideOutput.getParallelism());
             String uidName = getUidName(targetDbSet, dbTbl);
             sideOutput
-                    .sinkTo(oceanBaseSinkOperate.createGenericOceanBaseSink(dbTbl.f0, dbTbl.f1))
+                    .sinkTo(oceanBaseSinkBuild.createGenericOceanBaseSink(dbTbl.f0, dbTbl.f1))
                     .setParallelism(sinkParallel)
                     .name(uidName)
                     .uid(uidName);
