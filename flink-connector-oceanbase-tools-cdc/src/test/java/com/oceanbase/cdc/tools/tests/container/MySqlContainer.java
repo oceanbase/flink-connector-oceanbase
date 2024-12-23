@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * Docker container for MySQL. The difference between this class and {@link
- * org.testcontainers.containers.MySqlContainer} is that TC MySQLContainer has problems when
+ * org.testcontainers.containers.MySQLContainer} is that TC MySQLContainer has problems when
  * overriding mysql conf file, i.e. my.cnf.
  */
 @SuppressWarnings("MagicNumber")
@@ -92,11 +92,7 @@ public class MySqlContainer extends JdbcDatabaseContainer<MySqlContainer> {
                 + getDatabasePort()
                 + "/"
                 + databaseName
-                + additionalUrlParams;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
+                + "?serverTimezone=Asia/Shanghai";
     }
 
     @Override

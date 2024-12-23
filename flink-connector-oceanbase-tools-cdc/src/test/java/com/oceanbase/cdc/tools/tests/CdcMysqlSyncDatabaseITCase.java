@@ -145,7 +145,7 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
                 .setCreateTableOnly(false)
                 .create();
         databaseSync.build();
-        env.executeAsync(String.format("MySQL-Doris Database Sync: %s", MYSQL_DATABASE));
+        env.executeAsync(String.format("MySQL-OceanBase Database Sync: %s", MYSQL_DATABASE));
     }
 
     static void checkResult() {
@@ -153,10 +153,7 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
         String sinkSql = String.format("select * from %s order by 1", MYSQL_TABLE_NAME);
         try (Statement sourceStatement =
                         getConnection(
-                                        getJdbcUrl(
-                                                MYSQL_HOST,
-                                                MYSQL_CONTAINER.getMappedPort(MYSQL_PORT),
-                                                MYSQL_DATABASE),
+                                        MYSQL_CONTAINER.getJdbcUrl(),
                                         MYSQL_USER_NAME,
                                         MYSQL_USER_PASSWORD)
                                 .createStatement(
@@ -208,15 +205,5 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
     public static Connection getConnection(String jdbcUrl, String userName, String password)
             throws SQLException {
         return DriverManager.getConnection(jdbcUrl, userName, password);
-    }
-
-    public static String getJdbcUrl(String host, Integer port, String schema) {
-        return "jdbc:mysql://"
-                + host
-                + ":"
-                + port
-                + "/"
-                + schema
-                + "?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
     }
 }

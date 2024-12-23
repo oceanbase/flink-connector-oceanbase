@@ -17,8 +17,8 @@ package com.oceanbase.connector.flink.tools.cdc; // Licensed to the Apache Softw
 
 import com.oceanbase.connector.flink.connection.OceanBaseToolsConnectProvider;
 import com.oceanbase.connector.flink.tools.catalog.OceanBaseSchemaFactory;
+import com.oceanbase.connector.flink.tools.catalog.OceanBaseSinkOperate;
 import com.oceanbase.connector.flink.tools.catalog.TableSchema;
-import com.oceanbase.connector.flink.tools.catalog.oceanBaseSinkOperate;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.ConfigOption;
@@ -100,7 +100,7 @@ public abstract class DatabaseSync {
     }
 
     public void build() throws Exception {
-        oceanBaseSinkOperate oceanBaseSinkOperate = new oceanBaseSinkOperate(sinkConfig);
+        OceanBaseSinkOperate oceanBaseSinkOperate = new OceanBaseSinkOperate(sinkConfig);
         OceanBaseToolsConnectProvider oceanBaseConnectionProvider =
                 new OceanBaseToolsConnectProvider(
                         oceanBaseSinkOperate.getOceanBaseConnectorOptions());
@@ -200,7 +200,7 @@ public abstract class DatabaseSync {
         return sync;
     }
 
-    protected String getSyncTableList(List<String> syncTables) {
+    public String getSyncTableList(List<String> syncTables) {
         // includingTablePattern and ^excludingPattern
         if (includingTables == null) {
             includingTables = ".*";
@@ -217,7 +217,7 @@ public abstract class DatabaseSync {
     }
 
     /** Filter table that many tables merge to one. */
-    protected HashMap<Pattern, String> multiToOneRulesParser(
+    public HashMap<Pattern, String> multiToOneRulesParser(
             String multiToOneOrigin, String multiToOneTarget) {
         if (StringUtils.isNullOrWhitespaceOnly(multiToOneOrigin)
                 || StringUtils.isNullOrWhitespaceOnly(multiToOneTarget)) {
@@ -273,7 +273,7 @@ public abstract class DatabaseSync {
         }
     }
 
-    protected Properties getJdbcProperties() {
+    public Properties getJdbcProperties() {
         Properties jdbcProps = new Properties();
         for (Map.Entry<String, String> entry : config.toMap().entrySet()) {
             String key = entry.getKey();
@@ -285,7 +285,7 @@ public abstract class DatabaseSync {
         return jdbcProps;
     }
 
-    protected String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
+    public String getJdbcUrlTemplate(String initialJdbcUrl, Properties jdbcProperties) {
         StringBuilder jdbcUrlBuilder = new StringBuilder(initialJdbcUrl);
         jdbcProperties.forEach(
                 (key, value) -> jdbcUrlBuilder.append("&").append(key).append("=").append(value));

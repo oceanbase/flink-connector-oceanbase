@@ -41,12 +41,12 @@ import java.util.Map;
 
 /** OceanBase Sink Operate. */
 @Public
-public class oceanBaseSinkOperate implements Serializable {
+public class OceanBaseSinkOperate implements Serializable {
     private static final long serialVersionUID = 1L;
     protected Configuration sinkConfig;
     private final OceanBaseConnectorOptions connectorOptions;
 
-    public oceanBaseSinkOperate(Configuration cdcSinkConfig) {
+    public OceanBaseSinkOperate(Configuration cdcSinkConfig) {
         sinkConfig = cdcSinkConfig;
         this.connectorOptions = getOceanBaseConnectorOptions();
     }
