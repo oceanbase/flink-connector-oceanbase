@@ -61,7 +61,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
                                     .forPath(CONFIG_URL_PATH));
 
     public static final OceanBaseCEContainer CONTAINER =
-            new OceanBaseCEContainer("oceanbase/oceanbase-ce:latest")
+            new OceanBaseCEContainer("oceanbase/oceanbase-ce:4.3.3.1-101000012024102216")
                     .withNetwork(NETWORK)
                     .withMode(OceanBaseCEContainer.Mode.MINI)
                     .withTenantName(TEST_TENANT)
