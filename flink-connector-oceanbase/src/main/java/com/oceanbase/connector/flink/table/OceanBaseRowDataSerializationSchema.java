@@ -116,7 +116,7 @@ public class OceanBaseRowDataSerializationSchema
         }
     }
 
-    public int checkArrayDataNestDepth(LogicalType type) {
+    private int checkArrayDataNestDepth(LogicalType type) {
         LogicalType lt = ((ArrayType) type).getElementType();
         int depth = 1;
         while (LogicalTypeRoot.ARRAY.equals(lt.getTypeRoot())) {
@@ -126,7 +126,7 @@ public class OceanBaseRowDataSerializationSchema
         return depth;
     }
 
-    public static String parseArrayData(BinaryArrayData arrayData, LogicalType type) {
+    private String parseArrayData(BinaryArrayData arrayData, LogicalType type) {
         StringBuilder result = new StringBuilder();
 
         result.append("[");
