@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -381,5 +383,69 @@ public class OceanBaseMySQLConnectorITCase extends OceanBaseMySQLTestBase {
                                 String.format("DROP TABLE %s ", tableFullNameC)));
         env.fromCollection(dataSet).sinkTo(sink);
         env.execute();
+    }
+
+    @Test
+    public void testSinkArrayType() throws Exception {
+        String testTable = "test_array";
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+        StreamTableEnvironment tEnv =
+                StreamTableEnvironment.create(
+                        env, EnvironmentSettings.newInstance().inStreamingMode().build());
+
+        initialize("sql/mysql/array_type.sql");
+
+        tEnv.executeSql(
+                "CREATE TEMPORARY TABLE target ("
+                        + " `id` INT NOT NULL,"
+                        + " arr1 ARRAY<int>,"
+                        + " arr2 ARRAY<ARRAY<boolean>>,"
+                        + " arr3 ARRAY<ARRAY<ARRAY<float>>>,"
+                        + " arr4 ARRAY<ARRAY<ARRAY<ARRAY<double>>>>,"
+                        + " arr5 ARRAY<ARRAY<ARRAY<ARRAY<ARRAY<bigint>>>>>"
+                        + ") with ("
+                        + "  'connector'='oceanbase',"
+                        + "  'table-name'='test_array',"
+                        + getOptionsString()
+                        + ");");
+
+        tEnv.executeSql(
+                        "INSERT INTO target "
+                                + "VALUES (101, ARRAY[1], ARRAY[ARRAY[true],ARRAY[true, false]], ARRAY[ARRAY[ARRAY[3.4]]], ARRAY[ARRAY[ARRAY[ARRAY[3.45]]]], ARRAY[ARRAY[ARRAY[ARRAY[ARRAY[12121]]]]]),"
+                                + "       (101, ARRAY[1], ARRAY[ARRAY[true, false]], ARRAY[ARRAY[ARRAY[3.4]]], ARRAY[ARRAY[ARRAY[ARRAY[3.45],ARRAY[3.42]]]], ARRAY[ARRAY[ARRAY[ARRAY[ARRAY[12121]]]]]),"
+                                + "       (101, ARRAY[1], ARRAY[ARRAY[true, false]], ARRAY[ARRAY[ARRAY[3.4]]], ARRAY[ARRAY[ARRAY[ARRAY[3.45]]]], ARRAY[ARRAY[ARRAY[ARRAY[ARRAY[12121]],ARRAY[ARRAY[343343]]]]]),"
+                                + "       (101, ARRAY[1,2,3,4,5,6,7,8], ARRAY[ARRAY[true, false]], ARRAY[ARRAY[ARRAY[3.4]]], ARRAY[ARRAY[ARRAY[ARRAY[3.45]]]], ARRAY[ARRAY[ARRAY[ARRAY[ARRAY[12121]]]]]),"
+                                + "       (101, ARRAY[1], ARRAY[ARRAY[true, false]], ARRAY[ARRAY[ARRAY[3.2,3.1],ARRAY[3.0]],ARRAY[ARRAY[2.9, 2.8, 2.67],ARRAY[2.54]]], ARRAY[ARRAY[ARRAY[ARRAY[3.45]]]], ARRAY[ARRAY[ARRAY[ARRAY[ARRAY[12121]]]]]);")
+                .await();
+
+        List<String> expected =
+                Arrays.asList(
+                        "101,[1],[[1],[1,0]],[[[3.4]]],[[[[3.45]]]],[[[[[12121]]]]]",
+                        "101,[1],[[1,0]],[[[3.4]]],[[[[3.45],[3.42]]]],[[[[[12121]]]]]",
+                        "101,[1],[[1,0]],[[[3.4]]],[[[[3.45]]]],[[[[[12121]],[[343343]]]]]",
+                        "101,[1,2,3,4,5,6,7,8],[[1,0]],[[[3.4]]],[[[[3.45]]]],[[[[[12121]]]]]",
+                        "101,[1],[[1,0]],[[[3.2,3.1],[3]],[[2.9,2.8,2.67],[2.54]]],[[[[3.45]]]],[[[[[12121]]]]]");
+
+        waitingAndAssertTableCount(testTable, expected.size());
+
+        List<String> actual = queryTable(testTable);
+
+        assertEqualsInAnyOrder(expected, actual);
+
+        dropTables(testTable);
+    }
+
+    // Only for Array data-type of OB
+    protected String getRowString(ResultSet rs, int columnCount) throws SQLException {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < columnCount; i++) {
+            if (i != 0) {
+                sb.append(",");
+            }
+            // Change to getString() for the Array type.
+            sb.append(rs.getString(i + 1));
+        }
+        return sb.toString();
     }
 }

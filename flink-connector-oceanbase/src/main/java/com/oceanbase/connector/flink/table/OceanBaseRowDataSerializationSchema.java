@@ -16,17 +16,25 @@
 
 package com.oceanbase.connector.flink.table;
 
-import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.data.binary.BinaryArrayData;
+import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.types.RowKind;
+
+import org.apache.flink.shaded.guava31.com.google.common.collect.Lists;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -34,6 +42,8 @@ public class OceanBaseRowDataSerializationSchema
         extends AbstractRecordSerializationSchema<RowData> {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOG =
+            LoggerFactory.getLogger(OceanBaseRowDataSerializationSchema.class);
 
     private final TableInfo tableInfo;
     private final RowData.FieldGetter[] fieldGetters;
@@ -95,13 +105,70 @@ public class OceanBaseRowDataSerializationSchema
                 return data -> ((DecimalData) data).toBigDecimal();
             case ARRAY:
                 return data -> {
-                    ArrayData arrayData = (ArrayData) data;
-                    return IntStream.range(0, arrayData.size())
-                            .mapToObj(i -> arrayData.getString(i).toString())
-                            .collect(Collectors.joining(","));
+                    int depth = checkArrayDataNestDepth(type);
+                    if (depth > 6) {
+                        LOG.warn("Array nesting depth exceeds maximum allowed level of 6.");
+                    }
+                    return parseArrayData((BinaryArrayData) data, type);
                 };
             default:
                 throw new UnsupportedOperationException("Unsupported type:" + type);
         }
+    }
+
+    private int checkArrayDataNestDepth(LogicalType type) {
+        LogicalType lt = ((ArrayType) type).getElementType();
+        int depth = 1;
+        while (LogicalTypeRoot.ARRAY.equals(lt.getTypeRoot())) {
+            lt = ((ArrayType) lt).getElementType();
+            depth++;
+        }
+        return depth;
+    }
+
+    private String parseArrayData(BinaryArrayData arrayData, LogicalType type) {
+        StringBuilder result = new StringBuilder();
+
+        result.append("[");
+        LogicalType lt = ((ArrayType) type).getElementType();
+        List<Object> data = Lists.newArrayList((arrayData).toObjectArray(lt));
+        if (LogicalTypeRoot.ARRAY.equals(lt.getTypeRoot())) {
+            // traversal of the nested array
+            for (int i = 0; i < data.size(); i++) {
+                if (i > 0) {
+                    result.append(",");
+                }
+                String parsed = parseArrayData((BinaryArrayData) data.get(i), lt);
+                result.append(parsed);
+            }
+        } else {
+            String dataStr =
+                    data.stream()
+                            .map(
+                                    element -> {
+                                        if (element instanceof Integer) {
+                                            return element.toString();
+                                        } else if (element instanceof Boolean) {
+                                            return element.toString();
+                                        } else if (element instanceof Long) {
+                                            return element.toString();
+                                        } else if (element instanceof Short) {
+                                            return element.toString();
+                                        } else if (element instanceof Float) {
+                                            return element.toString();
+                                        } else if (element instanceof Double) {
+                                            return element.toString();
+                                        } else if (element instanceof Byte) {
+                                            return element.toString();
+                                        } else {
+                                            // Handle other types as needed
+                                            return element.toString();
+                                        }
+                                    })
+                            .collect(Collectors.joining(","));
+            result.append(dataStr);
+        }
+        result.append("]");
+        return result.toString();
     }
 }
