@@ -49,7 +49,7 @@ mvn clean package -DskipTests
 
 * 目前项目支持使用Flink CDC接入多表或整库。同步时需要在 `$FLINK_HOME/lib` 目录下添加对应的 Flink CDC 依赖，比如 flink-sql-connector-mysql-cdc-\${version}.jar，flink-sql-connector-oracle-cdc-\${version}.jar ，flink-sql-connector-sqlserver-cdc-\${version}.jar
 * 依赖的 Flink CDC 版本需要在 3.1 以上，如果需使用 Flink CDC 同步 MySQL 和 Oracle，还需要在 `$FLINK_HOME/lib` 下增加相关的 JDBC 驱动。
-* 同步至oceanbase时，oceanbase的url连接串需要使用mysql的协议。
+* 同步至oceanbase时，oceanbase的url连接串需要使用oceanbase或mysql作为协议名称。
 
 ### MySQL同步至OceanBase示例
 

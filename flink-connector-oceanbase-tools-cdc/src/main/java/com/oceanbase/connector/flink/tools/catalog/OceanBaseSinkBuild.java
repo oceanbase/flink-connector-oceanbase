@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OceanBase Sink Operate. */
+/** OceanBase Sink Build. */
 @Public
 public class OceanBaseSinkBuild implements Serializable {
     private static final long serialVersionUID = 1L;

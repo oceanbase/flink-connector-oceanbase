@@ -16,7 +16,7 @@ You can get the release packages at [Releases Page](https://github.com/oceanbase
 </dependency>
 ```
 
-如果你想要使用最新的快照版本，可以通过配置 Maven 快照仓库来指定：
+If you want to use the latest snapshot version, you can specify by configuring the Maven snapshot repository:
 
 ```xml
 <dependency>
@@ -47,9 +47,9 @@ mvn clean package -DskipTests
 
 ### Notes:
 
-* Currently, the project supports using Flink CDC to access multiple tables or the entire database. During synchronization, you need to add the corresponding Flink CDC dependency in the `$FLINK_HOME/lib` directory, such as flink-sql-connector-mysql-cdc-\${version}. jar, flink-sql-connector-oracle-cdc-\${version}.jar, flink-sql-connector-sqlserver-cdc-\${version}.jar
-* The dependent Flink CDC version needs to be above 3.1. If you need to use Flink CDC to synchronize MySQL and Oracle, you also need to add the relevant JDBC driver under `$FLINK_HOME/lib`
-* When synchronizing to oceanbase, the url connection string of oceanbase needs to use the mysql protocol.
+* Currently, the project supports using Flink CDC to access multiple tables or the entire database. During synchronization, you need to add the corresponding Flink CDC dependency in the `$FLINK_HOME/lib` directory, such as flink-sql-connector-mysql-cdc-\${version}. jar, flink-sql-connector-oracle-cdc-\${version}.jar, flink-sql-connector-sqlserver-cdc-\${version}.jar.
+  * The dependent Flink CDC version needs to be above 3.1. If you need to use Flink CDC to synchronize MySQL and Oracle, you also need to add the relevant JDBC driver under `$FLINK_HOME/lib`.
+    * If you synchronize data to OceanBase, you must use oceanBase or mysql as the protocol name for the URL connection string of OceanBase.
 
 ### MySQL  Synchronous OceanBase Example
 
