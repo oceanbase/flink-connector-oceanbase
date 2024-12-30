@@ -39,14 +39,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OceanBase Sink Operate. */
+/** OceanBase Sink Build. */
 @Public
-public class oceanBaseSinkOperate implements Serializable {
+public class OceanBaseSinkBuild implements Serializable {
     private static final long serialVersionUID = 1L;
     protected Configuration sinkConfig;
     private final OceanBaseConnectorOptions connectorOptions;
 
-    public oceanBaseSinkOperate(Configuration cdcSinkConfig) {
+    public OceanBaseSinkBuild(Configuration cdcSinkConfig) {
         sinkConfig = cdcSinkConfig;
         this.connectorOptions = getOceanBaseConnectorOptions();
     }
