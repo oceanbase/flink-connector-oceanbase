@@ -32,8 +32,13 @@ import org.apache.flink.table.types.logical.utils.LogicalTypeDefaultVisitor;
 
 import java.sql.Types;
 
-import static com.alibaba.druid.sql.ast.SQLDataType.Constants.BOOLEAN;
-import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.*;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.BIGINT;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.BOOLEAN;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.DOUBLE;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.FLOAT;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.INT;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.SMALLINT;
+import static com.oceanbase.connector.flink.tools.catalog.OceanBaseType.TINYINT;
 
 public class OceanBaseTypeMapper {
 

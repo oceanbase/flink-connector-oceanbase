@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.cdc.tools.tests.tools;
+package com.oceanbase.connector.flink.tools;
 
 import com.oceanbase.connector.flink.tools.cdc.DatabaseSync;
 import com.oceanbase.connector.flink.tools.cdc.db2.Db2DatabaseSync;
@@ -24,7 +24,6 @@ import com.oceanbase.connector.flink.tools.cdc.sqlserver.SqlServerDatabaseSync;
 
 import org.apache.flink.configuration.Configuration;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -35,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /** Unit tests for the {@link DatabaseSync}. */
 public class DatabaseSyncTest {
@@ -95,8 +96,8 @@ public class DatabaseSyncTest {
         Configuration config = Configuration.fromMap(mysqlConfig);
         databaseSync.setConfig(config);
         Properties jdbcProperties = databaseSync.getJdbcProperties();
-        Assert.assertEquals(1, jdbcProperties.size());
-        Assert.assertEquals("false", jdbcProperties.getProperty("use_ssl"));
+        assertEquals(1, jdbcProperties.size());
+        assertEquals("false", jdbcProperties.getProperty("use_ssl"));
     }
 
     @Test
@@ -139,39 +140,39 @@ public class DatabaseSyncTest {
         db2DatabaseSync.setConfig(db2Config);
 
         Properties mysqlJdbcProperties = mysqlDatabaseSync.getJdbcProperties();
-        Assert.assertEquals(1, mysqlJdbcProperties.size());
-        Assert.assertEquals("false", mysqlJdbcProperties.getProperty("use_ssl"));
+        assertEquals(1, mysqlJdbcProperties.size());
+        assertEquals("false", mysqlJdbcProperties.getProperty("use_ssl"));
         String mysqlJdbcUrlTemplate =
                 mysqlDatabaseSync.getJdbcUrlTemplate(mysqlJdbcTemplate, mysqlJdbcProperties);
-        Assert.assertEquals(mysqlJdbcTemplate + "&use_ssl=false", mysqlJdbcUrlTemplate);
+        assertEquals(mysqlJdbcTemplate + "&use_ssl=false", mysqlJdbcUrlTemplate);
 
         Properties postgresJdbcProperties = postgresDatabaseSync.getJdbcProperties();
-        Assert.assertEquals(1, postgresJdbcProperties.size());
-        Assert.assertEquals("false", postgresJdbcProperties.getProperty("ssl"));
+        assertEquals(1, postgresJdbcProperties.size());
+        assertEquals("false", postgresJdbcProperties.getProperty("ssl"));
         String postgresJdbcUrlTemplate =
                 postgresDatabaseSync.getJdbcUrlTemplate(
                         postgresJdbcTemplate, postgresJdbcProperties);
-        Assert.assertEquals(postgresJdbcTemplate + "&ssl=false", postgresJdbcUrlTemplate);
+        assertEquals(postgresJdbcTemplate + "&ssl=false", postgresJdbcUrlTemplate);
 
         Properties sqlServerJdbcProperties = sqlServerDatabaseSync.getJdbcProperties();
-        Assert.assertEquals(2, sqlServerJdbcProperties.size());
-        Assert.assertEquals("false", sqlServerJdbcProperties.getProperty("encrypt"));
-        Assert.assertEquals("false", sqlServerJdbcProperties.getProperty("integratedSecurity"));
+        assertEquals(2, sqlServerJdbcProperties.size());
+        assertEquals("false", sqlServerJdbcProperties.getProperty("encrypt"));
+        assertEquals("false", sqlServerJdbcProperties.getProperty("integratedSecurity"));
         String sqlServerJdbcUrlTemplate =
                 sqlServerDatabaseSync.getJdbcUrlTemplate(
                         sqlServerJdbcTemplate, sqlServerJdbcProperties);
-        Assert.assertEquals(
+        assertEquals(
                 sqlServerJdbcTemplate + "encrypt=false;integratedSecurity=false;",
                 sqlServerJdbcUrlTemplate);
 
         Properties db2JdbcProperties = db2DatabaseSync.getJdbcProperties();
-        Assert.assertEquals(3, db2JdbcProperties.size());
-        Assert.assertEquals("false", db2JdbcProperties.getProperty("ssl"));
-        Assert.assertEquals("1", db2JdbcProperties.getProperty("allowNextOnExhaustedResultSet"));
-        Assert.assertEquals("1", db2JdbcProperties.getProperty("resultSetHoldability"));
+        assertEquals(3, db2JdbcProperties.size());
+        assertEquals("false", db2JdbcProperties.getProperty("ssl"));
+        assertEquals("1", db2JdbcProperties.getProperty("allowNextOnExhaustedResultSet"));
+        assertEquals("1", db2JdbcProperties.getProperty("resultSetHoldability"));
         String db2JdbcUrlTemplate =
                 db2DatabaseSync.getJdbcUrlTemplate(db2JdbcTemplate, db2JdbcProperties);
-        Assert.assertEquals(
+        assertEquals(
                 db2JdbcTemplate
                         + ":allowNextOnExhaustedResultSet=1;ssl=false;resultSetHoldability=1;",
                 db2JdbcUrlTemplate);
