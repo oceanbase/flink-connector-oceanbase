@@ -39,4 +39,6 @@ jobs:
         run: mvn install -DskipTests=true
 
       - name: Maven test
-        run: mvn verify -pl :${{ inputs.module }} -am ${{ inputs.maven_opts }}
+        run: |
+          cd ${{ inputs.module }}
+          mvn verify ${{ inputs.maven_opts }}
