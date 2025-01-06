@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.cdc.tools.tests.tools;
+package com.oceanbase.connector.flink.tools;
 
 import com.oceanbase.connector.flink.tools.cdc.CdcTools;
 import com.oceanbase.connector.flink.tools.cdc.DatabaseSyncConfig;

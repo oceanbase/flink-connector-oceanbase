@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.tests;
+package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.tests.utils.FlinkContainerTestEnvironment;
+import com.oceanbase.connector.flink.utils.FlinkContainerTestEnvironment;
 
 import org.junit.After;
 import org.junit.AfterClass;

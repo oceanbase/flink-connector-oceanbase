@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.cdc.tools.tests.tools;
-
-import com.oceanbase.connector.flink.table.OceanBaseJsonSerializationSchema;
-import com.oceanbase.connector.flink.table.SerializationRuntimeConverter;
-import com.oceanbase.connector.flink.table.TableInfo;
+package com.oceanbase.connector.flink.table;
 
 import org.apache.flink.table.data.*;
 import org.apache.flink.table.types.logical.*;

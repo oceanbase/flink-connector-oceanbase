@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.tests;
+package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.tests.utils.FlinkContainerTestEnvironment;
+import com.oceanbase.connector.flink.utils.FlinkContainerTestEnvironment;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -31,12 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class OBDirectLoadE2eITCase extends FlinkContainerTestEnvironment {
+public class OceanBaseE2eITCase extends FlinkContainerTestEnvironment {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OBDirectLoadE2eITCase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseE2eITCase.class);
 
-    private static final String SINK_CONNECTOR_NAME =
-            "flink-sql-connector-oceanbase-directload.jar";
+    private static final String SINK_CONNECTOR_NAME = "flink-sql-connector-oceanbase.jar";
 
     @BeforeClass
     public static void setup() {
@@ -68,8 +67,6 @@ public class OBDirectLoadE2eITCase extends FlinkContainerTestEnvironment {
 
         sqlLines.add("SET 'execution.checkpointing.interval' = '3s';");
 
-        sqlLines.add("SET 'execution.runtime-mode' = 'batch';");
-
         sqlLines.add(
                 String.format(
                         "CREATE TEMPORARY TABLE target ("
@@ -79,21 +76,14 @@ public class OBDirectLoadE2eITCase extends FlinkContainerTestEnvironment {
                                 + " weight DECIMAL(20, 10),"
                                 + " PRIMARY KEY (`id`) NOT ENFORCED"
                                 + ") with ("
-                                + "  'connector' = 'oceanbase-directload',"
-                                + "  'host' = '%s', "
-                                + "  'port' = '%d', "
-                                + "  'username' = '%s', "
-                                + "  'password' = '%s',"
-                                + "  'tenant-name' = '%s', "
-                                + "  'schema-name' = '%s', "
-                                + "  'table-name' = 'products'"
+                                + "  'connector'='oceanbase',"
+                                + "  'url'='%s',"
+                                + "  'username'='%s',"
+                                + "  'password'='%s',"
+                                + "  'schema-name'='%s',"
+                                + "  'table-name'='products'"
                                 + ");",
-                        getHost(),
-                        getRpcPort(),
-                        getUserInfo().getUser(),
-                        getPassword(),
-                        getUserInfo().getTenant(),
-                        getSchemaName()));
+                        getJdbcUrl(), getUsername(), getPassword(), getSchemaName()));
 
         sqlLines.add(
                 "INSERT INTO target "

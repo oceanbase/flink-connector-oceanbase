@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.tests.utils;
+package com.oceanbase.connector.flink.utils;
 
 import com.oceanbase.connector.flink.OceanBaseMySQLTestBase;
 

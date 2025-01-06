@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.oceanbase.cdc.tools.tests;
+package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
-import com.oceanbase.connector.flink.OceanBaseMySQLTestBase;
 import com.oceanbase.connector.flink.tools.cdc.DatabaseSync;
 import com.oceanbase.connector.flink.tools.cdc.mysql.MysqlDatabaseSync;
 
