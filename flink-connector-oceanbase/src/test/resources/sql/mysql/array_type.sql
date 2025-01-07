@@ -18,5 +18,6 @@ CREATE TABLE test_array
   arr2 bool[][],
   arr3 float[][][],
   arr4 double[][][][],
-  arr5 bigint[][][][][]
+  arr5 bigint[][][][][],
+  arr6 varchar(225)[][][]
 );
