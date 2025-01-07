@@ -22,7 +22,7 @@ under the License.
         <version>${revision}</version>
     </parent>
 
-    <artifactId>flink-connector-oceanbase-tools-cdc</artifactId>
+    <artifactId>flink-connector-oceanbase-cli</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
