@@ -20,6 +20,7 @@ import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.data.binary.BinaryArrayData;
+import org.apache.flink.table.data.binary.BinaryStringData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
@@ -146,7 +147,9 @@ public class OceanBaseRowDataSerializationSchema
                     data.stream()
                             .map(
                                     element -> {
-                                        if (element instanceof Integer) {
+                                        if (element instanceof BinaryStringData) {
+                                            return String.format("\"%s\"", element);
+                                        } else if (element instanceof Integer) {
                                             return element.toString();
                                         } else if (element instanceof Boolean) {
                                             return element.toString();
