@@ -26,7 +26,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <flink.cdc.version>3.1.1</flink.cdc.version>
+        <flink.cdc.version>3.2.1</flink.cdc.version>
         <ojdbc.version>19.3.0.0</ojdbc.version>
     </properties>
 
