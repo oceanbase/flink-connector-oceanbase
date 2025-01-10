@@ -35,7 +35,6 @@ import org.apache.flink.table.types.logical.DoubleType;
 import org.apache.flink.table.types.logical.FloatType;
 import org.apache.flink.table.types.logical.IntType;
 import org.apache.flink.table.types.logical.LocalZonedTimestampType;
-import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.SmallIntType;
@@ -63,8 +62,7 @@ public class OceanBaseJsonSerializationSchemaTest {
 
     @Test
     void testCreateNotNullConverter() {
-        OceanBaseJsonSerializationSchemaConverterTest schema =
-                new OceanBaseJsonSerializationSchemaConverterTest(null);
+        OceanBaseJsonSerializationSchema schema = new OceanBaseJsonSerializationSchema(null);
         // Test Boolean
         assertEquals(true, schema.createNotNullConverter(new BooleanType()).convert(true));
 
@@ -194,19 +192,5 @@ public class OceanBaseJsonSerializationSchemaTest {
         assertEquals(
                 "{\"field1\":\"field1\",\"field2\":123,\"field3\":true}",
                 schema.createNotNullConverter(rowType).convert(rowData));
-    }
-
-    // Create a subclass to expose the protected createNotNullConverter method
-    private static class OceanBaseJsonSerializationSchemaConverterTest
-            extends OceanBaseJsonSerializationSchema {
-
-        public OceanBaseJsonSerializationSchemaConverterTest(TableInfo tableInfo) {
-            super(tableInfo);
-        }
-
-        @Override
-        public SerializationRuntimeConverter createNotNullConverter(LogicalType type) {
-            return super.createNotNullConverter(type);
-        }
     }
 }
