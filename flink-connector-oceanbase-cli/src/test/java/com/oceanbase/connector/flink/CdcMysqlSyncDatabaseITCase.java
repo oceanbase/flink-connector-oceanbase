@@ -16,8 +16,8 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.tools.cdc.DatabaseSync;
-import com.oceanbase.connector.flink.tools.cdc.mysql.MysqlDatabaseSync;
+import com.oceanbase.connector.flink.cdc.DatabaseSync;
+import com.oceanbase.connector.flink.cdc.mysql.MysqlDatabaseSync;
 
 import org.apache.flink.cdc.connectors.mysql.source.config.MySqlSourceOptions;
 import org.apache.flink.configuration.Configuration;

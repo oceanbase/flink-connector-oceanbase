@@ -105,4 +105,14 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
     public String getQueryTenantNameStatement() {
         return "SELECT SYS_CONTEXT('USERENV', 'CON_NAME') FROM DUAL";
     }
+
+    @Override
+    public String getListSchemaStatement() {
+        return "SELECT USERNAME FROM ALL_USERS";
+    }
+
+    @Override
+    public String getListTableStatement(String schemaName) {
+        return "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = '" + schemaName + "'";
+    }
 }

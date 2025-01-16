@@ -67,4 +67,16 @@ public class OceanBaseMySQLDialect implements OceanBaseDialect {
     public String getQueryTenantNameStatement() {
         return "SHOW TENANT";
     }
+
+    @Override
+    public String getListSchemaStatement() {
+        return "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`";
+    }
+
+    @Override
+    public String getListTableStatement(String schemaName) {
+        return "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = '"
+                + schemaName
+                + "'";
+    }
 }

@@ -63,7 +63,7 @@ Replace the following command with your real database information, and execute i
 $FLINK_HOME/bin/flink run \
     -Dexecution.checkpointing.interval=10s \
     -Dparallelism.default=1 \
-    -c com.oceanbase.connector.flink.tools.cdc.CdcTools \
+    -c com.oceanbase.connector.flink.CdcCli \
     lib/flink-connector-oceanbase-cli-xxx.jar \
     mysql-sync-database \
     --database test_db \

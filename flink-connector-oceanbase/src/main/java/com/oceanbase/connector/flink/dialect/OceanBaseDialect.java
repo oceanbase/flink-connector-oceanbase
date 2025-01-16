@@ -150,4 +150,8 @@ public interface OceanBaseDialect extends Serializable {
     }
 
     String getQueryTenantNameStatement();
+
+    String getListSchemaStatement();
+
+    String getListTableStatement(String schemaName);
 }
