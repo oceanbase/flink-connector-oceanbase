@@ -74,7 +74,7 @@ public class OceanBaseJdbcUtils {
                         rs -> rs.next() ? rs.getString(1) : null);
     }
 
-    private static Object query(
+    public static Object query(
             SupplierWithException<Connection, SQLException> connectionSupplier,
             String sql,
             FunctionWithException<ResultSet, Object, SQLException> resultSetConsumer) {
@@ -82,6 +82,16 @@ public class OceanBaseJdbcUtils {
                 Statement statement = connection.createStatement()) {
             ResultSet rs = statement.executeQuery(sql);
             return resultSetConsumer.apply(rs);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to execute sql: " + sql, e);
+        }
+    }
+
+    public static void execute(
+            SupplierWithException<Connection, SQLException> connectionSupplier, String sql) {
+        try (Connection connection = connectionSupplier.get();
+                Statement statement = connection.createStatement()) {
+            statement.execute(sql);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute sql: " + sql, e);
         }
