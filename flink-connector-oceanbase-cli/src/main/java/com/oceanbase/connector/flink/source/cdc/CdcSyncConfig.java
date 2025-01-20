@@ -14,42 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc;
+package com.oceanbase.connector.flink.source.cdc;
 
-public class DatabaseSyncConfig {
+public class CdcSyncConfig {
 
-    public static final String MYSQL_SYNC_DATABASE = "mysql-sync-database";
-    public static final String ORACLE_SYNC_DATABASE = "oracle-sync-database";
-    public static final String POSTGRES_SYNC_DATABASE = "postgres-sync-database";
-    public static final String SQLSERVER_SYNC_DATABASE = "sqlserver-sync-database";
-    public static final String DB2_SYNC_DATABASE = "db2-sync-database";
+    /** Option key for cdc source. */
+    public static final String SOURCE_CONF = "source-conf";
 
-    public static final String MYSQL_CONF = "mysql-conf";
-    public static final String ORACLE_CONF = "oracle-conf";
-    public static final String POSTGRES_CONF = "postgres-conf";
-    public static final String SQLSERVER_CONF = "sqlserver-conf";
-    public static final String DB2_CONF = "db2-conf";
-
-    ///////////// source-conf ////////
-    public static final String DATABASE_NAME = "database-name";
-    public static final String DB = "db";
-    public static final String USER = "user";
-    public static final String PASSWORD = "password";
-    public static final String TABLE_NAME = "TABLE_NAME";
-    public static final String REMARKS = "REMARKS";
-
-    ////////// cdc-conf //////////
-    // config options of {@link
-    // org.apache.flink.cdc.connectors.base.options.SourceOptions.SCAN_STARTUP_MODE}
-    public static final String SCAN_STARTUP_MODE_VALUE_INITIAL = "initial";
-    public static final String SCAN_STARTUP_MODE_VALUE_EARLIEST_OFFSET = "earliest-offset";
-    public static final String SCAN_STARTUP_MODE_VALUE_SPECIFIC_OFFSET = "specific-offset";
-    public static final String SCAN_STARTUP_MODE_VALUE_LATEST_OFFSET = "latest-offset";
-    public static final String SCAN_STARTUP_MODE_VALUE_TIMESTAMP = "timestamp";
-    public static final String DECIMAL_HANDLING_MODE = "decimal.handling.mode";
-
-    ////////// sink-conf /////////////
+    /** Option key for oceanbase sink. */
     public static final String SINK_CONF = "sink-conf";
+
+    // ------------------------------------------------------------
+    // Source types
+    // ------------------------------------------------------------
+    public static final String MYSQL_CDC = "mysql-cdc";
+
+    // ------------------------------------------------------------
+    // Sync configurations
+    // ------------------------------------------------------------
     public static final String JOB_NAME = "job-name";
     public static final String DATABASE = "database";
     public static final String TABLE_PREFIX = "table-prefix";
@@ -61,10 +43,10 @@ public class DatabaseSyncConfig {
     public static final String CREATE_TABLE_ONLY = "create-table-only";
     public static final String IGNORE_DEFAULT_VALUE = "ignore-default-value";
     public static final String IGNORE_INCOMPATIBLE = "ignore-incompatible";
-    ////////// oceanbase-table-conf //////////
-    public static final String TABLE_CONF = "table-conf";
 
-    ////////// date-converter-conf //////////
+    // ------------------------------------------------------------
+    // Temporal configurations
+    // ------------------------------------------------------------
     public static final String CONVERTERS = "converters";
     public static final String DATE = "date";
     public static final String DATE_TYPE = "date.type";
@@ -75,7 +57,6 @@ public class DatabaseSyncConfig {
     public static final String YEAR_MONTH_DAY_FORMAT = "yyyy-MM-dd";
     public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String DATETIME_MICRO_FORMAT = "yyyy-MM-dd HH:mm:ss.SSSSSS";
-    public static final String TIME_ZONE_SHANGHAI = "Asia/Shanghai";
     public static final String TIME_ZONE_UTC_8 = "UTC+8";
     public static final String FORMAT_DATE = "format.date";
     public static final String FORMAT_TIME = "format.time";
@@ -86,6 +67,4 @@ public class DatabaseSyncConfig {
     public static final String TIME = "TIME";
     public static final String DATETIME = "DATETIME";
     public static final String TIMESTAMP = "TIMESTAMP";
-    public static final String SMALLDATETIME = "SMALLDATETIME";
-    public static final String DATETIME2 = "DATETIME2";
 }

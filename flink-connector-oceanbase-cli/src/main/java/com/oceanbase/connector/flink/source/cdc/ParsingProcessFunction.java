@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc;
+package com.oceanbase.connector.flink.source.cdc;
+
+import com.oceanbase.connector.flink.source.TableNameConverter;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
@@ -28,12 +30,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ParsingProcessFunction extends ProcessFunction<String, Void> {
-    protected ObjectMapper objectMapper = new ObjectMapper();
-    private transient Map<String, OutputTag<String>> recordOutputTags;
-    private DatabaseSync.TableNameConverter converter;
 
-    public ParsingProcessFunction(DatabaseSync.TableNameConverter converter) {
+    private final TableNameConverter converter;
+    private final ObjectMapper objectMapper;
+
+    private transient Map<String, OutputTag<String>> recordOutputTags;
+
+    public ParsingProcessFunction(TableNameConverter converter) {
         this.converter = converter;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override

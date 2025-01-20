@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.connector.flink.cdc.mysql;
+package com.oceanbase.connector.flink.source.cdc.mysql;
 
-public class MysqlType {
+import com.oceanbase.connector.flink.table.OceanBaseType;
+
+public class MysqlTypeConverter {
     private static final String BIT = "BIT";
     private static final String BOOLEAN = "BOOLEAN";
     private static final String BOOL = "BOOL";
@@ -84,48 +86,48 @@ public class MysqlType {
     public static String toOceanBaseType(String type, Integer length, Integer scale) {
         switch (type.toUpperCase()) {
             case BIT:
-                return BIT;
+                return OceanBaseType.BIT;
             case BOOLEAN:
             case BOOL:
-                return BOOLEAN;
+                return OceanBaseType.BOOLEAN;
             case TINYINT:
             case TINYINT_UNSIGNED:
             case TINYINT_UNSIGNED_ZEROFILL:
-                return TINYINT;
+                return OceanBaseType.TINYINT;
             case SMALLINT:
             case SMALLINT_UNSIGNED:
             case SMALLINT_UNSIGNED_ZEROFILL:
-                return SMALLINT;
+                return OceanBaseType.SMALLINT;
             case MEDIUMINT:
             case MEDIUMINT_UNSIGNED:
             case MEDIUMINT_UNSIGNED_ZEROFILL:
-                return MEDIUMINT;
+                return OceanBaseType.MEDIUMINT;
             case INT:
             case INTEGER:
             case INT_UNSIGNED:
             case INT_UNSIGNED_ZEROFILL:
             case INTEGER_UNSIGNED:
             case INTEGER_UNSIGNED_ZEROFILL:
-                return INT;
+                return OceanBaseType.INT;
             case BIGINT:
             case BIGINT_UNSIGNED:
             case BIGINT_UNSIGNED_ZEROFILL:
             case SERIAL:
-                return BIGINT;
+                return OceanBaseType.BIGINT;
             case REAL:
             case REAL_UNSIGNED:
             case REAL_UNSIGNED_ZEROFILL:
             case FLOAT:
             case FLOAT_UNSIGNED:
             case FLOAT_UNSIGNED_ZEROFILL:
-                return FLOAT;
+                return OceanBaseType.FLOAT;
             case DOUBLE:
             case DOUBLE_UNSIGNED:
             case DOUBLE_UNSIGNED_ZEROFILL:
             case DOUBLE_PRECISION:
             case DOUBLE_PRECISION_UNSIGNED:
             case DOUBLE_PRECISION_UNSIGNED_ZEROFILL:
-                return DOUBLE;
+                return OceanBaseType.DOUBLE;
             case NUMERIC:
             case NUMERIC_UNSIGNED:
             case NUMERIC_UNSIGNED_ZEROFILL:
@@ -135,40 +137,41 @@ public class MysqlType {
             case DECIMAL:
             case DECIMAL_UNSIGNED:
             case DECIMAL_UNSIGNED_ZEROFILL:
-                return DECIMAL + "(" + length + "," + scale + ")";
+                return OceanBaseType.DECIMAL + "(" + length + "," + scale + ")";
             case CHAR:
-                return CHAR + "(" + length + ")";
+                return OceanBaseType.CHAR + "(" + length + ")";
             case VARCHAR:
-                return VARCHAR + "(" + length + ")";
+                return OceanBaseType.VARCHAR + "(" + length + ")";
             case TINYTEXT:
             case MEDIUMTEXT:
             case TEXT:
             case LONGTEXT:
-                return TEXT;
+                return OceanBaseType.TEXT;
             case DATE:
-                return DATE;
+                return OceanBaseType.DATE;
             case TIME:
-                return TIME + "(" + scale + ")";
+                return OceanBaseType.TIME + "(" + scale + ")";
             case DATETIME:
-                return DATETIME + "(" + scale + ")";
+                return OceanBaseType.DATETIME + "(" + scale + ")";
             case TIMESTAMP:
-                return TIMESTAMP + "(" + scale + ")";
+                return OceanBaseType.TIMESTAMP + "(" + scale + ")";
             case YEAR:
-                return YEAR;
+                return OceanBaseType.YEAR;
             case BINARY:
-                return BINARY + "(" + length + ")";
+                return OceanBaseType.BINARY + "(" + length + ")";
             case VARBINARY:
-                return VARBINARY + "(" + length + ")";
+                return OceanBaseType.VARBINARY + "(" + length + ")";
             case TINYBLOB:
             case MEDIUMBLOB:
             case BLOB:
             case LONGBLOB:
-                return BLOB;
+                return OceanBaseType.BLOB;
             case JSON:
-                return JSON;
+                return OceanBaseType.JSON;
             case ENUM:
+                return OceanBaseType.ENUM;
             case SET:
-                return type; // ENUM and SET types are kept as is
+                return OceanBaseType.SET;
             default:
                 throw new UnsupportedOperationException("Unsupported MySQL type: " + type);
         }

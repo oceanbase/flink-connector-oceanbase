@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc;
+package com.oceanbase.connector.flink.source;
 
-import com.oceanbase.connector.flink.table.FieldSchema;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
 
@@ -24,36 +23,28 @@ import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
-public abstract class SourceSchema {
-    protected final String databaseName;
-    protected final String schemaName;
-    protected final String tableName;
-    protected final String tableComment;
-    protected LinkedHashMap<String, FieldSchema> fields;
-    public List<String> primaryKeys;
+/** Schema information of generic data sources. */
+public class TableSchema {
 
-    public SourceSchema(
-            String databaseName, String schemaName, String tableName, String tableComment)
-            throws Exception {
+    public final String databaseName;
+    public final String schemaName;
+    public final String tableName;
+    public final String tableComment;
+    public final List<FieldSchema> fields = new ArrayList<>();
+    public final List<String> primaryKeys = new ArrayList<>();
+
+    public TableSchema(
+            String databaseName, String schemaName, String tableName, String tableComment) {
         this.databaseName = databaseName;
         this.schemaName = schemaName;
         this.tableName = tableName;
         this.tableComment = tableComment;
     }
 
-    public abstract String convertToOceanBaseType(
-            String fieldType, Integer precision, Integer scale);
-
     public String getTableIdentifier() {
-        return getString(databaseName, schemaName, tableName);
-    }
-
-    public static String getString(String databaseName, String schemaName, String tableName) {
         StringJoiner identifier = new StringJoiner(".");
         if (!StringUtils.isNullOrWhitespaceOnly(databaseName)) {
             identifier.add(databaseName);
@@ -65,7 +56,6 @@ public abstract class SourceSchema {
         if (!StringUtils.isNullOrWhitespaceOnly(tableName)) {
             identifier.add(tableName);
         }
-
         return identifier.toString();
     }
 
@@ -77,7 +67,7 @@ public abstract class SourceSchema {
         return tableName;
     }
 
-    public Map<String, FieldSchema> getFields() {
+    public List<FieldSchema> getFields() {
         return fields;
     }
 
@@ -89,12 +79,20 @@ public abstract class SourceSchema {
         return tableComment;
     }
 
+    public void addField(FieldSchema fieldSchema) {
+        this.fields.add(fieldSchema);
+    }
+
+    public void addPrimaryKey(String primaryKey) {
+        this.primaryKeys.add(primaryKey);
+    }
+
     public TableInfo toTableInfo() {
         List<String> fieldNames = new ArrayList<>();
         List<LogicalType> fieldTypes = new ArrayList<>();
-        for (FieldSchema fieldSchema : getFields().values()) {
+        for (FieldSchema fieldSchema : getFields()) {
             fieldNames.add(fieldSchema.getName());
-            fieldTypes.add(fieldSchema.getType());
+            fieldTypes.add(fieldSchema.getType().getFlinkType());
         }
         return new TableInfo(
                 new TableId(getDatabaseName(), getTableName()),

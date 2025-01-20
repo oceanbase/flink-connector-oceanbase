@@ -16,8 +16,8 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.cdc.DatabaseSync;
-import com.oceanbase.connector.flink.cdc.mysql.MysqlDatabaseSync;
+import com.oceanbase.connector.flink.source.cdc.CdcSync;
+import com.oceanbase.connector.flink.source.cdc.mysql.MysqlCdcSync;
 
 import org.apache.flink.cdc.connectors.mysql.source.config.MySqlSourceOptions;
 import org.apache.flink.configuration.Configuration;
@@ -32,16 +32,12 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
-    private static final Logger LOG = LoggerFactory.getLogger(CdcMysqlSyncDatabaseITCase.class);
-
-    private static final String MYSQL_TABLE_NAME = "test_history_text";
+public class MysqlCdcSyncITCase extends OceanBaseMySQLTestBase {
+    private static final Logger LOG = LoggerFactory.getLogger(MysqlCdcSyncITCase.class);
 
     private static final MySQLContainer<?> MYSQL_CONTAINER =
             new MySQLContainer<>("mysql:8.0.20")
@@ -70,7 +66,7 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
     }
 
     @Test
-    public void testCdcMysqlSyncOceanBase() throws Exception {
+    public void testMysqlCdcSync() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         Map<String, String> flinkMap = new HashMap<>();
@@ -80,16 +76,20 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
         Configuration configuration = Configuration.fromMap(flinkMap);
         env.configure(configuration);
 
+        // match all tables
+        String tableName = ".*";
+
         Map<String, String> mysqlConfig = new HashMap<>();
-        mysqlConfig.put(MySqlSourceOptions.DATABASE_NAME.key(), MYSQL_CONTAINER.getDatabaseName());
         mysqlConfig.put(MySqlSourceOptions.HOSTNAME.key(), MYSQL_CONTAINER.getHost());
         mysqlConfig.put(
                 MySqlSourceOptions.PORT.key(),
                 String.valueOf(MYSQL_CONTAINER.getMappedPort(MySQLContainer.MYSQL_PORT)));
         mysqlConfig.put(MySqlSourceOptions.USERNAME.key(), MYSQL_CONTAINER.getUsername());
         mysqlConfig.put(MySqlSourceOptions.PASSWORD.key(), MYSQL_CONTAINER.getPassword());
-        mysqlConfig.put("jdbc.properties.use_ssl", "false");
-        Configuration config = Configuration.fromMap(mysqlConfig);
+        mysqlConfig.put(MySqlSourceOptions.DATABASE_NAME.key(), MYSQL_CONTAINER.getDatabaseName());
+        mysqlConfig.put(MySqlSourceOptions.TABLE_NAME.key(), tableName);
+        mysqlConfig.put("jdbc.properties.useSSL", "false");
+        Configuration sourceConfig = Configuration.fromMap(mysqlConfig);
 
         Map<String, String> sinkConfig = new HashMap<>();
         sinkConfig.put(OceanBaseConnectorOptions.USERNAME.key(), CONTAINER.getUsername());
@@ -98,32 +98,20 @@ public class CdcMysqlSyncDatabaseITCase extends OceanBaseMySQLTestBase {
         sinkConfig.put("sink.enable-delete", "false");
         Configuration sinkConf = Configuration.fromMap(sinkConfig);
 
-        DatabaseSync databaseSync = new MysqlDatabaseSync();
-        databaseSync
-                .setEnv(env)
-                .setDatabase(MYSQL_CONTAINER.getDatabaseName())
-                .setConfig(config)
-                .setTablePrefix(null)
-                .setTableSuffix(null)
-                .setIncludingTables(MYSQL_CONTAINER.getDatabaseName() + ".*")
-                .setExcludingTables(null)
-                .setIgnoreDefaultValue(false)
+        CdcSync cdcSync = new MysqlCdcSync();
+        cdcSync.setEnv(env)
+                .setSourceConfig(sourceConfig)
                 .setSinkConfig(sinkConf)
-                .setCreateTableOnly(false)
-                .create();
-        databaseSync.build();
+                .setDatabase(CONTAINER.getDatabaseName())
+                .setIncludingTables(tableName)
+                .build();
 
         env.executeAsync(
                 String.format(
-                        "MySQL-OceanBase Database Sync: %s", MYSQL_CONTAINER.getDatabaseName()));
+                        "MySQL-OceanBase Database Sync: %s -> %s",
+                        MYSQL_CONTAINER.getDatabaseName(), CONTAINER.getDatabaseName()));
 
-        List<String> expected = Arrays.asList("1,21131,ces1,21321", "2,21321,ces2,12321");
-
-        waitingAndAssertTableCount(MYSQL_TABLE_NAME, expected.size());
-
-        List<String> actual =
-                queryTable(MYSQL_TABLE_NAME, Arrays.asList("itemid", "clock", "value", "ns"));
-
-        assertEqualsInAnyOrder(expected, actual);
+        waitingAndAssertTableCount("products", 9);
+        waitingAndAssertTableCount("customers", 4);
     }
 }

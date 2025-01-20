@@ -16,186 +16,85 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.cdc.DatabaseSync;
-import com.oceanbase.connector.flink.cdc.DatabaseSyncConfig;
-import com.oceanbase.connector.flink.cdc.SourceConnector;
-import com.oceanbase.connector.flink.cdc.db2.Db2DatabaseSync;
-import com.oceanbase.connector.flink.cdc.mysql.MysqlDatabaseSync;
-import com.oceanbase.connector.flink.cdc.oracle.OracleDatabaseSync;
-import com.oceanbase.connector.flink.cdc.postgres.PostgresDatabaseSync;
-import com.oceanbase.connector.flink.cdc.sqlserver.SqlServerDatabaseSync;
+import com.oceanbase.connector.flink.source.cdc.CdcSync;
+import com.oceanbase.connector.flink.source.cdc.CdcSyncConfig;
+import com.oceanbase.connector.flink.source.cdc.mysql.MysqlCdcSync;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.java.utils.MultipleParameterTool;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class CdcCli {
-    private static final List<String> EMPTY_KEYS =
-            Collections.singletonList(DatabaseSyncConfig.PASSWORD);
-    private static StreamExecutionEnvironment flinkEnvironmentForTesting;
-    private static JobClient jobClient;
+    private static final Logger LOG = LoggerFactory.getLogger(CdcCli.class);
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Input args: " + Arrays.asList(args) + ".\n");
-        String operation = args[0].toLowerCase();
+        LOG.info("Starting CdcCli with args: {}", Arrays.toString(args));
+
+        String jobType = args[0];
         String[] opArgs = Arrays.copyOfRange(args, 1, args.length);
         MultipleParameterTool params = MultipleParameterTool.fromArgs(opArgs);
-        switch (operation) {
-                // mysql is synchronized as a data source
-            case DatabaseSyncConfig.MYSQL_SYNC_DATABASE:
-                createMySQLSyncDatabase(params);
-                break;
-                // oracle is synchronized as a data source
-            case DatabaseSyncConfig.ORACLE_SYNC_DATABASE:
-                createOracleSyncDatabase(params);
-                break;
-                // postgres is synchronized as a data source
-            case DatabaseSyncConfig.POSTGRES_SYNC_DATABASE:
-                createPostgresSyncDatabase(params);
-                break;
-                // sqlserver is synchronized as a data source
-            case DatabaseSyncConfig.SQLSERVER_SYNC_DATABASE:
-                createSqlServerSyncDatabase(params);
-                break;
-                // db2 is synchronized as a data source
-            case DatabaseSyncConfig.DB2_SYNC_DATABASE:
-                createDb2SyncDatabase(params);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        CdcSync cdcSync;
+        switch (jobType.trim().toLowerCase()) {
+            case CdcSyncConfig.MYSQL_CDC:
+                cdcSync = new MysqlCdcSync();
                 break;
             default:
-                System.out.println("Unknown operation " + operation);
-                System.exit(1);
+                throw new RuntimeException("Unsupported job type: " + jobType);
         }
-    }
 
-    private static void createMySQLSyncDatabase(MultipleParameterTool params) throws Exception {
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.MYSQL_CONF));
-        Map<String, String> mysqlMap = getConfigMap(params, DatabaseSyncConfig.MYSQL_CONF);
-        Configuration mysqlConfig = Configuration.fromMap(mysqlMap);
-        DatabaseSync databaseSync = new MysqlDatabaseSync();
-        syncDatabase(params, databaseSync, mysqlConfig, SourceConnector.MYSQL);
-    }
+        Map<String, String> sourceConfigMap = getConfigMap(params, CdcSyncConfig.SOURCE_CONF);
+        Configuration sourceConfig = Configuration.fromMap(sourceConfigMap);
 
-    private static void createOracleSyncDatabase(MultipleParameterTool params) throws Exception {
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.ORACLE_CONF));
-        Map<String, String> oracleMap = getConfigMap(params, DatabaseSyncConfig.ORACLE_CONF);
-        Configuration oracleConfig = Configuration.fromMap(oracleMap);
-        DatabaseSync databaseSync = new OracleDatabaseSync();
-        syncDatabase(params, databaseSync, oracleConfig, SourceConnector.ORACLE);
-    }
+        Map<String, String> sinkConfigMap = getConfigMap(params, CdcSyncConfig.SINK_CONF);
+        Configuration sinkConfig = Configuration.fromMap(sinkConfigMap);
 
-    private static void createPostgresSyncDatabase(MultipleParameterTool params) throws Exception {
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.POSTGRES_CONF));
-        Map<String, String> postgresMap = getConfigMap(params, DatabaseSyncConfig.POSTGRES_CONF);
-        Configuration postgresConfig = Configuration.fromMap(postgresMap);
-        DatabaseSync databaseSync = new PostgresDatabaseSync();
-        syncDatabase(params, databaseSync, postgresConfig, SourceConnector.POSTGRES);
-    }
+        String jobName = params.get(CdcSyncConfig.JOB_NAME);
+        String database = params.get(CdcSyncConfig.DATABASE);
+        String tablePrefix = params.get(CdcSyncConfig.TABLE_PREFIX);
+        String tableSuffix = params.get(CdcSyncConfig.TABLE_SUFFIX);
+        String includingTables = params.get(CdcSyncConfig.INCLUDING_TABLES);
+        String excludingTables = params.get(CdcSyncConfig.EXCLUDING_TABLES);
+        String multiToOneOrigin = params.get(CdcSyncConfig.MULTI_TO_ONE_ORIGIN);
+        String multiToOneTarget = params.get(CdcSyncConfig.MULTI_TO_ONE_TARGET);
 
-    private static void createSqlServerSyncDatabase(MultipleParameterTool params) throws Exception {
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.SQLSERVER_CONF));
-        Map<String, String> postgresMap = getConfigMap(params, DatabaseSyncConfig.SQLSERVER_CONF);
-        Configuration postgresConfig = Configuration.fromMap(postgresMap);
-        DatabaseSync databaseSync = new SqlServerDatabaseSync();
-        syncDatabase(params, databaseSync, postgresConfig, SourceConnector.SQLSERVER);
-    }
+        boolean createTableOnly = params.has(CdcSyncConfig.CREATE_TABLE_ONLY);
+        boolean ignoreDefaultValue = params.has(CdcSyncConfig.IGNORE_DEFAULT_VALUE);
+        boolean ignoreIncompatible = params.has(CdcSyncConfig.IGNORE_INCOMPATIBLE);
 
-    private static void createDb2SyncDatabase(MultipleParameterTool params) throws Exception {
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.DB2_CONF));
-        Map<String, String> db2Map = getConfigMap(params, DatabaseSyncConfig.DB2_CONF);
-        Configuration db2Config = Configuration.fromMap(db2Map);
-        DatabaseSync databaseSync = new Db2DatabaseSync();
-        syncDatabase(params, databaseSync, db2Config, SourceConnector.DB2);
-    }
-
-    private static void syncDatabase(
-            MultipleParameterTool params,
-            DatabaseSync databaseSync,
-            Configuration config,
-            SourceConnector sourceConnector)
-            throws Exception {
-        String jobName = params.get(DatabaseSyncConfig.JOB_NAME);
-        String database = params.get(DatabaseSyncConfig.DATABASE);
-        String tablePrefix = params.get(DatabaseSyncConfig.TABLE_PREFIX);
-        String tableSuffix = params.get(DatabaseSyncConfig.TABLE_SUFFIX);
-        String includingTables = params.get(DatabaseSyncConfig.INCLUDING_TABLES);
-        String excludingTables = params.get(DatabaseSyncConfig.EXCLUDING_TABLES);
-        String multiToOneOrigin = params.get(DatabaseSyncConfig.MULTI_TO_ONE_ORIGIN);
-        String multiToOneTarget = params.get(DatabaseSyncConfig.MULTI_TO_ONE_TARGET);
-        boolean createTableOnly = params.has(DatabaseSyncConfig.CREATE_TABLE_ONLY);
-        boolean ignoreDefaultValue = params.has(DatabaseSyncConfig.IGNORE_DEFAULT_VALUE);
-        boolean ignoreIncompatible = params.has(DatabaseSyncConfig.IGNORE_INCOMPATIBLE);
-
-        Preconditions.checkArgument(params.has(DatabaseSyncConfig.SINK_CONF));
-        Map<String, String> sinkMap = getConfigMap(params, DatabaseSyncConfig.SINK_CONF);
-        Configuration sinkConfig = Configuration.fromMap(sinkMap);
-
-        StreamExecutionEnvironment env =
-                Objects.nonNull(flinkEnvironmentForTesting)
-                        ? flinkEnvironmentForTesting
-                        : StreamExecutionEnvironment.getExecutionEnvironment();
-        databaseSync
-                .setEnv(env)
+        cdcSync.setEnv(env)
+                .setSourceConfig(sourceConfig)
+                .setSinkConfig(sinkConfig)
                 .setDatabase(database)
-                .setConfig(config)
                 .setTablePrefix(tablePrefix)
                 .setTableSuffix(tableSuffix)
                 .setIncludingTables(includingTables)
                 .setExcludingTables(excludingTables)
                 .setMultiToOneOrigin(multiToOneOrigin)
                 .setMultiToOneTarget(multiToOneTarget)
-                .setIgnoreDefaultValue(ignoreDefaultValue)
-                .setSinkConfig(sinkConfig)
                 .setCreateTableOnly(createTableOnly)
-                .create();
-        databaseSync.build();
+                .setIgnoreDefaultValue(ignoreDefaultValue)
+                .setIgnoreIncompatible(ignoreIncompatible)
+                .build();
+
         if (StringUtils.isNullOrWhitespaceOnly(jobName)) {
-            jobName =
-                    String.format(
-                            "%s-OceanBase Sync Database: %s",
-                            sourceConnector.getConnectorName(),
-                            config.getString(
-                                    DatabaseSyncConfig.DATABASE_NAME, DatabaseSyncConfig.DB));
+            jobName = String.format("%s Sync", jobType);
         }
-        if (Objects.nonNull(flinkEnvironmentForTesting)) {
-            jobClient = env.executeAsync();
-        } else {
-            env.execute(jobName);
-        }
+        env.execute(jobName);
     }
 
-    @VisibleForTesting
-    public static JobClient getJobClient() {
-        return jobClient;
-    }
-
-    // Only for testing, please do not use it in actual environment
-    @VisibleForTesting
-    public static void setStreamExecutionEnvironmentForTesting(
-            StreamExecutionEnvironment environment) {
-        flinkEnvironmentForTesting = environment;
-    }
-
-    @VisibleForTesting
     public static Map<String, String> getConfigMap(MultipleParameterTool params, String key) {
         if (!params.has(key)) {
-            System.out.println(
-                    "Can not find key ["
-                            + key
-                            + "] from args: "
-                            + params.toMap().toString()
-                            + ".\n");
-            return null;
+            throw new RuntimeException("Failed to find config by key: " + key);
         }
 
         Map<String, String> map = new HashMap<>();
@@ -204,13 +103,11 @@ public class CdcCli {
             if (kv.length == 2) {
                 map.put(kv[0].trim(), kv[1].trim());
                 continue;
-            } else if (kv.length == 1 && EMPTY_KEYS.contains(kv[0])) {
-                map.put(kv[0].trim(), "");
-                continue;
             }
-
-            System.out.println("Invalid " + key + " " + param + ".\n");
-            return null;
+            throw new RuntimeException("Invalid option: " + param);
+        }
+        if (map.isEmpty()) {
+            throw new RuntimeException("Failed to get config by key: " + key);
         }
         return map;
     }

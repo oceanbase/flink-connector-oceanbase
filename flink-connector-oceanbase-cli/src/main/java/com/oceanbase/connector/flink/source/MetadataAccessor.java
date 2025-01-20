@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc.mysql;
+package com.oceanbase.connector.flink.source;
 
-import com.oceanbase.connector.flink.cdc.JdbcSourceSchema;
+import java.util.List;
 
-import java.sql.DatabaseMetaData;
+/** {@code MetadataAccessor} is used to access the metadata of data sources. */
+public interface MetadataAccessor {
 
-public class MysqlSchema extends JdbcSourceSchema {
+    List<FieldSchema> getColumnInfo(String databaseName, String schemaName, String tableName);
 
-    public MysqlSchema(
-            DatabaseMetaData metaData, String databaseName, String tableName, String tableComment)
-            throws Exception {
-        super(metaData, databaseName, null, tableName, tableComment);
-    }
-
-    public String convertToOceanBaseType(String fieldType, Integer precision, Integer scale) {
-        return MysqlType.toOceanBaseType(fieldType, precision, scale);
-    }
+    List<String> getPrimaryKeys(String databaseName, String schemaName, String tableName);
 }

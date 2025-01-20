@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc.deserialize;
+package com.oceanbase.connector.flink.source.cdc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -39,15 +39,15 @@ import java.util.Collection;
 import java.util.Map;
 
 /** Currently just use for synchronous mysql non-default. */
-public class OceanBaseJsonDebeziumDeserializationSchema
-        implements DebeziumDeserializationSchema<String> {
+public class OceanBaseJsonDeserializationSchema implements DebeziumDeserializationSchema<String> {
 
     private static final JsonNodeFactory JSON_NODE_FACTORY =
             JsonNodeFactory.withExactBigDecimals(true);
+
     private final ObjectMapper objectMapper;
 
-    public OceanBaseJsonDebeziumDeserializationSchema() {
-        objectMapper = new ObjectMapper();
+    public OceanBaseJsonDeserializationSchema() {
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -62,7 +62,6 @@ public class OceanBaseJsonDebeziumDeserializationSchema
 
     private JsonNode convertToJson(Schema schema, Object value) throws RuntimeException {
         if (value == null) {
-            // Any schema is valid and we don't have a default, so treat this as an optional schema
             if (schema == null) {
                 return null;
             }

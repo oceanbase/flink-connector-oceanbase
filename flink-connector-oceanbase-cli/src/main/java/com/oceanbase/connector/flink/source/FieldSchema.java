@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.table;
+package com.oceanbase.connector.flink.source;
 
-import org.apache.flink.table.types.logical.LogicalType;
-
+/** The schema information of table fields. */
 public class FieldSchema {
     private final String name;
-    private final LogicalType type;
-    private final String typeString;
+    private final FieldType type;
     private final String defaultValue;
     private final String comment;
-    private final Boolean nullable;
+    private final boolean nullable;
 
     public FieldSchema(
-            String name,
-            LogicalType type,
-            String typeString,
-            String defaultValue,
-            String comment,
-            Boolean nullable) {
+            String name, FieldType type, String defaultValue, String comment, boolean nullable) {
         this.name = name;
         this.type = type;
-        this.typeString = typeString;
         this.defaultValue = defaultValue;
         this.comment = comment;
         this.nullable = nullable;
@@ -45,20 +37,16 @@ public class FieldSchema {
         return name;
     }
 
-    public LogicalType getType() {
+    public FieldType getType() {
         return type;
-    }
-
-    public String getTypeString() {
-        return typeString;
-    }
-
-    public String getComment() {
-        return comment;
     }
 
     public String getDefaultValue() {
         return defaultValue;
+    }
+
+    public String getComment() {
+        return comment;
     }
 
     public Boolean getNullable() {
@@ -73,9 +61,6 @@ public class FieldSchema {
                 + '\''
                 + ", type="
                 + type
-                + ", typeString='"
-                + typeString
-                + '\''
                 + ", defaultValue='"
                 + defaultValue
                 + '\''

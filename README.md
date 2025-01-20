@@ -22,6 +22,7 @@ This repository contains connectors as following:
 | Flink Connector: OceanBase             | This Connector uses the JDBC driver supported by OceanBase to write data to OceanBase, and supports MySQL and Oracle compatibility modes.        | [Sink](docs/sink/flink-connector-oceanbase.md)            |
 | Flink Connector: OceanBase Direct Load | This Connector uses the [direct load](https://en.oceanbase.com/docs/common-oceanbase-database-10000000001375568) API to write data to OceanBase. | [Sink](docs/sink/flink-connector-oceanbase-directload.md) |
 | Flink Connector: OBKV HBase            | This Connector uses the [OBKV HBase API](https://github.com/oceanbase/obkv-hbase-client-java) to write data to OceanBase.                        | [Sink](docs/sink/flink-connector-obkv-hbase.md)           |
+| Flink Connector: Cli                   | This command line tool to migrate data to OceanBase.                                                                                             | [Sink](docs/sink/flink-connector-oceanbase-cli.md)        |
 
 ### Other External Projects
 

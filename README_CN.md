@@ -22,6 +22,7 @@
 | Flink Connector: OceanBase             | 该Connector通过OceanBase支持的JDBC驱动将数据写入OceanBase，支持MySQL 和 Oracle 兼容模式。                                                | [Sink](docs/sink/flink-connector-oceanbase_cn.md)            |
 | Flink Connector: OceanBase Direct Load | 该Connector通过[旁路导入](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001428636)API将数据写入OceanBase。 | [Sink](docs/sink/flink-connector-oceanbase-directload_cn.md) |
 | Flink Connector: OBKV HBase            | 该Connector通过[OBKV HBase API](https://github.com/oceanbase/obkv-hbase-client-java)将数据写入OceanBase。                   | [Sink](docs/sink/flink-connector-obkv-hbase_cn.md)           |
+| Flink Connector: Cli                   | 从其他数据源迁移数据到 OceanBase 的命令行工具。                                                                                      | [Sink](docs/sink/flink-connector-oceanbase-cli_cn.md)        |
 
 ### 其他外部项目
 

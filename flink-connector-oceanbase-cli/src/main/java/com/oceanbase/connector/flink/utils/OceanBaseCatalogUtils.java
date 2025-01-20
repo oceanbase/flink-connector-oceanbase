@@ -17,8 +17,7 @@ package com.oceanbase.connector.flink.utils;
 
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
-import com.oceanbase.connector.flink.table.OceanBaseSchemaFactory;
-import com.oceanbase.connector.flink.table.TableSchema;
+import com.oceanbase.connector.flink.table.OceanBaseTableSchema;
 
 import org.apache.commons.compress.utils.Lists;
 
@@ -99,8 +98,7 @@ public class OceanBaseCatalogUtils extends OceanBaseJdbcUtils {
     }
 
     public static void createTable(
-            OceanBaseConnectionProvider connectionProvider, TableSchema schema) {
-        String ddl = OceanBaseSchemaFactory.generateCreateTableDDL(schema);
-        execute(connectionProvider::getConnection, ddl);
+            OceanBaseConnectionProvider connectionProvider, OceanBaseTableSchema schema) {
+        execute(connectionProvider::getConnection, schema.generateCreateTableDDL());
     }
 }

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.cdc.mysql;
+package com.oceanbase.connector.flink.source.cdc.mysql;
 
-import com.oceanbase.connector.flink.cdc.DatabaseSyncConfig;
+import com.oceanbase.connector.flink.source.cdc.CdcSyncConfig;
 
 import org.apache.flink.cdc.connectors.shaded.org.apache.kafka.connect.data.SchemaBuilder;
 
@@ -38,7 +38,8 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 public class MysqlDateConverter implements CustomConverter<SchemaBuilder, RelationalColumn> {
-    private static final Logger log = LoggerFactory.getLogger(MysqlDateConverter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MysqlDateConverter.class);
+
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_DATE;
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_TIME;
     private DateTimeFormatter datetimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
@@ -48,51 +49,48 @@ public class MysqlDateConverter implements CustomConverter<SchemaBuilder, Relati
     public static final Properties DEFAULT_PROPS = new Properties();
 
     static {
-        DEFAULT_PROPS.setProperty(DatabaseSyncConfig.CONVERTERS, DatabaseSyncConfig.DATE);
-        DEFAULT_PROPS.setProperty(DatabaseSyncConfig.DATE_TYPE, MysqlDateConverter.class.getName());
+        DEFAULT_PROPS.setProperty(CdcSyncConfig.CONVERTERS, CdcSyncConfig.DATE);
+        DEFAULT_PROPS.setProperty(CdcSyncConfig.DATE_TYPE, MysqlDateConverter.class.getName());
         DEFAULT_PROPS.setProperty(
-                DatabaseSyncConfig.DATE_FORMAT_DATE, DatabaseSyncConfig.YEAR_MONTH_DAY_FORMAT);
+                CdcSyncConfig.DATE_FORMAT_DATE, CdcSyncConfig.YEAR_MONTH_DAY_FORMAT);
         DEFAULT_PROPS.setProperty(
-                DatabaseSyncConfig.DATE_FORMAT_DATETIME, DatabaseSyncConfig.DATETIME_MICRO_FORMAT);
+                CdcSyncConfig.DATE_FORMAT_DATETIME, CdcSyncConfig.DATETIME_MICRO_FORMAT);
         DEFAULT_PROPS.setProperty(
-                DatabaseSyncConfig.DATE_FORMAT_TIMESTAMP, DatabaseSyncConfig.DATETIME_MICRO_FORMAT);
+                CdcSyncConfig.DATE_FORMAT_TIMESTAMP, CdcSyncConfig.DATETIME_MICRO_FORMAT);
         DEFAULT_PROPS.setProperty(
-                DatabaseSyncConfig.DATE_FORMAT_TIMESTAMP_ZONE, DatabaseSyncConfig.TIME_ZONE_UTC_8);
+                CdcSyncConfig.DATE_FORMAT_TIMESTAMP_ZONE, CdcSyncConfig.TIME_ZONE_UTC_8);
     }
 
     @Override
     public void configure(Properties props) {
         readProps(
                 props,
-                DatabaseSyncConfig.FORMAT_DATE,
+                CdcSyncConfig.FORMAT_DATE,
                 p -> dateFormatter = DateTimeFormatter.ofPattern(p));
         readProps(
                 props,
-                DatabaseSyncConfig.FORMAT_TIME,
+                CdcSyncConfig.FORMAT_TIME,
                 p -> timeFormatter = DateTimeFormatter.ofPattern(p));
         readProps(
                 props,
-                DatabaseSyncConfig.FORMAT_DATETIME,
+                CdcSyncConfig.FORMAT_DATETIME,
                 p -> datetimeFormatter = DateTimeFormatter.ofPattern(p));
         readProps(
                 props,
-                DatabaseSyncConfig.FORMAT_TIMESTAMP,
+                CdcSyncConfig.FORMAT_TIMESTAMP,
                 p -> timestampFormatter = DateTimeFormatter.ofPattern(p));
-        readProps(
-                props,
-                DatabaseSyncConfig.FORMAT_TIMESTAMP_ZONE,
-                z -> timestampZoneId = ZoneId.of(z));
+        readProps(props, CdcSyncConfig.FORMAT_TIMESTAMP_ZONE, z -> timestampZoneId = ZoneId.of(z));
     }
 
-    private void readProps(Properties properties, String settingKey, Consumer<String> callback) {
+    private void readProps(Properties properties, String settingKey, Consumer<String> consumer) {
         String settingValue = (String) properties.get(settingKey);
-        if (settingValue == null || settingValue.length() == 0) {
+        if (settingValue == null || settingValue.isEmpty()) {
             return;
         }
         try {
-            callback.accept(settingValue.trim());
+            consumer.accept(settingValue.trim());
         } catch (IllegalArgumentException | DateTimeException e) {
-            log.error("setting {} is illegal:{}", settingKey, settingValue);
+            LOG.error("setting {} is illegal: {}", settingKey, settingValue);
             throw e;
         }
     }
@@ -103,19 +101,19 @@ public class MysqlDateConverter implements CustomConverter<SchemaBuilder, Relati
         String sqlType = column.typeName().toUpperCase();
         SchemaBuilder schemaBuilder = null;
         Converter converter = null;
-        if (DatabaseSyncConfig.UPPERCASE_DATE.equals(sqlType)) {
+        if (CdcSyncConfig.UPPERCASE_DATE.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertDate;
         }
-        if (DatabaseSyncConfig.TIME.equals(sqlType)) {
+        if (CdcSyncConfig.TIME.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertTime;
         }
-        if (DatabaseSyncConfig.DATETIME.equals(sqlType)) {
+        if (CdcSyncConfig.DATETIME.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertDateTime;
         }
-        if (DatabaseSyncConfig.TIMESTAMP.equals(sqlType)) {
+        if (CdcSyncConfig.TIMESTAMP.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertTimestamp;
         }
