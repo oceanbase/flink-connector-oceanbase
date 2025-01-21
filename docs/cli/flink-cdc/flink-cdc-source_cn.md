@@ -1,24 +1,8 @@
-# Flink Connector OceanBase CLI
+# 使用 Flink CDC 作为源端
 
-[English](flink-connector-oceanbase-cli.md) | 简体中文
+[English](flink-cdc-source.md) | 简体中文
 
-本项目是一套 CLI（命令行界面）工具，支持提交 Flink 作业将数据从其他数据源迁移到 OceanBase。
-
-## 开始上手
-
-您可以在 [Releases 页面](https://github.com/oceanbase/flink-connector-oceanbase/releases) 或者 [Maven 中央仓库](https://central.sonatype.com/artifact/com.oceanbase/flink-connector-oceanbase-cli) 找到正式的发布版本，或者从 [Sonatype Snapshot](https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-connector-oceanbase-cli) 获取最新的快照版本。
-
-您也可以通过源码构建的方式获得程序包。
-
-```shell
-git clone https://github.com/oceanbase/flink-connector-oceanbase.git
-cd flink-connector-oceanbase
-mvn clean package -DskipTests
-```
-
-### 使用 Flink CDC 作为源端
-
-#### 依赖
+## 依赖
 
 本项目基于 [Flink CDC Source 连接器](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/overview/) 的 SQL 客户端 JAR。
 
@@ -26,9 +10,9 @@ mvn clean package -DskipTests
 
 如果您使用 Flink Oracle CDC 作为源端，您还需要下载源连接器的依赖项，请参阅 [Oracle CDC 连接器](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/oracle-cdc/#sql-client-jar) 的 *依赖项* 章节。
 
-#### 示例：从 Flink MySQL CDC 迁移数据到 OceanBase
+## 示例：从 Flink MySQL CDC 迁移数据到 OceanBase
 
-#### 准备
+### 准备
 
 将 CLI JAR `flink-connector-oceanbase-cli-xxx.jar` 和依赖 JAR `flink-sql-connector-mysql-cdc-xxx.jar` 添加到 `$FLINK_HOME/lib`。
 
@@ -72,7 +56,7 @@ VALUES (default, "Sally", "Thomas", "sally.thomas@acme.com"),
        (default, "Anne", "Kretchmar", "annek@noanswer.org");
 ```
 
-##### 通过 CLI 提交作业
+### 通过 CLI 提交作业
 
 将以下命令替换为您的真实数据库信息，并执行它以提交 Flink 作业。
 
@@ -98,13 +82,13 @@ $FLINK_HOME/bin/flink run \
 
 请将以上的数据库信息替换为您真实的数据库信息，当出现类似于以下的信息时，任务构建成功并提交。
 
-##### 检查和验证
+### 检查和验证
 
 检查目标 OceanBase 数据库，你应该找到这两个表和多行数据。
 
 你可以继续将测试数据插入到 MySQL 数据库，由于是CDC任务，MySQL中插入数据后，即可在 OceanBase 中查询验证同步过来的数据。
 
-#### 配置项
+## 配置项
 
 <div class="highlight">
     <table class="colwidths-auto docutils">
