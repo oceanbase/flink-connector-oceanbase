@@ -1,24 +1,8 @@
-# Flink Connector OceanBase CLI
+# Using Flink CDC as Source
 
-English | [简体中文](flink-connector-oceanbase-cli_cn.md)
+English | [简体中文](flink-cdc-source_cn.md)
 
-The project is a set of CLI (command line interface) tools that supports submitting Flink jobs to migrate data from other data sources to OceanBase.
-
-## Getting Started
-
-You can get the release packages at [Releases Page](https://github.com/oceanbase/flink-connector-oceanbase/releases) or [Maven Central](https://central.sonatype.com/artifact/com.oceanbase/flink-connector-oceanbase-cli)，or get the latest snapshot packages at [Sonatype Snapshot](https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-connector-oceanbase-cli).
-
-You can also manually build it from the source code.
-
-```shell
-git clone https://github.com/oceanbase/flink-connector-oceanbase.git
-cd flink-connector-oceanbase
-mvn clean package -DskipTests
-```
-
-### Using Flink CDC as Source
-
-#### Dependencies
+## Dependencies
 
 This project is based on the SQL Client JAR of [Flink CDC Source Connector](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/overview/).
 
@@ -26,9 +10,9 @@ We do not provide Flink CDC Source Connector in the JAR package of this project,
 
 If you're using Flink Oracle CDC as source, you need also download the dependencies of the source connector, see the *Dependencies* chapter of [Oracle CDC Connector](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/oracle-cdc/#sql-client-jar).
 
-#### Demo: Migrate from Flink MySQL CDC to OceanBase
+## Demo: Migrate from Flink MySQL CDC to OceanBase
 
-##### Preparation
+### Preparation
 
 Add the CLI JAR `flink-connector-oceanbase-cli-xxx.jar` and dependency JAR `flink-sql-connector-mysql-cdc-xxx.jar` to `$FLINK_HOME/lib`.
 
@@ -72,7 +56,7 @@ VALUES (default, "Sally", "Thomas", "sally.thomas@acme.com"),
        (default, "Anne", "Kretchmar", "annek@noanswer.org");
 ```
 
-##### Submit Job via CLI
+### Submit Job via CLI
 
 Replace the following command with your real database information, and execute it to submit a Flink job.
 
@@ -96,13 +80,13 @@ $FLINK_HOME/bin/flink run \
     --sink-conf url=jdbc:mysql://xxxx:xxxx
 ```
 
-##### Check and Verify
+### Check and Verify
 
 Check the target OceanBase database, you should find out these two tables and rows data.
 
 You can go on insert test data to MySQL database, since it is a CDC task, after data is inserted in MySQL, you can query and verify the synchronized data in OceanBase.
 
-#### Options
+## Options
 
 <div class="highlight">
     <table class="colwidths-auto docutils">
