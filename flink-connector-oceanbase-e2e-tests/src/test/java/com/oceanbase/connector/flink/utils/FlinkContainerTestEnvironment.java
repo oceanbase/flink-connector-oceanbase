@@ -18,14 +18,22 @@ package com.oceanbase.connector.flink.utils;
 
 import com.oceanbase.connector.flink.OceanBaseMySQLTestBase;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.model.Volume;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.FrameConsumerResultCallback;
+import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
 
@@ -67,7 +75,8 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                         "execution.checkpointing.interval: 300"));
     }
 
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    protected final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    protected final Volume sharedVolume = new Volume("/tmp/shared");
 
     public GenericContainer<?> jobManager;
     public GenericContainer<?> taskManager;
@@ -75,9 +84,9 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
     @SuppressWarnings("resource")
     @BeforeEach
     public void before() throws Exception {
+        LOG.info("Starting Flink containers...");
         temporaryFolder.create();
 
-        LOG.info("Starting Flink containers...");
         jobManager =
                 new GenericContainer<>(getFlinkDockerImageTag())
                         .withCommand("jobmanager")
@@ -85,7 +94,10 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                         .withNetworkAliases(INTER_CONTAINER_JM_ALIAS)
                         .withExposedPorts(JOB_MANAGER_REST_PORT)
                         .withEnv("FLINK_PROPERTIES", getFlinkProperties())
+                        .withCreateContainerCmdModifier(cmd -> cmd.withVolumes(sharedVolume))
                         .withLogConsumer(new Slf4jLogConsumer(LOG));
+        Startables.deepStart(jobManager).join();
+        runInContainerAsRoot(jobManager, "chmod", "0777", "-R", sharedVolume.toString());
 
         taskManager =
                 new GenericContainer<>(getFlinkDockerImageTag())
@@ -94,9 +106,11 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                         .withNetworkAliases(INTER_CONTAINER_TM_ALIAS)
                         .withEnv("FLINK_PROPERTIES", getFlinkProperties())
                         .dependsOn(jobManager)
+                        .withVolumesFrom(jobManager, BindMode.READ_WRITE)
                         .withLogConsumer(new Slf4jLogConsumer(LOG));
+        Startables.deepStart(taskManager).join();
+        runInContainerAsRoot(taskManager, "chmod", "0777", "-R", sharedVolume.toString());
 
-        Startables.deepStart(Stream.of(jobManager, taskManager)).join();
         LOG.info("Flink containers started");
     }
 
@@ -194,8 +208,7 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         commands.add(FLINK_BIN + "/sql-client.sh");
         for (Path jar : jars) {
             commands.add("--jar");
-            String containerPath =
-                    copyAndGetContainerPath(jobManager, jar.toAbsolutePath().toString());
+            String containerPath = copyAndGetContainerPath(jar.toAbsolutePath().toString());
             commands.add(containerPath);
         }
 
@@ -208,10 +221,55 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         }
     }
 
-    private String copyAndGetContainerPath(GenericContainer<?> container, String filePath) {
+    private String copyAndGetContainerPath(String filePath) {
         Path path = Paths.get(filePath);
-        String containerPath = "/tmp/" + path.getFileName();
-        container.copyFileToContainer(MountableFile.forHostPath(path), containerPath);
+        String containerPath = sharedVolume + "/" + path.getFileName();
+        jobManager.copyFileToContainer(MountableFile.forHostPath(path), containerPath);
         return containerPath;
+    }
+
+    private void runInContainerAsRoot(GenericContainer<?> container, String... command)
+            throws InterruptedException {
+        ToStringConsumer stdoutConsumer = new ToStringConsumer();
+        ToStringConsumer stderrConsumer = new ToStringConsumer();
+        DockerClient dockerClient = DockerClientFactory.instance().client();
+        ExecCreateCmdResponse execCreateCmdResponse =
+                dockerClient
+                        .execCreateCmd(container.getContainerId())
+                        .withUser("root")
+                        .withCmd(command)
+                        .exec();
+        FrameConsumerResultCallback callback = new FrameConsumerResultCallback();
+        callback.addConsumer(OutputFrame.OutputType.STDOUT, stdoutConsumer);
+        callback.addConsumer(OutputFrame.OutputType.STDERR, stderrConsumer);
+        dockerClient.execStartCmd(execCreateCmdResponse.getId()).exec(callback).awaitCompletion();
+    }
+
+    public String multipleParameterArg(String key, String value) {
+        return String.format("--%s '%s'", key, value);
+    }
+
+    public void submitJob(List<Path> dependencies, Path jar, String[] args)
+            throws IOException, InterruptedException {
+        final List<String> commands = new ArrayList<>();
+        commands.add(FLINK_BIN + "/flink run --detached");
+        if (dependencies != null && !dependencies.isEmpty()) {
+            for (Path dependency : dependencies) {
+                commands.add(
+                        "--classpath "
+                                + "file://"
+                                + copyAndGetContainerPath(dependency.toAbsolutePath().toString()));
+            }
+        }
+        commands.add(copyAndGetContainerPath(jar.toAbsolutePath().toString()));
+        commands.addAll(Arrays.asList(args));
+
+        Container.ExecResult execResult =
+                jobManager.execInContainer("bash", "-c", String.join(" ", commands));
+        LOG.info(execResult.getStdout());
+        LOG.error(execResult.getStderr());
+        if (execResult.getExitCode() != 0) {
+            throw new AssertionError("Failed when submitting the job.");
+        }
     }
 }

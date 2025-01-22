@@ -61,6 +61,9 @@ under the License.
                         </goals>
                         <phase>package</phase>
                         <configuration>
+                            <shadeTestJar>false</shadeTestJar>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>
                                     <include>com.oceanbase:*</include>

@@ -16,21 +16,28 @@
 
 package com.oceanbase.connector.flink;
 
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import com.oceanbase.connector.flink.utils.FlinkContainerTestEnvironment;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
+import java.util.Collections;
 import java.util.stream.Stream;
 
-public class MysqlCdcSyncITCase extends OceanBaseMySQLTestBase {
-    private static final Logger LOG = LoggerFactory.getLogger(MysqlCdcSyncITCase.class);
+@DisabledIfSystemProperty(
+        named = "flink_version",
+        matches = "1.15.4",
+        disabledReason = "Flink 1.15.4 does not contain 'SideOutputDataStream'")
+public class MysqlCdcSyncE2eITCase extends FlinkContainerTestEnvironment {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MysqlCdcSyncE2eITCase.class);
 
     private static final MySQLContainer<?> MYSQL_CONTAINER =
             new MySQLContainer<>("mysql:8.0.20")
@@ -56,42 +63,30 @@ public class MysqlCdcSyncITCase extends OceanBaseMySQLTestBase {
 
     @Test
     public void testMysqlCdcSync() throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        Cli.setStreamExecutionEnvironmentForTesting(env);
-
-        Cli.main(
+        submitJob(
+                Collections.singletonList(getResource("flink-sql-connector-mysql-cdc.jar")),
+                getResource("flink-connector-oceanbase-cli.jar"),
                 new String[] {
-                    "--source-type",
-                    "mysql-cdc",
-                    "--source-conf",
-                    "hostname=" + getContainerIP(MYSQL_CONTAINER),
-                    "--source-conf",
-                    "port=" + MySQLContainer.MYSQL_PORT,
-                    "--source-conf",
-                    "username=" + MYSQL_CONTAINER.getUsername(),
-                    "--source-conf",
-                    "password=" + MYSQL_CONTAINER.getPassword(),
-                    "--source-conf",
-                    "database-name=" + MYSQL_CONTAINER.getDatabaseName(),
-                    "--source-conf",
-                    "table-name=.*",
-                    "--sink-conf",
-                    "url=" + CONTAINER.getJdbcUrl(),
-                    "--sink-conf",
-                    "username=" + CONTAINER.getUsername(),
-                    "--sink-conf",
-                    "password=" + CONTAINER.getPassword(),
-                    "--job-name",
-                    "test-mysql-cdc-sync",
-                    "--database",
-                    CONTAINER.getDatabaseName(),
-                    "--including-tables",
-                    ".*"
+                    multipleParameterArg("source-type", "mysql-cdc"),
+                    multipleParameterArg(
+                            "source-conf", "hostname=" + getContainerIP(MYSQL_CONTAINER)),
+                    multipleParameterArg("source-conf", "port=" + MySQLContainer.MYSQL_PORT),
+                    multipleParameterArg(
+                            "source-conf", "username=" + MYSQL_CONTAINER.getUsername()),
+                    multipleParameterArg(
+                            "source-conf", "password=" + MYSQL_CONTAINER.getPassword()),
+                    multipleParameterArg(
+                            "source-conf", "database-name=" + MYSQL_CONTAINER.getDatabaseName()),
+                    multipleParameterArg("source-conf", "table-name=.*"),
+                    multipleParameterArg("sink-conf", "url=" + getJdbcUrl()),
+                    multipleParameterArg("sink-conf", "username=" + CONTAINER.getUsername()),
+                    multipleParameterArg("sink-conf", "password=" + CONTAINER.getPassword()),
+                    multipleParameterArg("job-name", "test-mysql-cdc-sync"),
+                    multipleParameterArg("database", CONTAINER.getDatabaseName()),
+                    multipleParameterArg("including-tables", ".*")
                 });
 
         waitingAndAssertTableCount("products", 9);
         waitingAndAssertTableCount("customers", 4);
-
-        Cli.getJobClientForTesting().cancel();
     }
 }

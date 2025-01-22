@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.connector.flink.source;
+package com.oceanbase.connector.flink.process;
 
 import org.apache.flink.util.StringUtils;
 

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.connector.flink.source.cdc;
+package com.oceanbase.connector.flink.process;
 
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 import com.oceanbase.connector.flink.connection.OceanBaseConnectionProvider;
 import com.oceanbase.connector.flink.sink.OceanBaseRecordFlusher;
 import com.oceanbase.connector.flink.sink.OceanBaseSink;
-import com.oceanbase.connector.flink.source.TableNameConverter;
 import com.oceanbase.connector.flink.source.TableSchema;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.OceanBaseJsonSerializationSchema;
@@ -53,8 +52,8 @@ import static com.oceanbase.connector.flink.utils.OceanBaseCatalogUtils.database
 import static com.oceanbase.connector.flink.utils.OceanBaseCatalogUtils.tableExists;
 import static org.apache.flink.cdc.debezium.utils.JdbcUrlUtils.PROPERTIES_PREFIX;
 
-public abstract class CdcSync {
-    private static final Logger LOG = LoggerFactory.getLogger(CdcSync.class);
+public abstract class Sync {
+    private static final Logger LOG = LoggerFactory.getLogger(Sync.class);
 
     protected StreamExecutionEnvironment env;
     protected Configuration sourceConfig;
@@ -71,67 +70,67 @@ public abstract class CdcSync {
     protected boolean ignoreDefaultValue;
     protected boolean ignoreIncompatible;
 
-    public CdcSync setEnv(StreamExecutionEnvironment env) {
+    public Sync setEnv(StreamExecutionEnvironment env) {
         this.env = env;
         return this;
     }
 
-    public CdcSync setSourceConfig(Configuration sourceConfig) {
+    public Sync setSourceConfig(Configuration sourceConfig) {
         this.sourceConfig = sourceConfig;
         return this;
     }
 
-    public CdcSync setSinkConfig(Configuration sinkConfig) {
+    public Sync setSinkConfig(Configuration sinkConfig) {
         this.sinkConfig = sinkConfig;
         return this;
     }
 
-    public CdcSync setDatabase(String database) {
+    public Sync setDatabase(String database) {
         this.database = database;
         return this;
     }
 
-    public CdcSync setTablePrefix(String tablePrefix) {
+    public Sync setTablePrefix(String tablePrefix) {
         this.tablePrefix = tablePrefix;
         return this;
     }
 
-    public CdcSync setTableSuffix(String tableSuffix) {
+    public Sync setTableSuffix(String tableSuffix) {
         this.tableSuffix = tableSuffix;
         return this;
     }
 
-    public CdcSync setIncludingTables(String includingTables) {
+    public Sync setIncludingTables(String includingTables) {
         this.includingTables = includingTables;
         return this;
     }
 
-    public CdcSync setExcludingTables(String excludingTables) {
+    public Sync setExcludingTables(String excludingTables) {
         this.excludingTables = excludingTables;
         return this;
     }
 
-    public CdcSync setMultiToOneOrigin(String multiToOneOrigin) {
+    public Sync setMultiToOneOrigin(String multiToOneOrigin) {
         this.multiToOneOrigin = multiToOneOrigin;
         return this;
     }
 
-    public CdcSync setMultiToOneTarget(String multiToOneTarget) {
+    public Sync setMultiToOneTarget(String multiToOneTarget) {
         this.multiToOneTarget = multiToOneTarget;
         return this;
     }
 
-    public CdcSync setCreateTableOnly(boolean createTableOnly) {
+    public Sync setCreateTableOnly(boolean createTableOnly) {
         this.createTableOnly = createTableOnly;
         return this;
     }
 
-    public CdcSync setIgnoreDefaultValue(boolean ignoreDefaultValue) {
+    public Sync setIgnoreDefaultValue(boolean ignoreDefaultValue) {
         this.ignoreDefaultValue = ignoreDefaultValue;
         return this;
     }
 
-    public CdcSync setIgnoreIncompatible(boolean ignoreIncompatible) {
+    public Sync setIgnoreIncompatible(boolean ignoreIncompatible) {
         this.ignoreIncompatible = ignoreIncompatible;
         return this;
     }
@@ -174,7 +173,7 @@ public abstract class CdcSync {
 
     protected abstract List<TableSchema> getTableSchemas();
 
-    protected abstract DataStreamSource<String> buildCdcSource();
+    protected abstract DataStreamSource<String> buildSource();
 
     public void build() {
         this.includingPattern = includingTables == null ? null : Pattern.compile(includingTables);
@@ -213,13 +212,17 @@ public abstract class CdcSync {
             return;
         }
 
-        DataStreamSource<String> cdcSource = buildCdcSource();
+        DataStreamSource<String> source = buildSource();
+
         SingleOutputStreamOperator<Void> parsedStream =
-                cdcSource.process(new ParsingProcessFunction(tableNameConverter));
+                source.process(new ParsingProcessFunction(tableNameConverter));
+
         for (Tuple2<String, String> dbTbl : targetTables) {
+            String tableName = dbTbl.f1;
             OutputTag<String> recordOutputTag =
-                    ParsingProcessFunction.createRecordOutputTag(dbTbl.f1);
+                    ParsingProcessFunction.createRecordOutputTag(tableName);
             DataStream<String> sideOutput = parsedStream.getSideOutput(recordOutputTag);
+
             int sinkParallel =
                     sinkConfig.getInteger(
                             FactoryUtil.SINK_PARALLELISM, sideOutput.getParallelism());

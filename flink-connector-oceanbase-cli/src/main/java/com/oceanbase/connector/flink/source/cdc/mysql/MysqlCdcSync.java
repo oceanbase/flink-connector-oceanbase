@@ -16,9 +16,9 @@
 
 package com.oceanbase.connector.flink.source.cdc.mysql;
 
+import com.oceanbase.connector.flink.process.Sync;
 import com.oceanbase.connector.flink.source.FieldSchema;
 import com.oceanbase.connector.flink.source.TableSchema;
-import com.oceanbase.connector.flink.source.cdc.CdcSync;
 import com.oceanbase.connector.flink.source.cdc.OceanBaseJsonDeserializationSchema;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
 
 import static org.apache.flink.cdc.debezium.utils.JdbcUrlUtils.PROPERTIES_PREFIX;
 
-public class MysqlCdcSync extends CdcSync {
+public class MysqlCdcSync extends Sync {
     private static final Logger LOG = LoggerFactory.getLogger(MysqlCdcSync.class);
 
     public static final String JDBC_URL_PATTERN =
@@ -134,7 +134,7 @@ public class MysqlCdcSync extends CdcSync {
     }
 
     @Override
-    protected DataStreamSource<String> buildCdcSource() {
+    protected DataStreamSource<String> buildSource() {
         String databaseName = sourceConfig.get(MySqlSourceOptions.DATABASE_NAME);
         MySqlSourceBuilder<String> sourceBuilder = MySqlSource.builder();
         sourceBuilder

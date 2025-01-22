@@ -64,20 +64,19 @@ Replace the following command with your real database information, and execute i
 $FLINK_HOME/bin/flink run \
     -Dexecution.checkpointing.interval=10s \
     -Dparallelism.default=1 \
-    -c com.oceanbase.connector.flink.CdcCli \
     lib/flink-connector-oceanbase-cli-xxx.jar \
-    mysql-cdc \
-    --database test_db \
+    --source-type mysql-cdc \
     --source-conf hostname=xxxx \
     --source-conf port=3306 \
     --source-conf username=root \
     --source-conf password=xxxx \
     --source-conf database-name=test_db \
     --source-conf table-name=.* \
-    --including-tables ".*" \
     --sink-conf username=xxxx \
     --sink-conf password=xxxx \
-    --sink-conf url=jdbc:mysql://xxxx:xxxx
+    --sink-conf url=jdbc:mysql://xxxx:xxxx \
+    --database test_db \
+    --including-tables ".*"
 ```
 
 ### Check and Verify
@@ -101,18 +100,18 @@ You can go on insert test data to MySQL database, since it is a CDC task, after 
         </thead>
         <tbody>
             <tr>
-                <td>${job-type}</td>
+                <td>--source-type</td>
                 <td>Yes</td>
                 <td>Enumeration value</td>
                 <td style="word-wrap: break-word;"></td>
-                <td>Job type, can be <code>mysql-cdc</code>.</td>
+                <td>Source type, can be <code>mysql-cdc</code>.</td>
             </tr>
             <tr>
                 <td>--source-conf</td>
                 <td>Yes</td>
                 <td>Multi-value parameter</td>
                 <td style="word-wrap: break-word;"></td>
-                <td>Configurations of specific Flink CDC Source.</td>
+                <td>Configurations of the specific source.</td>
             </tr>
             <tr>
                 <td>--sink-conf</td>
@@ -125,7 +124,7 @@ You can go on insert test data to MySQL database, since it is a CDC task, after 
                 <td>--job-name</td>
                 <td>No</td>
                 <td>String</td>
-                <td style="word-wrap: break-word;">${job-type} Sync</td>
+                <td style="word-wrap: break-word;">${source-type} Sync</td>
                 <td>The Flink job name.</td>
             </tr>
             <tr>
