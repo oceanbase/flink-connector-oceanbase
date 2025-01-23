@@ -23,9 +23,9 @@ import org.apache.flink.cdc.connectors.mysql.source.config.MySqlSourceOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -50,19 +50,15 @@ public class MysqlCdcSyncITCase extends OceanBaseMySQLTestBase {
                     .withPassword("mysqlpw")
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
-        CONFIG_SERVER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
-        CONTAINER
-                .withEnv("OB_CONFIGSERVER_ADDRESS", getConfigServerAddress())
-                .withLogConsumer(new Slf4jLogConsumer(LOG))
-                .start();
+        CONTAINER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
         MYSQL_CONTAINER.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
-        Stream.of(CONFIG_SERVER, CONTAINER, MYSQL_CONTAINER).forEach(GenericContainer::stop);
+        Stream.of(CONTAINER, MYSQL_CONTAINER).forEach(GenericContainer::stop);
     }
 
     @Test

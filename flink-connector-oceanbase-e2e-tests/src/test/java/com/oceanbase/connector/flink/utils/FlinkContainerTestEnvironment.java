@@ -18,9 +18,8 @@ package com.oceanbase.connector.flink.utils;
 
 import com.oceanbase.connector.flink.OceanBaseMySQLTestBase;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,14 +67,16 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                         "execution.checkpointing.interval: 300"));
     }
 
-    @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public GenericContainer<?> jobManager;
     public GenericContainer<?> taskManager;
 
     @SuppressWarnings("resource")
-    @Before
+    @BeforeEach
     public void before() throws Exception {
+        temporaryFolder.create();
+
         LOG.info("Starting Flink containers...");
         jobManager =
                 new GenericContainer<>(getFlinkDockerImageTag())
@@ -99,7 +100,7 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         LOG.info("Flink containers started");
     }
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         if (jobManager != null) {
             jobManager.stop();
@@ -107,6 +108,7 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         if (taskManager != null) {
             taskManager.stop();
         }
+        temporaryFolder.delete();
     }
 
     @Override

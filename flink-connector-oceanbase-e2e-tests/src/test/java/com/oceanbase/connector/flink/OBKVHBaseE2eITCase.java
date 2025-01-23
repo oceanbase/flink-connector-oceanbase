@@ -18,11 +18,11 @@ package com.oceanbase.connector.flink;
 
 import com.oceanbase.connector.flink.utils.FlinkContainerTestEnvironment;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -39,7 +39,7 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
 
     private static final String SINK_CONNECTOR_NAME = "flink-sql-connector-obkv-hbase.jar";
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         CONFIG_SERVER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
 
@@ -49,7 +49,7 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
                 .start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         Stream.of(CONFIG_SERVER, CONTAINER).forEach(GenericContainer::stop);
     }
@@ -60,14 +60,14 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
         return super.getFlinkDockerImageTag() + "-java8";
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 
         initialize("sql/htable.sql");
     }
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         super.after();
 

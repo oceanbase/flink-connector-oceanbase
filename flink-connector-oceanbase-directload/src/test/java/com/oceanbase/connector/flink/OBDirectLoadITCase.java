@@ -25,11 +25,11 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.flink.shaded.guava31.com.google.common.collect.ImmutableMap;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -41,22 +41,22 @@ public class OBDirectLoadITCase extends OceanBaseMySQLTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(OBDirectLoadITCase.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         CONTAINER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         CONTAINER.stop();
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         initialize("sql/products.sql");
     }
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         dropTables("products");
     }

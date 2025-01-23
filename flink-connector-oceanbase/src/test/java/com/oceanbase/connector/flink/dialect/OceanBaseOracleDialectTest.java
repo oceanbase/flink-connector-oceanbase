@@ -17,8 +17,8 @@ package com.oceanbase.connector.flink.dialect;
 
 import com.oceanbase.connector.flink.OceanBaseConnectorOptions;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.Maps;
 
 public class OceanBaseOracleDialectTest {
@@ -26,10 +26,10 @@ public class OceanBaseOracleDialectTest {
     @Test
     public void testQuoteIdentifier() {
         OceanBaseConnectorOptions options = new OceanBaseConnectorOptions(Maps.newHashMap());
-        Assert.assertTrue(options.getTableOracleTenantCaseInsensitive());
+        Assertions.assertTrue(options.getTableOracleTenantCaseInsensitive());
         OceanBaseOracleDialect oracleDialect = new OceanBaseOracleDialect(options);
 
         String identifier = "name";
-        Assert.assertEquals(identifier, oracleDialect.quoteIdentifier(identifier));
+        Assertions.assertEquals(identifier, oracleDialect.quoteIdentifier(identifier));
     }
 }

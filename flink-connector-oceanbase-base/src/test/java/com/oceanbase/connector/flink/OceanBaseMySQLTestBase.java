@@ -19,7 +19,6 @@ package com.oceanbase.connector.flink;
 import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
 
 import com.github.dockerjava.api.model.ContainerNetwork;
-import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -48,7 +47,7 @@ public abstract class OceanBaseMySQLTestBase extends OceanBaseTestBase {
     private static final String SYS_PASSWORD = "123456";
     private static final String TEST_PASSWORD = "654321";
 
-    @ClassRule public static final Network NETWORK = Network.newNetwork();
+    public static final Network NETWORK = Network.newNetwork();
 
     @SuppressWarnings("resource")
     public static final GenericContainer<?> CONFIG_SERVER =
