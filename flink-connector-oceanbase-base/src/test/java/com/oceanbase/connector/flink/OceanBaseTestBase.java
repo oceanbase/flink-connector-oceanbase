@@ -16,6 +16,8 @@
 
 package com.oceanbase.connector.flink;
 
+import org.junit.jupiter.api.Assertions;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -37,33 +39,29 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public abstract class OceanBaseTestBase implements OceanBaseMetadata {
 
     private static final Pattern COMMENT_PATTERN = Pattern.compile("^(.*)--.*$");
 
     public static String getOptionsString(Map<String, String> options) {
-        assertNotNull(options);
+        Assertions.assertNotNull(options);
         return options.entrySet().stream()
                 .map(e -> String.format("'%s'='%s'", e.getKey(), e.getValue()))
                 .collect(Collectors.joining(","));
     }
 
     public static void assertEqualsInAnyOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
+        Assertions.assertTrue(expected != null && actual != null);
         assertEqualsInOrder(
                 expected.stream().sorted().collect(Collectors.toList()),
                 actual.stream().sorted().collect(Collectors.toList()));
     }
 
     public static void assertEqualsInOrder(List<String> expected, List<String> actual) {
-        assertTrue(expected != null && actual != null);
-        assertEquals(expected.size(), actual.size());
-        assertArrayEquals(expected.toArray(new String[0]), actual.toArray(new String[0]));
+        Assertions.assertTrue(expected != null && actual != null);
+        Assertions.assertEquals(expected.size(), actual.size());
+        Assertions.assertArrayEquals(
+                expected.toArray(new String[0]), actual.toArray(new String[0]));
     }
 
     public Map<String, String> getBaseOptions() {
@@ -90,7 +88,7 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
 
     public void initialize(String sqlFile) throws SQLException, IOException, URISyntaxException {
         final URL file = getClass().getClassLoader().getResource(sqlFile);
-        assertNotNull("Cannot locate " + sqlFile, file);
+        Assertions.assertNotNull(file, "Cannot locate " + sqlFile);
 
         try (Connection connection = getJdbcConnection();
                 Statement statement = connection.createStatement()) {
@@ -129,7 +127,7 @@ public abstract class OceanBaseTestBase implements OceanBaseMetadata {
                 Thread.sleep(100);
             }
         }
-        assertEquals(expectedCount, tableRowsCount);
+        Assertions.assertEquals(expectedCount, tableRowsCount);
     }
 
     public int getTableRowsCount(String tableName) throws SQLException {

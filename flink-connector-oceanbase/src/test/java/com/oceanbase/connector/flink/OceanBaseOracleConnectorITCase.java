@@ -37,8 +37,8 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.RowKind;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,7 +46,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
-@Ignore
+@Disabled
 public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
 
     @Test

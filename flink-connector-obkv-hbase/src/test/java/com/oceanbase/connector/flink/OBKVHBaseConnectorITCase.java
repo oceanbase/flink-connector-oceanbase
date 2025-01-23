@@ -21,11 +21,11 @@ import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import org.apache.hadoop.hbase.util.Bytes;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -42,7 +42,7 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(OBKVHBaseConnectorITCase.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws Exception {
         CONFIG_SERVER.withLogConsumer(new Slf4jLogConsumer(LOG)).start();
 
@@ -60,17 +60,17 @@ public class OBKVHBaseConnectorITCase extends OceanBaseMySQLTestBase {
                 .start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         Stream.of(CONFIG_SERVER, CONTAINER, ODP).forEach(GenericContainer::stop);
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         initialize("sql/htable.sql");
     }
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         dropTables("htable$family1", "htable$family2");
     }
