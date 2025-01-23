@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.connector.flink.source.cdc;
+package com.oceanbase.connector.flink.config;
 
-public class CdcSyncConfig {
+public class CliConfig {
+
+    /** Option key for source type. */
+    public static final String SOURCE_TYPE = "source-type";
 
     /** Option key for cdc source. */
     public static final String SOURCE_CONF = "source-conf";

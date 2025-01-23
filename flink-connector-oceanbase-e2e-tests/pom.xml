@@ -30,17 +30,25 @@ under the License.
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>flink-connector-oceanbase-base</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>flink-connector-oceanbase-base</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -105,6 +113,22 @@ under the License.
                             <artifactId>flink-sql-connector-oceanbase-directload</artifactId>
                             <version>${project.version}</version>
                             <destFileName>flink-sql-connector-oceanbase-directload.jar</destFileName>
+                            <type>jar</type>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>com.oceanbase</groupId>
+                            <artifactId>flink-connector-oceanbase-cli</artifactId>
+                            <version>${project.version}</version>
+                            <destFileName>flink-connector-oceanbase-cli.jar</destFileName>
+                            <type>jar</type>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>org.apache.flink</groupId>
+                            <artifactId>flink-sql-connector-mysql-cdc</artifactId>
+                            <version>${flink.cdc.version}</version>
+                            <destFileName>flink-sql-connector-mysql-cdc.jar</destFileName>
                             <type>jar</type>
                             <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                         </artifactItem>

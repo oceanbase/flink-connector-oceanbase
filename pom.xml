@@ -46,6 +46,8 @@ under the License.
         <flink.major.version>1.18</flink.major.version>
         <scala.binary.version>2.12</scala.binary.version>
         <shaded.prefix>com.oceanbase.connector.flink.shaded</shaded.prefix>
+        <!-- CLI Dependencies -->
+        <flink.cdc.version>3.2.1</flink.cdc.version>
     </properties>
 
     <dependencyManagement>
@@ -145,24 +147,35 @@ under the License.
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-core</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-base</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-test-utils</artifactId>
             <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
@@ -170,6 +183,7 @@ under the License.
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>oceanbase</artifactId>

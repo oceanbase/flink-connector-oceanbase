@@ -16,7 +16,7 @@
 
 package com.oceanbase.connector.flink.source.cdc.mysql;
 
-import com.oceanbase.connector.flink.source.cdc.CdcSyncConfig;
+import com.oceanbase.connector.flink.config.CliConfig;
 
 import org.apache.flink.cdc.connectors.shaded.org.apache.kafka.connect.data.SchemaBuilder;
 
@@ -49,37 +49,29 @@ public class MysqlDateConverter implements CustomConverter<SchemaBuilder, Relati
     public static final Properties DEFAULT_PROPS = new Properties();
 
     static {
-        DEFAULT_PROPS.setProperty(CdcSyncConfig.CONVERTERS, CdcSyncConfig.DATE);
-        DEFAULT_PROPS.setProperty(CdcSyncConfig.DATE_TYPE, MysqlDateConverter.class.getName());
-        DEFAULT_PROPS.setProperty(
-                CdcSyncConfig.DATE_FORMAT_DATE, CdcSyncConfig.YEAR_MONTH_DAY_FORMAT);
-        DEFAULT_PROPS.setProperty(
-                CdcSyncConfig.DATE_FORMAT_DATETIME, CdcSyncConfig.DATETIME_MICRO_FORMAT);
-        DEFAULT_PROPS.setProperty(
-                CdcSyncConfig.DATE_FORMAT_TIMESTAMP, CdcSyncConfig.DATETIME_MICRO_FORMAT);
-        DEFAULT_PROPS.setProperty(
-                CdcSyncConfig.DATE_FORMAT_TIMESTAMP_ZONE, CdcSyncConfig.TIME_ZONE_UTC_8);
+        DEFAULT_PROPS.setProperty(CliConfig.CONVERTERS, CliConfig.DATE);
+        DEFAULT_PROPS.setProperty(CliConfig.DATE_TYPE, MysqlDateConverter.class.getName());
+        DEFAULT_PROPS.setProperty(CliConfig.DATE_FORMAT_DATE, CliConfig.YEAR_MONTH_DAY_FORMAT);
+        DEFAULT_PROPS.setProperty(CliConfig.DATE_FORMAT_DATETIME, CliConfig.DATETIME_MICRO_FORMAT);
+        DEFAULT_PROPS.setProperty(CliConfig.DATE_FORMAT_TIMESTAMP, CliConfig.DATETIME_MICRO_FORMAT);
+        DEFAULT_PROPS.setProperty(CliConfig.DATE_FORMAT_TIMESTAMP_ZONE, CliConfig.TIME_ZONE_UTC_8);
     }
 
     @Override
     public void configure(Properties props) {
         readProps(
-                props,
-                CdcSyncConfig.FORMAT_DATE,
-                p -> dateFormatter = DateTimeFormatter.ofPattern(p));
+                props, CliConfig.FORMAT_DATE, p -> dateFormatter = DateTimeFormatter.ofPattern(p));
+        readProps(
+                props, CliConfig.FORMAT_TIME, p -> timeFormatter = DateTimeFormatter.ofPattern(p));
         readProps(
                 props,
-                CdcSyncConfig.FORMAT_TIME,
-                p -> timeFormatter = DateTimeFormatter.ofPattern(p));
-        readProps(
-                props,
-                CdcSyncConfig.FORMAT_DATETIME,
+                CliConfig.FORMAT_DATETIME,
                 p -> datetimeFormatter = DateTimeFormatter.ofPattern(p));
         readProps(
                 props,
-                CdcSyncConfig.FORMAT_TIMESTAMP,
+                CliConfig.FORMAT_TIMESTAMP,
                 p -> timestampFormatter = DateTimeFormatter.ofPattern(p));
-        readProps(props, CdcSyncConfig.FORMAT_TIMESTAMP_ZONE, z -> timestampZoneId = ZoneId.of(z));
+        readProps(props, CliConfig.FORMAT_TIMESTAMP_ZONE, z -> timestampZoneId = ZoneId.of(z));
     }
 
     private void readProps(Properties properties, String settingKey, Consumer<String> consumer) {
@@ -101,19 +93,19 @@ public class MysqlDateConverter implements CustomConverter<SchemaBuilder, Relati
         String sqlType = column.typeName().toUpperCase();
         SchemaBuilder schemaBuilder = null;
         Converter converter = null;
-        if (CdcSyncConfig.UPPERCASE_DATE.equals(sqlType)) {
+        if (CliConfig.UPPERCASE_DATE.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertDate;
         }
-        if (CdcSyncConfig.TIME.equals(sqlType)) {
+        if (CliConfig.TIME.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertTime;
         }
-        if (CdcSyncConfig.DATETIME.equals(sqlType)) {
+        if (CliConfig.DATETIME.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertDateTime;
         }
-        if (CdcSyncConfig.TIMESTAMP.equals(sqlType)) {
+        if (CliConfig.TIMESTAMP.equals(sqlType)) {
             schemaBuilder = SchemaBuilder.string().optional();
             converter = this::convertTimestamp;
         }

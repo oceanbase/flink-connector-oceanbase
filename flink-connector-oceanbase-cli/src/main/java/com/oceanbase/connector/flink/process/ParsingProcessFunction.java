@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.connector.flink.source.cdc;
-
-import com.oceanbase.connector.flink.source.TableNameConverter;
+package com.oceanbase.connector.flink.process;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -64,20 +64,19 @@ VALUES (default, "Sally", "Thomas", "sally.thomas@acme.com"),
 $FLINK_HOME/bin/flink run \
     -Dexecution.checkpointing.interval=10s \
     -Dparallelism.default=1 \
-    -c com.oceanbase.connector.flink.CdcCli \
     lib/flink-connector-oceanbase-cli-xxx.jar \
-    mysql-cdc \
-    --database test_db \
+    --source-type mysql-cdc \
     --source-conf hostname=xxxx \
     --source-conf port=3306 \
     --source-conf username=root \
     --source-conf password=xxxx \
     --source-conf database-name=test_db \
     --source-conf table-name=.* \
-    --including-tables ".*" \
     --sink-conf username=xxxx \
     --sink-conf password=xxxx \
-    --sink-conf url=jdbc:mysql://xxxx:xxxx
+    --sink-conf url=jdbc:mysql://xxxx:xxxx \
+    --database test_db \
+    --including-tables ".*"
 ```
 
 请将以上的数据库信息替换为您真实的数据库信息，当出现类似于以下的信息时，任务构建成功并提交。
@@ -103,18 +102,18 @@ $FLINK_HOME/bin/flink run \
         </thead>
         <tbody>
             <tr>
-                <td>${job-type}</td>
+                <td>--source-type</td>
                 <td>是</td>
                 <td>枚举值</td>
                 <td style="word-wrap: break-word;"></td>
-                <td>任务类型，可以是 <code>mysql-cdc</code>。</td>
+                <td>源端类型，可以是 <code>mysql-cdc</code>。</td>
             </tr>
             <tr>
                 <td>--source-conf</td>
                 <td>是</td>
                 <td>多值参数</td>
                 <td style="word-wrap: break-word;"></td>
-                <td>指定类型的 Flink CDC 源端连接器的配置参数。</td>
+                <td>指定类型的源端的配置参数。</td>
             </tr>
             <tr>
                 <td>--sink-conf</td>
@@ -127,7 +126,7 @@ $FLINK_HOME/bin/flink run \
                 <td>--job-name</td>
                 <td>否</td>
                 <td>String</td>
-                <td style="word-wrap: break-word;">${job-type} Sync</td>
+                <td style="word-wrap: break-word;">${source-type} Sync</td>
                 <td>Flink 任务名称。</td>
             </tr>
             <tr>

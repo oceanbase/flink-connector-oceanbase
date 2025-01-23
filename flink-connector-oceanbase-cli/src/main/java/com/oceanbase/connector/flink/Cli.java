@@ -16,12 +16,14 @@
 
 package com.oceanbase.connector.flink;
 
-import com.oceanbase.connector.flink.source.cdc.CdcSync;
-import com.oceanbase.connector.flink.source.cdc.CdcSyncConfig;
+import com.oceanbase.connector.flink.config.CliConfig;
+import com.oceanbase.connector.flink.process.Sync;
 import com.oceanbase.connector.flink.source.cdc.mysql.MysqlCdcSync;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.java.utils.MultipleParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.StringUtils;
 
@@ -31,47 +33,60 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-public class CdcCli {
-    private static final Logger LOG = LoggerFactory.getLogger(CdcCli.class);
+public class Cli {
+    private static final Logger LOG = LoggerFactory.getLogger(Cli.class);
+
+    private static StreamExecutionEnvironment flinkEnvironmentForTesting;
+    private static JobClient jobClientForTesting;
+
+    @VisibleForTesting
+    public static void setStreamExecutionEnvironmentForTesting(StreamExecutionEnvironment env) {
+        flinkEnvironmentForTesting = env;
+    }
+
+    @VisibleForTesting
+    public static JobClient getJobClientForTesting() {
+        return jobClientForTesting;
+    }
 
     public static void main(String[] args) throws Exception {
-        LOG.info("Starting CdcCli with args: {}", Arrays.toString(args));
+        LOG.info("Starting CLI with args: {}", Arrays.toString(args));
 
-        String jobType = args[0];
-        String[] opArgs = Arrays.copyOfRange(args, 1, args.length);
-        MultipleParameterTool params = MultipleParameterTool.fromArgs(opArgs);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        MultipleParameterTool params = MultipleParameterTool.fromArgs(args);
+        String sourceType = params.getRequired(CliConfig.SOURCE_TYPE);
 
-        CdcSync cdcSync;
-        switch (jobType.trim().toLowerCase()) {
-            case CdcSyncConfig.MYSQL_CDC:
-                cdcSync = new MysqlCdcSync();
+        Sync sync;
+        switch (sourceType.trim().toLowerCase()) {
+            case CliConfig.MYSQL_CDC:
+                sync = new MysqlCdcSync();
                 break;
             default:
-                throw new RuntimeException("Unsupported job type: " + jobType);
+                throw new RuntimeException("Unsupported source type: " + sourceType);
         }
 
-        Map<String, String> sourceConfigMap = getConfigMap(params, CdcSyncConfig.SOURCE_CONF);
+        Map<String, String> sourceConfigMap = getConfigMap(params, CliConfig.SOURCE_CONF);
         Configuration sourceConfig = Configuration.fromMap(sourceConfigMap);
 
-        Map<String, String> sinkConfigMap = getConfigMap(params, CdcSyncConfig.SINK_CONF);
+        Map<String, String> sinkConfigMap = getConfigMap(params, CliConfig.SINK_CONF);
         Configuration sinkConfig = Configuration.fromMap(sinkConfigMap);
 
-        String jobName = params.get(CdcSyncConfig.JOB_NAME);
-        String database = params.get(CdcSyncConfig.DATABASE);
-        String tablePrefix = params.get(CdcSyncConfig.TABLE_PREFIX);
-        String tableSuffix = params.get(CdcSyncConfig.TABLE_SUFFIX);
-        String includingTables = params.get(CdcSyncConfig.INCLUDING_TABLES);
-        String excludingTables = params.get(CdcSyncConfig.EXCLUDING_TABLES);
-        String multiToOneOrigin = params.get(CdcSyncConfig.MULTI_TO_ONE_ORIGIN);
-        String multiToOneTarget = params.get(CdcSyncConfig.MULTI_TO_ONE_TARGET);
+        String jobName = params.get(CliConfig.JOB_NAME);
+        String database = params.get(CliConfig.DATABASE);
+        String tablePrefix = params.get(CliConfig.TABLE_PREFIX);
+        String tableSuffix = params.get(CliConfig.TABLE_SUFFIX);
+        String includingTables = params.get(CliConfig.INCLUDING_TABLES);
+        String excludingTables = params.get(CliConfig.EXCLUDING_TABLES);
+        String multiToOneOrigin = params.get(CliConfig.MULTI_TO_ONE_ORIGIN);
+        String multiToOneTarget = params.get(CliConfig.MULTI_TO_ONE_TARGET);
 
-        boolean createTableOnly = params.has(CdcSyncConfig.CREATE_TABLE_ONLY);
-        boolean ignoreDefaultValue = params.has(CdcSyncConfig.IGNORE_DEFAULT_VALUE);
-        boolean ignoreIncompatible = params.has(CdcSyncConfig.IGNORE_INCOMPATIBLE);
+        boolean createTableOnly = params.has(CliConfig.CREATE_TABLE_ONLY);
+        boolean ignoreDefaultValue = params.has(CliConfig.IGNORE_DEFAULT_VALUE);
+        boolean ignoreIncompatible = params.has(CliConfig.IGNORE_INCOMPATIBLE);
 
-        cdcSync.setEnv(env)
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        sync.setEnv(env)
                 .setSourceConfig(sourceConfig)
                 .setSinkConfig(sinkConfig)
                 .setDatabase(database)
@@ -87,9 +102,14 @@ public class CdcCli {
                 .build();
 
         if (StringUtils.isNullOrWhitespaceOnly(jobName)) {
-            jobName = String.format("%s Sync", jobType);
+            jobName = String.format("%s Sync", sourceType);
         }
-        env.execute(jobName);
+
+        if (Objects.nonNull(flinkEnvironmentForTesting)) {
+            jobClientForTesting = env.executeAsync();
+        } else {
+            env.execute(jobName);
+        }
     }
 
     public static Map<String, String> getConfigMap(MultipleParameterTool params, String key) {
