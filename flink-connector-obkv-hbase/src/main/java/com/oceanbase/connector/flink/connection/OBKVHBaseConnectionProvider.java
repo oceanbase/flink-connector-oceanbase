@@ -23,7 +23,7 @@ import com.oceanbase.connector.flink.utils.TableCache;
 import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +37,14 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     private final OBKVHBaseConnectorOptions options;
 
-    private final TableCache<HTableInterface> tableCache;
+    private final TableCache<Table> tableCache;
 
     public OBKVHBaseConnectionProvider(OBKVHBaseConnectorOptions options) {
         this.options = options;
         this.tableCache = new TableCache<>();
     }
 
-    public HTableInterface getHTableClient(TableId tableId) {
+    public Table getHTableClient(TableId tableId) {
         return tableCache.get(
                 tableId.identifier(),
                 () -> {
@@ -88,7 +88,7 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     @Override
     public void close() throws Exception {
-        for (HTableInterface table : tableCache.getAll()) {
+        for (Table table : tableCache.getAll()) {
             table.close();
         }
         tableCache.clear();

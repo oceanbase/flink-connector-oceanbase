@@ -54,12 +54,6 @@ public class OBKVHBaseE2eITCase extends FlinkContainerTestEnvironment {
         Stream.of(CONFIG_SERVER, CONTAINER).forEach(GenericContainer::stop);
     }
 
-    @Override
-    protected String getFlinkDockerImageTag() {
-        // the hbase packages are not compatible with jdk 11
-        return super.getFlinkDockerImageTag() + "-java8";
-    }
-
     @BeforeEach
     public void before() throws Exception {
         super.before();

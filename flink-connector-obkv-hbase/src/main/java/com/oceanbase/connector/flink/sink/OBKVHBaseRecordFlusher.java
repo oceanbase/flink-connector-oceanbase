@@ -23,8 +23,8 @@ import com.oceanbase.connector.flink.table.HTableInfo;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.ArrayList;
@@ -82,7 +82,7 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
                     Put put = new Put(rowKey);
                     columnValues.forEach(
                             entry ->
-                                    put.add(
+                                    put.addColumn(
                                             family,
                                             Bytes.toBytes(entry.getKey()),
                                             (byte[]) entry.getValue()));
@@ -91,10 +91,10 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
                     Delete delete = new Delete(rowKey);
                     for (Map.Entry<String, Object> entry :
                             ((Map<String, Object>) familyValue).entrySet()) {
-                        delete.deleteColumn(family, Bytes.toBytes(entry.getKey()));
+                        delete.addColumn(family, Bytes.toBytes(entry.getKey()));
                     }
                     columnValues.forEach(
-                            entry -> delete.deleteColumn(family, Bytes.toBytes(entry.getKey())));
+                            entry -> delete.addColumn(family, Bytes.toBytes(entry.getKey())));
                     familyDeleteListMap.computeIfAbsent(family, k -> new ArrayList<>()).add(delete);
                 }
             }
@@ -107,7 +107,7 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
     }
 
     private void flush(
-            HTableInterface table,
+            Table table,
             Map<byte[], List<Put>> familyPutListMap,
             Map<byte[], List<Delete>> familyDeleteListMap)
             throws Exception {
