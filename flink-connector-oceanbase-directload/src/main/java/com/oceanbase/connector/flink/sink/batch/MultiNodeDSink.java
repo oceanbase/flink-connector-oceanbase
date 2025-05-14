@@ -17,31 +17,24 @@
 package com.oceanbase.connector.flink.sink.batch;
 
 import com.oceanbase.connector.flink.OBDirectLoadConnectorOptions;
-import com.oceanbase.connector.flink.table.RecordSerializationSchema;
 
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
-import org.apache.flink.table.data.RowData;
 
 import java.io.IOException;
 
 /** The direct-load sink. see {@link Sink}. */
-public class DirectLoadSink implements Sink<RowData> {
+public class MultiNodeDSink implements Sink<Void> {
+    private final String executionId;
     private final OBDirectLoadConnectorOptions connectorOptions;
-    private final RecordSerializationSchema<RowData> recordSerializer;
-    private final int numberOfTaskSlots;
 
-    public DirectLoadSink(
-            OBDirectLoadConnectorOptions connectorOptions,
-            RecordSerializationSchema<RowData> recordSerializer,
-            int numberOfTaskSlots) {
+    public MultiNodeDSink(String executionId, OBDirectLoadConnectorOptions connectorOptions) {
+        this.executionId = executionId;
         this.connectorOptions = connectorOptions;
-        this.recordSerializer = recordSerializer;
-        this.numberOfTaskSlots = numberOfTaskSlots;
     }
 
     @Override
-    public SinkWriter<RowData> createWriter(InitContext context) throws IOException {
-        return new DirectLoadWriter(connectorOptions, recordSerializer, numberOfTaskSlots);
+    public SinkWriter<Void> createWriter(InitContext context) throws IOException {
+        return new MultiNodeCommiter(executionId, connectorOptions);
     }
 }

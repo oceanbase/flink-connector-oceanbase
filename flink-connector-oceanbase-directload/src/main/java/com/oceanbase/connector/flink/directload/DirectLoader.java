@@ -54,7 +54,8 @@ public class DirectLoader {
 
     private final DirectLoaderBuilder builder;
     private final String schemaTableName;
-    private final ObDirectLoadStatement statement;
+    private ObDirectLoadStatement statement;
+    private final ObDirectLoadStatement.Builder statementBuilder;
     private final ObDirectLoadConnection connection;
 
     private String executionId;
@@ -62,28 +63,29 @@ public class DirectLoader {
     public DirectLoader(
             DirectLoaderBuilder builder,
             String schemaTableName,
-            ObDirectLoadStatement statement,
+            ObDirectLoadStatement.Builder statementBuilder,
             ObDirectLoadConnection connection) {
         this.builder = builder;
         this.schemaTableName = schemaTableName;
-        this.statement = statement;
+        this.statementBuilder = statementBuilder;
         this.connection = connection;
     }
 
     public DirectLoader(
             DirectLoaderBuilder builder,
             String schemaTableName,
-            ObDirectLoadStatement statement,
+            ObDirectLoadStatement.Builder statementBuilder,
             ObDirectLoadConnection connection,
             String executionId) {
-        this(builder, schemaTableName, statement, connection);
+        this(builder, schemaTableName, statementBuilder, connection);
         this.executionId = executionId;
     }
 
-    public String begin() throws SQLException {
+    public String begin() {
         try {
             LOG.info("{} direct load beginning ......", schemaTableName);
             if (Objects.isNull(executionId)) {
+                statement = statementBuilder.build();
                 statement.begin();
                 ObDirectLoadStatementExecutionId statementExecutionId = statement.getExecutionId();
                 byte[] executionIdBytes = statementExecutionId.encode();
@@ -95,7 +97,7 @@ public class DirectLoader {
                         new ObDirectLoadStatementExecutionId();
                 byte[] executionIdBytes = Base64.getDecoder().decode(executionId);
                 statementExecutionId.decode(executionIdBytes);
-                statement.resume(statementExecutionId);
+                statement = statementBuilder.setExecutionId(statementExecutionId).build();
                 LOG.info(
                         "{} direct load resume from execution id : {} success",
                         schemaTableName,
@@ -103,7 +105,8 @@ public class DirectLoader {
             }
             return executionId;
         } catch (Exception ex) {
-            throw new SQLException(ex);
+            throw new RuntimeException(
+                    String.format("The direct-load failed to begin: %s.", schemaTableName), ex);
         }
     }
 
@@ -119,11 +122,12 @@ public class DirectLoader {
         }
     }
 
-    public void commit() throws SQLException {
+    public void commit() {
         try {
+            LOG.info("{} direct load committing......", schemaTableName);
             statement.commit();
         } catch (Exception e) {
-            throw new SQLException(
+            throw new RuntimeException(
                     String.format(
                             "Failed to commit, table: %s, execution id: %s",
                             schemaTableName, executionId),
@@ -132,6 +136,7 @@ public class DirectLoader {
     }
 
     public void close() {
+        LOG.info("{} direct load closing......", schemaTableName);
         if (Objects.nonNull(statement)) {
             this.statement.close();
         }
