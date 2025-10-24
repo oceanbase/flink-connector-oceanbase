@@ -17,6 +17,8 @@
 package com.oceanbase.connector.flink;
 
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -40,6 +42,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class OceanBaseTestBase implements OceanBaseMetadata {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OceanBaseTestBase.class);;
 
     private static final Pattern COMMENT_PATTERN = Pattern.compile("^(.*)--.*$");
 

@@ -53,6 +53,7 @@ under the License.
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
                 <executions>
                     <execution>
                         <id>shade-flink</id>
@@ -75,9 +76,28 @@ under the License.
                                     <include>org.apache.hadoop*:*</include>
                                     <include>org.apache.hbase*:*</include>
                                     <include>mysql:mysql-connector-java</include>
+                                    <include>com.fasterxml.jackson.core:*</include>
+                                    <include>com.fasterxml.jackson.datatype:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
+                                <relocation>
+                                    <pattern>org.apache.log4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.log4j</shadedPattern>
+                                </relocation>
+                                <!-- Shade Log4j2 to avoid conflicts with Flink's Log4j2 for obkv-table-client -->
+                                <relocation>
+                                    <pattern>org.apache.logging.log4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.logging.log4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.logging.slf4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.logging.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>${shaded.prefix}.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>com.google</pattern>
                                     <shadedPattern>${shaded.prefix}.com.google</shadedPattern>

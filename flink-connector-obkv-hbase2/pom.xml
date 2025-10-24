@@ -21,10 +21,11 @@ under the License.
         <version>${revision}</version>
     </parent>
 
-    <artifactId>flink-connector-obkv-hbase</artifactId>
+    <artifactId>flink-connector-obkv-hbase2</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
+
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>flink-connector-oceanbase-base</artifactId>

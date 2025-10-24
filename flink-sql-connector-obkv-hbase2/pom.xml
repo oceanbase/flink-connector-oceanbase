@@ -21,12 +21,12 @@ under the License.
         <version>${revision}</version>
     </parent>
 
-    <artifactId>flink-sql-connector-oceanbase-directload</artifactId>
+    <artifactId>flink-sql-connector-obkv-hbase2</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>flink-connector-oceanbase-directload</artifactId>
+            <artifactId>flink-connector-obkv-hbase2</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -73,9 +73,11 @@ under the License.
                                     <include>com.google.*:*</include>
                                     <include>commons-*:*</include>
                                     <include>io.netty:*</include>
+                                    <include>org.apache.hadoop*:*</include>
+                                    <include>org.apache.hbase*:*</include>
+                                    <include>mysql:mysql-connector-java</include>
                                     <include>com.fasterxml.jackson.core:*</include>
                                     <include>com.fasterxml.jackson.datatype:*</include>
-                                    <include>com.lmax:disruptor</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -93,16 +95,20 @@ under the License.
                                     <shadedPattern>${shaded.prefix}.org.apache.logging.slf4j</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>${shaded.prefix}.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>com.google</pattern>
                                     <shadedPattern>${shaded.prefix}.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>io.netty</pattern>
-                                    <shadedPattern>${shaded.prefix}.io.netty</shadedPattern>
+                                    <pattern>org.apache.hadoop</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.hadoop</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>${shaded.prefix}.com.fasterxml.jackson</shadedPattern>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>${shaded.prefix}.io.netty</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -111,4 +117,5 @@ under the License.
             </plugin>
         </plugins>
     </build>
+
 </project>

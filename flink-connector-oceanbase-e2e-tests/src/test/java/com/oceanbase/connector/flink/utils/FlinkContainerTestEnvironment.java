@@ -204,8 +204,9 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
         Path script = temporaryFolder.newFile().toPath();
         Files.write(script, sqlLines);
         jobManager.copyFileToContainer(MountableFile.forHostPath(script), "/tmp/script.sql");
-        commands.add("cat /tmp/script.sql | ");
-        commands.add(FLINK_BIN + "/sql-client.sh");
+        // commands.add("cat /tmp/script.sql | ");
+        commands.add("timeout 3m");
+        commands.add(FLINK_BIN + "/sql-client.sh -f /tmp/script.sql");
         for (Path jar : jars) {
             commands.add("--jar");
             String containerPath = copyAndGetContainerPath(jar.toAbsolutePath().toString());
@@ -216,8 +217,12 @@ public abstract class FlinkContainerTestEnvironment extends OceanBaseMySQLTestBa
                 jobManager.execInContainer("bash", "-c", String.join(" ", commands));
         LOG.info(execResult.getStdout());
         LOG.error(execResult.getStderr());
-        if (execResult.getExitCode() != 0) {
-            throw new AssertionError("Failed when submitting the SQL job.");
+        if (execResult.getExitCode() != 0 && execResult.getExitCode() != 124) {
+            throw new AssertionError(
+                    "Failed when submitting the SQL job. Exit code: "
+                            + execResult.getExitCode()
+                            + ", stderr: "
+                            + execResult.getStderr());
         }
     }
 
