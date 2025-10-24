@@ -31,7 +31,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
@@ -40,7 +39,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,11 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.oceanbase.connector.flink.obkv2.util.OBKV2RowDataUtils.parseTsValueFromRowData;
@@ -61,7 +54,7 @@ import static org.apache.flink.table.types.logical.LogicalTypeRoot.VARCHAR;
 
 /** Sink function for OBKV HBase2 connector. */
 public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
-        implements CheckpointedFunction, Serializable {
+        implements CheckpointedFunction {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = LoggerFactory.getLogger(OBKVHBase2SinkFunction.class);
@@ -91,9 +84,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
     // Buffering
     private final List<Object> mutationList;
-    private transient ScheduledExecutorService executor;
-    private transient ScheduledFuture<?> scheduledFuture;
-    private transient AtomicLong numPendingRequests;
 
     // Behavior flags
     private boolean ignoreDelete;
@@ -261,31 +251,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
         this.connectionProvider = new OBKV2ConnectionProvider(connectorOptions);
         this.table = connectionProvider.getHTableClient();
 
-        this.numPendingRequests = new AtomicLong(0);
-
-        // Start scheduled flusher if configured
-        long flushIntervalMs = connectorOptions.getFlushIntervalMs();
-        if (flushIntervalMs > 0) {
-            this.executor =
-                    Executors.newScheduledThreadPool(
-                            1, new ExecutorThreadFactory("obkv-hbase2-sink-flusher"));
-            this.scheduledFuture =
-                    this.executor.scheduleWithFixedDelay(
-                            () -> {
-                                if (closed) {
-                                    return;
-                                }
-                                try {
-                                    sync();
-                                } catch (Exception e) {
-                                    failureThrowable.compareAndSet(null, e);
-                                }
-                            },
-                            flushIntervalMs,
-                            flushIntervalMs,
-                            TimeUnit.MILLISECONDS);
-        }
-
         LOG.info("OBKVHBase2SinkFunction opened successfully");
     }
 
@@ -295,13 +260,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
         this.closed = true;
 
         sync();
-
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(false);
-        }
-        if (executor != null) {
-            executor.shutdownNow();
-        }
 
         if (connectionProvider != null) {
             connectionProvider.close();
@@ -333,7 +291,7 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             }
         }
 
-        if (numPendingRequests.incrementAndGet() >= connectorOptions.getBufferSize()) {
+        if (mutationList.size() >= connectorOptions.getBufferSize()) {
             sync();
         }
     }
@@ -577,16 +535,13 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             long duration = System.currentTimeMillis() - start;
             LOG.debug("Synced {} mutations in {} ms", mutationList.size(), duration);
 
-            numPendingRequests.set(0);
             mutationList.clear();
         }
     }
 
     @Override
     public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
-        do {
-            sync();
-        } while (numPendingRequests.get() != 0);
+        sync();
     }
 
     @Override
