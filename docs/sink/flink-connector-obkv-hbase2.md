@@ -284,7 +284,7 @@ CREATE TABLE t_sink (
 ## Configuration Options
 
 |     Option Name      | Required | Default |   Type   |                                                                                                  Description                                                                                                   |
-|----------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---|
+|----------------------|----------|---------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connector            | Yes      |         | String   | Must be set to 'obkv-hbase2' to use this connector.                                                                                                                                                            |
 | schema-name          | Yes      |         | String   | The database name in OceanBase.                                                                                                                                                                                |
 | table-name           | Yes      |         | String   | HBase table name (without column family suffix).                                                                                                                                                               |
@@ -308,7 +308,7 @@ CREATE TABLE t_sink (
 | dynamicColumnSink    | No       | false   | Boolean  | Whether to enable dynamic column mode. When enabled, non-PK columns must be exactly 2 columns (columnKey and columnValue), both must be VARCHAR type.                                                          |
 | tsColumn             | No       |         | String   | Timestamp column name. When specified, the value of this column will be used as the timestamp for all columns. If this is set, 'tsMap' will be ignored.                                                        |
 | tsMap                | No       |         | String   | Timestamp mapping configuration. Format: 'tsColumn0:column0;tsColumn0:column1;tsColumn1:column2', meaning column0 and column1 use tsColumn0's value as timestamp, column2 uses tsColumn1's value as timestamp. |
-| tsInMills            | No       | true    | Boolean  | Whether timestamp unit is milliseconds. When set to 'false', timestamp unit is seconds.                                                                                                                        |   |
+| tsInMills            | No       | true    | Boolean  | Whether timestamp unit is milliseconds. When set to 'false', timestamp unit is seconds.                                                                                                                        |
 
 ## Core Features
 
