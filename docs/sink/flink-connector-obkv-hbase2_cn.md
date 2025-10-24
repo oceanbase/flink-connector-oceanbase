@@ -29,7 +29,7 @@ CREATE TABLE t_sink (
 );
 ```
 
-### flink-connector-obkv-hbase2 (扁平结构)
+### 新版 flink-connector-obkv-hbase2 (扁平结构)
 
 ```sql
 CREATE TABLE t_sink (
@@ -192,7 +192,7 @@ INSERT INTO t_sink (rowkey, column1) VALUES ('1', 'new_value');
 ```
 
 **两种更新控制方式：**
-- `ignoreNullWhenUpdate=true`：跳过值为 NULL 的列，灵活实现部分列更新
+- `ignoreNullWhenUpdate=true`：跳过值为 NULL 的列，此时任何为 NULL 的列都不会写入到 OBKV-HBase 中
 - `excludeUpdateColumns`：永久排除指定列，这些列永远不会被更新
 
 #### 4. 动态列模式
@@ -283,32 +283,33 @@ CREATE TABLE t_sink (
 
 ## 配置项
 
-|         参数名          | 是否必需 |  默认值  |    类型    |                                                                     描述                                                                     |
-|----------------------|------|-------|----------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| connector            | 是    |       | String   | 必须设置为 'obkv-hbase2' 以使用此连接器。                                                                                                               |
-| schema-name          | 是    |       | String   | OceanBase 的 database 名。                                                                                                                    |
-| table-name           | 是    |       | String   | HBase 表名（不含列族后缀）。                                                                                                                          |
-| username             | 是    |       | String   | 用户名。                                                                                                                                       |
-| password             | 是    |       | String   | 密码。                                                                                                                                        |
-| odp-mode             | 否    | false | Boolean  | 是否通过 ODP 连接到 OBKV。设置为 'true' 时通过 ODP 连接，否则通过 config url 直连。                                                                                |
-| url                  | 否    |       | String   | 集群的 config url，可以通过 `SHOW PARAMETERS LIKE 'obconfig_url'` 查询。当 'odp-mode' 为 'false' 时必填。                                                   |
-| sys.username         | 否    |       | String   | sys 租户的用户名，当 'odp-mode' 为 'false' 时必填。                                                                                                     |
-| sys.password         | 否    |       | String   | sys 租户用户的密码，当 'odp-mode' 为 'false' 时必填。                                                                                                    |
-| odp-ip               | 否    |       | String   | ODP 的 IP 地址，当 'odp-mode' 为 'true' 时必填。                                                                                                     |
-| odp-port             | 否    | 2885  | Integer  | ODP 的 RPC 端口，当 'odp-mode' 为 'true' 时可选。                                                                                                    |
-| hbase.properties     | 否    |       | String   | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔，格式：'key1=value1;key2=value2'。                                                                     |
-| columnFamily         | 否    | f     | String   | HBase 列族名称。                                                                                                                                |
-| rowkeyDelimiter      | 否    | :     | String   | 复合主键的分隔符。                                                                                                                                  |
-| writePkValue         | 否    | false | Boolean  | 是否将主键值也写入 HBase 列值中。                                                                                                                       |
-| bufferSize           | 否    | 5000  | Integer  | 批量写入的缓冲区大小。                                                                                                                                |
-| flushIntervalMs      | 否    | 2000  | Duration | 批量刷新的时间间隔（毫秒）。设置为 '0' 时将关闭定期刷新。                                                                                                            |
-| ignoreNullWhenUpdate | 否    | true  | Boolean  | 是否忽略空值更新。设置为 'true' 时，跳过值为 null 的列，实现部分列更新；设置为 'false' 时，会将 null 值写入 HBase。                                                                |
-| ignoreDelete         | 否    | false | Boolean  | 是否忽略删除操作。设置为 'true' 时，不会执行删除操作。                                                                                                            |
-| excludeUpdateColumns | 否    |       | String   | 排除更新的列名，多个列用逗号分隔。这些列不会被更新。                                                                                                                 |
-| dynamicColumnSink    | 否    | false | Boolean  | 是否启用动态列模式。启用后，非主键列必须恰好为 2 列（columnKey 和 columnValue），都必须是 VARCHAR 类型。                                                                      |
-| tsColumn             | 否    |       | String   | 时间戳列名。指定后，该列的值将作为所有列的时间戳。如果设置了此项，'tsMap' 将被忽略。                                                                                             |
-| tsMap                | 否    |       | String   | 时间戳映射配置，格式：'tsColumn0:column0;tsColumn0:column1;tsColumn1:column2'，表示 column0 和 column1 使用 tsColumn0 的值作为时间戳，column2 使用 tsColumn1 的值作为时间戳。 |
-| tsInMills            | 否    | true  | Boolean  | 时间戳的单位是否为毫秒。设置为 'false' 时，时间戳单位为秒。                                                                                                         |
+|         参数名          | 是否必需 |  默认值  |   类型    |                                                                     描述                                                                     |
+|----------------------|------|-------|---------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| connector            | 是    |       | String  | 必须设置为 'obkv-hbase2' 以使用此连接器。                                                                                                               |
+| schema-name          | 是    |       | String  | OceanBase 的 database 名。                                                                                                                    |
+| table-name           | 是    |       | String  | HBase 表名（不含列族后缀）。                                                                                                                          |
+| username             | 是    |       | String  | 用户名。                                                                                                                                       |
+| password             | 是    |       | String  | 密码。                                                                                                                                        |
+| odp-mode             | 否    | false | Boolean | 是否通过 ODP 连接到 OBKV。设置为 'true' 时通过 ODP 连接，否则通过 config url 直连。                                                                                |
+| url                  | 否    |       | String  | 集群的 config url，可以通过 `SHOW PARAMETERS LIKE 'obconfig_url'` 查询。当 'odp-mode' 为 'false' 时必填。                                                   |
+| sys.username         | 否    |       | String  | sys 租户的用户名，当 'odp-mode' 为 'false' 时必填。                                                                                                     |
+| sys.password         | 否    |       | String  | sys 租户用户的密码，当 'odp-mode' 为 'false' 时必填。                                                                                                    |
+| odp-ip               | 否    |       | String  | ODP 的 IP 地址，当 'odp-mode' 为 'true' 时必填。                                                                                                     |
+| odp-port             | 否    | 2885  | Integer | ODP 的 RPC 端口，当 'odp-mode' 为 'true' 时可选。                                                                                                    |
+| hbase.properties     | 否    |       | String  | 配置 'obkv-hbase-client-java' 的属性，多个值用分号分隔，格式：'key1=value1;key2=value2'。                                                                     |
+| columnFamily         | 否    | f     | String  | HBase 列族名称。                                                                                                                                |
+| rowkeyDelimiter      | 否    | :     | String  | 复合主键的分隔符。                                                                                                                                  |
+| writePkValue         | 否    | false | Boolean | 是否将主键值也写入 HBase 列值中。                                                                                                                       |
+| bufferSize           | 否    | 5000  | Integer | 批量写入的缓冲区大小。                                                                                                                                |
+| ignoreNullWhenUpdate | 否    | false | Boolean | 是否忽略空值更新。设置为 'true' 时，跳过值为 null 的列，实现部分列更新；设置为 'false' 时，会将 null 值写入 HBase。                                                                |
+| ignoreDelete         | 否    | false | Boolean | 是否忽略删除操作。设置为 'true' 时，不会执行删除操作。                                                                                                            |
+| excludeUpdateColumns | 否    |       | String  | 排除更新的列名，多个列用逗号分隔。这些列不会被更新。                                                                                                                 |
+| dynamicColumnSink    | 否    | false | Boolean | 是否启用动态列模式。启用后，非主键列必须恰好为 2 列（columnKey 和 columnValue），都必须是 VARCHAR 类型。                                                                      |
+| tsColumn             | 否    |       | String  | 时间戳列名。指定后，该列的值将作为所有列的时间戳。如果设置了此项，'tsMap' 将被忽略。                                                                                             |
+| tsMap                | 否    |       | String  | 时间戳映射配置，格式：'tsColumn0:column0;tsColumn0:column1;tsColumn1:column2'，表示 column0 和 column1 使用 tsColumn0 的值作为时间戳，column2 使用 tsColumn1 的值作为时间戳。 |
+| tsInMills            | 否    | true  | Boolean | 时间戳的单位是否为毫秒。设置为 'false' 时，时间戳单位为秒。                                                                                                         |
+| maxRetryTimes        | 否    | 5     | Long    | 失败重试的最大次数。                                                                                                                                 |
+| retryIntervalMs      | 否    | 1000  | Long    | 重试间隔（毫秒）。                                                                                                                                  |
 
 ## 核心功能
 

@@ -31,7 +31,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
@@ -49,12 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.oceanbase.connector.flink.obkv2.util.OBKV2RowDataUtils.parseTsValueFromRowData;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.VARCHAR;
@@ -91,8 +85,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
     // Buffering
     private final List<Object> mutationList;
-    private transient ScheduledExecutorService executor;
-    private transient ScheduledFuture<?> scheduledFuture;
     private transient AtomicLong numPendingRequests;
 
     // Behavior flags
@@ -107,10 +99,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     // Connection
     private transient OBKV2ConnectionProvider connectionProvider;
     private transient Table table;
-
-    // Error handling
-    private final AtomicReference<Throwable> failureThrowable = new AtomicReference<>();
-    private transient volatile boolean closed = false;
 
     public OBKVHBase2SinkFunction(
             String tableName,
@@ -263,45 +251,14 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
         this.numPendingRequests = new AtomicLong(0);
 
-        // Start scheduled flusher if configured
-        long flushIntervalMs = connectorOptions.getFlushIntervalMs();
-        if (flushIntervalMs > 0) {
-            this.executor =
-                    Executors.newScheduledThreadPool(
-                            1, new ExecutorThreadFactory("obkv-hbase2-sink-flusher"));
-            this.scheduledFuture =
-                    this.executor.scheduleWithFixedDelay(
-                            () -> {
-                                if (closed) {
-                                    return;
-                                }
-                                try {
-                                    sync();
-                                } catch (Exception e) {
-                                    failureThrowable.compareAndSet(null, e);
-                                }
-                            },
-                            flushIntervalMs,
-                            flushIntervalMs,
-                            TimeUnit.MILLISECONDS);
-        }
-
         LOG.info("OBKVHBase2SinkFunction opened successfully");
     }
 
     @Override
     public void close() throws Exception {
         LOG.info("Closing OBKVHBase2SinkFunction");
-        this.closed = true;
 
         sync();
-
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(false);
-        }
-        if (executor != null) {
-            executor.shutdownNow();
-        }
 
         if (connectionProvider != null) {
             connectionProvider.close();
@@ -312,8 +269,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
     @Override
     public void invoke(RowData value, Context context) throws Exception {
-        checkErrorAndRethrow();
-
         if (value.getRowKind().equals(RowKind.UPDATE_BEFORE)) {
             // Ignore UPDATE_BEFORE
             return;
@@ -335,13 +290,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
         if (numPendingRequests.incrementAndGet() >= connectorOptions.getBufferSize()) {
             sync();
-        }
-    }
-
-    private void checkErrorAndRethrow() {
-        Throwable cause = failureThrowable.get();
-        if (cause != null) {
-            throw new RuntimeException("An error occurred in OBKV HBase2 Sink.", cause);
         }
     }
 
