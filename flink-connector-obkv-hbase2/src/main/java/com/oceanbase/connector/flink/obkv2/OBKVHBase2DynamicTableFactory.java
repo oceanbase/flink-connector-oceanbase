@@ -120,7 +120,6 @@ public class OBKVHBase2DynamicTableFactory implements DynamicTableSinkFactory {
         set.add(ROWKEY_DELIMITER);
         set.add(WRITE_PK_VALUE);
         set.add(BUFFER_SIZE);
-        set.add(FLUSH_INTERVAL);
         set.add(IGNORE_NULL);
         set.add(IGNORE_DELETE);
         set.add(EXCLUDE_UPDATE_COLUMNS);

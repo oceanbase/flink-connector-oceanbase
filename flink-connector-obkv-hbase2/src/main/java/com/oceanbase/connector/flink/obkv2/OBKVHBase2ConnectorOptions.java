@@ -22,7 +22,6 @@ import com.oceanbase.connector.flink.utils.OptionUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -99,12 +98,6 @@ public class OBKVHBase2ConnectorOptions extends ConnectorOptions {
                     .intType()
                     .defaultValue(5000)
                     .withDescription("The buffer size for batch writing.");
-
-    public static final ConfigOption<Duration> FLUSH_INTERVAL =
-            ConfigOptions.key("flushIntervalMs")
-                    .durationType()
-                    .defaultValue(Duration.ofMillis(2000))
-                    .withDescription("The flush interval for batch writing.");
 
     public static final ConfigOption<Boolean> IGNORE_NULL =
             ConfigOptions.key("ignoreNullWhenUpdate")
@@ -236,10 +229,6 @@ public class OBKVHBase2ConnectorOptions extends ConnectorOptions {
     // Sink behavior getters
     public int getBufferSize() {
         return allConfig.get(BUFFER_SIZE);
-    }
-
-    public Long getFlushIntervalMs() {
-        return allConfig.get(FLUSH_INTERVAL).toMillis();
     }
 
     public Boolean getIgnoreNull() {
