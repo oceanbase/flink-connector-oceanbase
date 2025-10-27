@@ -308,8 +308,6 @@ CREATE TABLE t_sink (
 | tsColumn             | 否    |       | String  | 时间戳列名。指定后，该列的值将作为所有列的时间戳。如果设置了此项，'tsMap' 将被忽略。                                                                                             |
 | tsMap                | 否    |       | String  | 时间戳映射配置，格式：'tsColumn0:column0;tsColumn0:column1;tsColumn1:column2'，表示 column0 和 column1 使用 tsColumn0 的值作为时间戳，column2 使用 tsColumn1 的值作为时间戳。 |
 | tsInMills            | 否    | true  | Boolean | 时间戳的单位是否为毫秒。设置为 'false' 时，时间戳单位为秒。                                                                                                         |
-| maxRetryTimes        | 否    | 5     | Long    | 失败重试的最大次数。                                                                                                                                 |
-| retryIntervalMs      | 否    | 1000  | Long    | 重试间隔（毫秒）。                                                                                                                                  |
 
 ## 核心功能
 

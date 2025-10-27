@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.oceanbase.connector.flink.obkv2.util.OBKV2RowDataUtils.parseTsValueFromRowData;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.VARCHAR;
@@ -85,7 +84,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
     // Buffering
     private final List<Object> mutationList;
-    private transient AtomicLong numPendingRequests;
 
     // Behavior flags
     private boolean ignoreDelete;
@@ -249,8 +247,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
         this.connectionProvider = new OBKV2ConnectionProvider(connectorOptions);
         this.table = connectionProvider.getHTableClient();
 
-        this.numPendingRequests = new AtomicLong(0);
-
         LOG.info("OBKVHBase2SinkFunction opened successfully");
     }
 
@@ -286,10 +282,10 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
                 Put put = createPut(value);
                 mutationList.add(put);
             }
-        }
 
-        if (numPendingRequests.incrementAndGet() >= connectorOptions.getBufferSize()) {
-            sync();
+            if (mutationList.size() >= connectorOptions.getBufferSize()) {
+                sync();
+            }
         }
     }
 
@@ -525,16 +521,13 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             long duration = System.currentTimeMillis() - start;
             LOG.debug("Synced {} mutations in {} ms", mutationList.size(), duration);
 
-            numPendingRequests.set(0);
             mutationList.clear();
         }
     }
 
     @Override
     public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
-        do {
-            sync();
-        } while (numPendingRequests.get() != 0);
+        sync();
     }
 
     @Override
