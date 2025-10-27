@@ -85,7 +85,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     // Buffering
     private final List<Put> putBuffer;
     private final List<Delete> deleteBuffer;
-    private final Object bufferLock = new Object();
 
     // Behavior flags
     private boolean ignoreDelete;
@@ -277,7 +276,7 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             return;
         }
 
-        synchronized (bufferLock) {
+        synchronized (this) {
             if (value.getRowKind().equals(RowKind.DELETE)) {
                 Delete delete = createDelete(value);
                 deleteBuffer.add(delete);
@@ -490,7 +489,7 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     }
 
     private void sync() throws Exception {
-        synchronized (bufferLock) {
+        synchronized (this) {
             if (putBuffer.isEmpty() && deleteBuffer.isEmpty()) {
                 return;
             }
