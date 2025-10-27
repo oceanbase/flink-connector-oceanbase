@@ -83,7 +83,9 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     private boolean tsInMills;
 
     // Buffering
-    private final List<Object> mutationList;
+    private final List<Put> putBuffer;
+    private final List<Delete> deleteBuffer;
+    private final Object bufferLock = new Object();
 
     // Behavior flags
     private boolean ignoreDelete;
@@ -163,7 +165,8 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
         Preconditions.checkArgument(
                 connectorOptions.getBufferSize() > 0, "Buffer size must be > 0.");
-        this.mutationList = new ArrayList<>(connectorOptions.getBufferSize());
+        this.putBuffer = new ArrayList<>(connectorOptions.getBufferSize());
+        this.deleteBuffer = new ArrayList<>(connectorOptions.getBufferSize());
         connectionProvider = new OBKV2ConnectionProvider(connectorOptions);
         this.table = connectionProvider.getHTableClient();
     }
@@ -274,16 +277,16 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             return;
         }
 
-        synchronized (mutationList) {
+        synchronized (bufferLock) {
             if (value.getRowKind().equals(RowKind.DELETE)) {
                 Delete delete = createDelete(value);
-                mutationList.add(delete);
+                deleteBuffer.add(delete);
             } else {
                 Put put = createPut(value);
-                mutationList.add(put);
+                putBuffer.add(put);
             }
 
-            if (mutationList.size() >= connectorOptions.getBufferSize()) {
+            if (putBuffer.size() + deleteBuffer.size() >= connectorOptions.getBufferSize()) {
                 sync();
             }
         }
@@ -487,41 +490,32 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     }
 
     private void sync() throws Exception {
-        synchronized (mutationList) {
-            if (mutationList.isEmpty()) {
+        synchronized (bufferLock) {
+            if (putBuffer.isEmpty() && deleteBuffer.isEmpty()) {
                 return;
             }
 
-            LOG.debug("Syncing {} mutations to HBase", mutationList.size());
+            int totalSize = putBuffer.size() + deleteBuffer.size();
+            LOG.debug("Syncing {} mutations to HBase", totalSize);
             long start = System.currentTimeMillis();
 
-            List<Put> puts = new ArrayList<>();
-            List<Delete> deletes = new ArrayList<>();
-
-            for (Object mutation : mutationList) {
-                if (mutation instanceof Put) {
-                    puts.add((Put) mutation);
-                } else if (mutation instanceof Delete) {
-                    deletes.add((Delete) mutation);
-                }
-            }
-
             // Execute puts
-            if (!puts.isEmpty()) {
-                table.put(puts);
-                LOG.debug("Put {} records to HBase", puts.size());
+            if (!putBuffer.isEmpty()) {
+                table.put(putBuffer);
+                LOG.debug("Put {} records to HBase", putBuffer.size());
             }
 
             // Execute deletes
-            if (!deletes.isEmpty()) {
-                table.delete(deletes);
-                LOG.debug("Deleted {} records from HBase", deletes.size());
+            if (!deleteBuffer.isEmpty()) {
+                table.delete(deleteBuffer);
+                LOG.debug("Deleted {} records from HBase", deleteBuffer.size());
             }
 
             long duration = System.currentTimeMillis() - start;
-            LOG.debug("Synced {} mutations in {} ms", mutationList.size(), duration);
+            LOG.debug("Synced {} mutations in {} ms", totalSize, duration);
 
-            mutationList.clear();
+            putBuffer.clear();
+            deleteBuffer.clear();
         }
     }
 
