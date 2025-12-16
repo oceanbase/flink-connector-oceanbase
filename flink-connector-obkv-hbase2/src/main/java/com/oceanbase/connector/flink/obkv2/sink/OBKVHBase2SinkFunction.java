@@ -31,7 +31,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
@@ -49,12 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.oceanbase.connector.flink.obkv2.util.OBKV2RowDataUtils.parseTsValueFromRowData;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.VARCHAR;
@@ -90,10 +83,8 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     private boolean tsInMills;
 
     // Buffering
-    private final List<Object> mutationList;
-    private transient ScheduledExecutorService executor;
-    private transient ScheduledFuture<?> scheduledFuture;
-    private transient AtomicLong numPendingRequests;
+    private final List<Put> putBuffer;
+    private final List<Delete> deleteBuffer;
 
     // Behavior flags
     private boolean ignoreDelete;
@@ -107,10 +98,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     // Connection
     private transient OBKV2ConnectionProvider connectionProvider;
     private transient Table table;
-
-    // Error handling
-    private final AtomicReference<Throwable> failureThrowable = new AtomicReference<>();
-    private transient volatile boolean closed = false;
 
     public OBKVHBase2SinkFunction(
             String tableName,
@@ -177,7 +164,8 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
         Preconditions.checkArgument(
                 connectorOptions.getBufferSize() > 0, "Buffer size must be > 0.");
-        this.mutationList = new ArrayList<>(connectorOptions.getBufferSize());
+        this.putBuffer = new ArrayList<>(connectorOptions.getBufferSize());
+        this.deleteBuffer = new ArrayList<>(connectorOptions.getBufferSize());
         connectionProvider = new OBKV2ConnectionProvider(connectorOptions);
         this.table = connectionProvider.getHTableClient();
     }
@@ -261,47 +249,14 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
         this.connectionProvider = new OBKV2ConnectionProvider(connectorOptions);
         this.table = connectionProvider.getHTableClient();
 
-        this.numPendingRequests = new AtomicLong(0);
-
-        // Start scheduled flusher if configured
-        long flushIntervalMs = connectorOptions.getFlushIntervalMs();
-        if (flushIntervalMs > 0) {
-            this.executor =
-                    Executors.newScheduledThreadPool(
-                            1, new ExecutorThreadFactory("obkv-hbase2-sink-flusher"));
-            this.scheduledFuture =
-                    this.executor.scheduleWithFixedDelay(
-                            () -> {
-                                if (closed) {
-                                    return;
-                                }
-                                try {
-                                    sync();
-                                } catch (Exception e) {
-                                    failureThrowable.compareAndSet(null, e);
-                                }
-                            },
-                            flushIntervalMs,
-                            flushIntervalMs,
-                            TimeUnit.MILLISECONDS);
-        }
-
         LOG.info("OBKVHBase2SinkFunction opened successfully");
     }
 
     @Override
     public void close() throws Exception {
         LOG.info("Closing OBKVHBase2SinkFunction");
-        this.closed = true;
 
         sync();
-
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(false);
-        }
-        if (executor != null) {
-            executor.shutdownNow();
-        }
 
         if (connectionProvider != null) {
             connectionProvider.close();
@@ -312,8 +267,6 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
 
     @Override
     public void invoke(RowData value, Context context) throws Exception {
-        checkErrorAndRethrow();
-
         if (value.getRowKind().equals(RowKind.UPDATE_BEFORE)) {
             // Ignore UPDATE_BEFORE
             return;
@@ -323,25 +276,18 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
             return;
         }
 
-        synchronized (mutationList) {
+        synchronized (this) {
             if (value.getRowKind().equals(RowKind.DELETE)) {
                 Delete delete = createDelete(value);
-                mutationList.add(delete);
+                deleteBuffer.add(delete);
             } else {
                 Put put = createPut(value);
-                mutationList.add(put);
+                putBuffer.add(put);
             }
-        }
 
-        if (numPendingRequests.incrementAndGet() >= connectorOptions.getBufferSize()) {
-            sync();
-        }
-    }
-
-    private void checkErrorAndRethrow() {
-        Throwable cause = failureThrowable.get();
-        if (cause != null) {
-            throw new RuntimeException("An error occurred in OBKV HBase2 Sink.", cause);
+            if (putBuffer.size() + deleteBuffer.size() >= connectorOptions.getBufferSize()) {
+                sync();
+            }
         }
     }
 
@@ -543,50 +489,38 @@ public class OBKVHBase2SinkFunction extends RichSinkFunction<RowData>
     }
 
     private void sync() throws Exception {
-        synchronized (mutationList) {
-            if (mutationList.isEmpty()) {
+        synchronized (this) {
+            if (putBuffer.isEmpty() && deleteBuffer.isEmpty()) {
                 return;
             }
 
-            LOG.debug("Syncing {} mutations to HBase", mutationList.size());
+            int totalSize = putBuffer.size() + deleteBuffer.size();
+            LOG.debug("Syncing {} mutations to HBase", totalSize);
             long start = System.currentTimeMillis();
 
-            List<Put> puts = new ArrayList<>();
-            List<Delete> deletes = new ArrayList<>();
-
-            for (Object mutation : mutationList) {
-                if (mutation instanceof Put) {
-                    puts.add((Put) mutation);
-                } else if (mutation instanceof Delete) {
-                    deletes.add((Delete) mutation);
-                }
-            }
-
             // Execute puts
-            if (!puts.isEmpty()) {
-                table.put(puts);
-                LOG.debug("Put {} records to HBase", puts.size());
+            if (!putBuffer.isEmpty()) {
+                table.put(putBuffer);
+                LOG.debug("Put {} records to HBase", putBuffer.size());
             }
 
             // Execute deletes
-            if (!deletes.isEmpty()) {
-                table.delete(deletes);
-                LOG.debug("Deleted {} records from HBase", deletes.size());
+            if (!deleteBuffer.isEmpty()) {
+                table.delete(deleteBuffer);
+                LOG.debug("Deleted {} records from HBase", deleteBuffer.size());
             }
 
             long duration = System.currentTimeMillis() - start;
-            LOG.debug("Synced {} mutations in {} ms", mutationList.size(), duration);
+            LOG.debug("Synced {} mutations in {} ms", totalSize, duration);
 
-            numPendingRequests.set(0);
-            mutationList.clear();
+            putBuffer.clear();
+            deleteBuffer.clear();
         }
     }
 
     @Override
     public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
-        do {
-            sync();
-        } while (numPendingRequests.get() != 0);
+        sync();
     }
 
     @Override
