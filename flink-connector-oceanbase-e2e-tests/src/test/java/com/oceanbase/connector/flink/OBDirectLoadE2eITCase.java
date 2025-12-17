@@ -107,7 +107,10 @@ public class OBDirectLoadE2eITCase extends FlinkContainerTestEnvironment {
                         + "       (108, 'jacket', 'water resistent black wind breaker', 0.1),"
                         + "       (109, 'spare tire', '24 inch spare tire', 22.2);");
 
-        submitSQLJob(sqlLines, getResource(SINK_CONNECTOR_NAME));
+        submitSQLJob(
+                sqlLines,
+                getResource(SINK_CONNECTOR_NAME),
+                getResource("mysql-connector-java.jar"));
 
         List<String> expected =
                 Arrays.asList(

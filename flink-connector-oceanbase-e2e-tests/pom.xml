@@ -91,12 +91,21 @@ under the License.
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
+                    <skip>false</skip>
                     <artifactItems>
                         <artifactItem>
                             <groupId>com.oceanbase</groupId>
                             <artifactId>flink-sql-connector-obkv-hbase</artifactId>
                             <version>${project.version}</version>
                             <destFileName>flink-sql-connector-obkv-hbase.jar</destFileName>
+                            <type>jar</type>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>com.oceanbase</groupId>
+                            <artifactId>flink-sql-connector-obkv-hbase2</artifactId>
+                            <version>${project.version}</version>
+                            <destFileName>flink-sql-connector-obkv-hbase2.jar</destFileName>
                             <type>jar</type>
                             <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                         </artifactItem>
@@ -129,6 +138,14 @@ under the License.
                             <artifactId>flink-sql-connector-mysql-cdc</artifactId>
                             <version>${flink.cdc.version}</version>
                             <destFileName>flink-sql-connector-mysql-cdc.jar</destFileName>
+                            <type>jar</type>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>mysql</groupId>
+                            <artifactId>mysql-connector-java</artifactId>
+                            <version>${mysql.connector.version}</version>
+                            <destFileName>mysql-connector-java.jar</destFileName>
                             <type>jar</type>
                             <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                         </artifactItem>
