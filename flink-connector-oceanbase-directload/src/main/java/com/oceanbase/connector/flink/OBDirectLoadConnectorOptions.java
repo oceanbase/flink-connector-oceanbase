@@ -140,12 +140,6 @@ public class OBDirectLoadConnectorOptions implements Serializable {
                     .withDescription(
                             "Enforces the job to run strictly in bounded mode when enabled.");
 
-    public static final ConfigOption<Boolean> ENABLE_LEGACY_IMPLEMENT =
-            ConfigOptions.key("enable-legacy-implement")
-                    .booleanType()
-                    .defaultValue(false)
-                    .withDescription("Enable legacy implement of direct-load.");
-
     protected final ReadableConfig allConfig;
 
     public OBDirectLoadConnectorOptions(Map<String, String> config) {
@@ -218,9 +212,5 @@ public class OBDirectLoadConnectorOptions implements Serializable {
 
     public boolean getBoundedModeEnabled() {
         return allConfig.get(BOUNDED_MODE_ENABLED);
-    }
-
-    public boolean getEnableLegacyImplement() {
-        return allConfig.get(ENABLE_LEGACY_IMPLEMENT);
     }
 }

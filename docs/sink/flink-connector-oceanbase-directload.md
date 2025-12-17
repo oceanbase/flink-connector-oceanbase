@@ -2,9 +2,18 @@
 
 English | [简体中文](flink-connector-oceanbase-directload_cn.md)
 
-This Flink Connector based on the direct-load feature of OceanBase. It can write data to OceanBase through direct-load in Flink.
+This Flink Connector is based on the direct-load feature of OceanBase, enabling high-performance bulk data loading from Flink to OceanBase.
 
-For OceanBase's direct-load feature, see the [direct-load document](https://en.oceanbase.com/docs/common-oceanbase-database-10000000001375568).
+## ⚠️ Important Notes
+
+**This connector is specifically designed for batch processing scenarios with the following characteristics:**
+
+- ✅ **Bounded Streams Only**: Data sources must be bounded; unbounded streams are not supported. Flink Batch mode is recommended for better performance
+- ✅ **High Throughput**: Ideal for large-scale data import with multi-node parallel writing capability
+- ⚠️ **Table Locking During Import**: The target table will be locked during the direct-load process, allowing only SELECT queries. INSERT/UPDATE/DELETE operations are not permitted
+- ⚠️ **Not for Real-time**: If you need real-time/streaming writes with unbounded streams, please use [flink-connector-oceanbase](flink-connector-oceanbase.md) instead
+
+For more details on OceanBase's direct-load feature, see the [direct-load document](https://en.oceanbase.com/docs/common-oceanbase-database-10000000001375568).
 
 ## Getting Started
 
@@ -54,19 +63,34 @@ To use this connector through Flink SQL directly, you need to download the shade
 - Release versions: https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase-directload
 - Snapshot versions: https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase-directload
 
-### Instructions for use:
+### Prerequisites
 
-- Currently, the direct-load Flink Connector only supports running in Flink Batch execution mode. Refer to the following method to enable Flink Batch execution mode.
-  - Table-API/Flink-SQL: `SET 'execution.runtime-mode' = 'BATCH';`
-  - DataStream API:
+**Data sources must be bounded streams**. The direct-load connector does not support unbounded streams.
 
-    ```
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH);
-    ```
-- Currently, the direct-load Flink Connector supports two modes: single-node write and multi-node write:
-  - Single-node write: In this mode, the Flink Task has only one parallelism for writing. It is suitable for small and medium-sized data import. This method is simple and easy to use and is recommended.
-  - Multi-node write: In this mode, the parallelism of the Flink Task can be freely adjusted according to the amount of data to be imported to improve the write throughput.
+**Flink Batch mode is recommended** for better performance:
+
+- **Table API / Flink SQL**:
+
+  ```sql
+  SET 'execution.runtime-mode' = 'BATCH';
+  ```
+- **DataStream API**:
+
+  ```java
+  StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+  env.setRuntimeMode(RuntimeExecutionMode.BATCH);
+  ```
+
+> **Note**: While you can use bounded data sources in Streaming mode, Batch mode typically provides better performance and resource utilization.
+
+### Performance Tuning
+
+- **Parallelism Adjustment**: Supports multi-node parallel writing. Increase Flink task parallelism to improve throughput
+
+  ```sql
+  SET 'parallelism.default' = '8';  -- Adjust based on data volume
+  ```
+- **Server-side Parallelism**: Use the `parallel` parameter to configure CPU resources on OceanBase server for processing the import task
 
 ### Demo
 
@@ -85,14 +109,16 @@ CREATE TABLE `t_sink`
 );
 ```
 
-#### single-node write
-
 #### Flink SQL Demo
 
-Put the JAR files of dependencies to the 'lib' directory of Flink, and then create the destination table with Flink SQL through the sql client.
+Put the JAR files of dependencies into the 'lib' directory of Flink, then create the destination table using Flink SQL through the SQL client.
 
 ```sql
+-- Recommended to set BATCH mode for better performance
 SET 'execution.runtime-mode' = 'BATCH';
+
+-- Optional: Adjust parallelism based on data volume to improve throughput
+SET 'parallelism.default' = '8';
 
 CREATE TABLE t_sink
 (
@@ -100,82 +126,7 @@ CREATE TABLE t_sink
     username VARCHAR,
     score    INT,
     PRIMARY KEY (id) NOT ENFORCED
-) with (
-    'connector' = 'oceanbase-directload',
-    'host' = '127.0.0.1',
-    'port' = '2882',
-    'schema-name' = 'test',
-    'table-name' = 't_sink',
-    'username' = 'root',
-    'tenant-name' = 'test',
-    'password' = 'password'
-    );
-```
-
-Insert records by Flink SQL.
-
-```sql
-INSERT INTO t_sink
-VALUES (1, 'Tom', 99),
-       (2, 'Jerry', 88),
-       (1, 'Tom', 89);
-```
-
-Once executed, the records should have been written to OceanBase.
-
-#### Multi-node write
-
-##### 1. Create a direct-load task in the code and obtain the execution id
-
-- Create a Java Maven project with the following POM file:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.oceanbase.directload</groupId>
-    <artifactId>multi-node-write-demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>obkv-table-client</artifactId>
-            <version>1.2.13</version>
-        </dependency>
-        <dependency>
-          <groupId>com.alibaba.fastjson2</groupId>
-          <artifactId>fastjson2</artifactId>
-          <version>2.0.53</version>
-        </dependency>
-    </dependencies>
-</project>
-```
-
-- Create a direct-load task in the code and obtain the execution id
-
-For code examples, see the complete sample code below.
-
-#### 2. After obtaining the execution id in the above steps, submit the Flink task
-
-Put the JAR files of dependencies to the 'lib' directory of Flink, and then create the destination table with Flink SQL through the sql client.
-
-Note, set `enable-multi-node-write` to true and set `execution-id` to the execution id obtained in the above steps.
-
-```sql
-SET 'execution.runtime-mode' = 'BATCH';
-SET 'parallelism.default' = '3';
-
-CREATE TABLE t_sink
-(
-    id       INT,
-    username VARCHAR,
-    score    INT,
-    PRIMARY KEY (id) NOT ENFORCED
-) with (
+) WITH (
     'connector' = 'oceanbase-directload',
     'host' = '127.0.0.1',
     'port' = '2882',
@@ -184,80 +135,22 @@ CREATE TABLE t_sink
     'username' = 'root',
     'tenant-name' = 'test',
     'password' = 'password',
-    'enable-multi-node-write' = 'true',
-    'execution-id' = '5cIeLwELBIWAxOAKAAAAwhY='
-    );
+    'parallel' = '8'  -- OceanBase server-side parallelism
+);
 ```
 
-Insert records by Flink SQL.
+Insert records using Flink SQL:
 
 ```sql
 INSERT INTO t_sink
 VALUES (1, 'Tom', 99),
        (2, 'Jerry', 88),
-       (1, 'Tom', 89);
-```
-
-#### 3、Wait for the execution of the Flink task submitted above to be completed, and finally perform the final submission action of the direct-load task in the code.
-
-For code examples, see the complete sample code below.
-
-#### Complete sample code
-
-```java
-public class MultiNode {
-    private static String host = "127.0.0.1";
-    private static int port = 2882;
-
-    private static String userName = "root";
-    private static String tenantName = "test";
-    private static String password = "password";
-    private static String dbName = "test";
-    private static String tableName = "t_sink";
-
-    public static void main(String[] args) throws ObDirectLoadException, IOException, InterruptedException {
-        // 1. Create a direct-load task and obtain the execution id.
-        ObDirectLoadConnection connection = ObDirectLoadManager.getConnectionBuilder()
-                        .setServerInfo(host, port)
-                        .setLoginInfo(tenantName, userName, password, dbName)
-                        .build();
-        ObDirectLoadStatement statement = connection.getStatementBuilder()
-                        .setTableName(tableName)
-                        .build();
-        statement.begin();
-        ObDirectLoadStatementExecutionId statementExecutionId =
-                statement.getExecutionId();
-        byte[] executionIdBytes = statementExecutionId.encode();
-        // Convert the execution id in byte[] form to string form so that it can be passed to the Flink-SQL job as a parameter.
-        String executionId = java.util.Base64.getEncoder().encodeToString(executionIdBytes);
-        System.out.println(executionId);
-
-        // 2. After obtaining the executionId, submit the Flink SQL job.
-
-        // 3. Enter the id of the Flink job submitted in the second step on the command line and wait for the Flink job to be completed.
-        Scanner scanner = new Scanner((System.in));
-        String flinkJobId = scanner.nextLine();
-
-        while (true) {
-            // Loop to check the running status of Flink jobs, see: https://nightlies.apache.org/flink/flink-docs-master/zh/docs/ops/rest_api/
-            JSONObject jsonObject = JSON.parseObject(new URL("http://localhost:8081/jobs/" + flinkJobId));
-            String status = jsonObject.getString("state");
-            if ("FINISHED".equals(status)) {
-                break;
-            }
-            Thread.sleep(3_000);
-        }
-
-        // 4. After waiting for the Flink job execution to FINISHED, perform the final submission action of the direct-load task.
-        statement.commit();
-
-        statement.close();
-        connection.close();
-    }
-}
+       (3, 'Alice', 95);
 ```
 
 Once executed, the records should have been written to OceanBase.
+
+**Note**: During the execution of the `INSERT` statement (while direct-load is in progress), the target table `t_sink` will be locked. Only SELECT queries are allowed; INSERT/UPDATE/DELETE operations are not permitted.
 
 ## Configuration
 
@@ -399,22 +292,6 @@ Once executed, the records should have been written to OceanBase.
                     <li><code>inc_replace</code>: special replace mode incremental direct-load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), direct-load.dup-action parameter will be ignored, observer-4.3.2 and above support.</li>
                 </ul>
                 </td>
-            </tr>
-            <tr>
-                <td>enable-multi-node-write</td>
-                <td>No</td>
-                <td>No</td>
-                <td>false</td>
-                <td>Boolean</td>
-                <td>Whether to enable direct-load that supports multi-node writing. Not enabled by default.</td>
-            </tr>
-            <tr>
-                <td>execution-id</td>
-                <td>No</td>
-                <td>No</td>
-                <td></td>
-                <td>String</td>
-                <td>The execution id of the direct-load task. This parameter is only valid when the <code>enable-multi-node-write</code> parameter is true.</td>
             </tr>
         </tbody>
     </table>

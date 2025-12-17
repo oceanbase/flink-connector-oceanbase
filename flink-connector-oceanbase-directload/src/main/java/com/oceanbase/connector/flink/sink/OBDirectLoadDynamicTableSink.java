@@ -20,14 +20,11 @@ import com.oceanbase.connector.flink.OBDirectLoadConnectorOptions;
 import com.oceanbase.connector.flink.OBDirectLoadDynamicTableSinkFactory;
 import com.oceanbase.connector.flink.directload.DirectLoadUtils;
 import com.oceanbase.connector.flink.directload.DirectLoader;
-import com.oceanbase.connector.flink.sink.batch.MultiNodeDSink;
-import com.oceanbase.connector.flink.sink.batch.MultiNodeWriter;
 import com.oceanbase.connector.flink.sink.v2.MultiNodeSink;
 import com.oceanbase.connector.flink.table.OceanBaseRowDataSerializationSchema;
 import com.oceanbase.connector.flink.table.TableId;
 import com.oceanbase.connector.flink.table.TableInfo;
 
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
@@ -57,7 +54,6 @@ public class OBDirectLoadDynamicTableSink implements DynamicTableSink {
     public ChangelogMode getChangelogMode(ChangelogMode requestedMode) {
         return ChangelogMode.newBuilder()
                 .addContainedKind(RowKind.INSERT)
-                .addContainedKind(RowKind.DELETE)
                 .addContainedKind(RowKind.UPDATE_AFTER)
                 .build();
     }
@@ -74,43 +70,17 @@ public class OBDirectLoadDynamicTableSink implements DynamicTableSink {
                         "The direct-load currently only supports running with bounded source.");
             }
         }
-        if (!connectorOptions.getEnableLegacyImplement()) {
-            return new DirectLoadStreamSinkProvider(
-                    (dataStream) -> {
-                        // Get direct-load's execution id
-                        DirectLoader directLoader =
-                                DirectLoadUtils.buildDirectLoaderFromConnOption(
-                                        connectorOptions, null);
-                        String executionId = directLoader.begin();
-                        directLoader.close();
+        return new DirectLoadStreamSinkProvider(
+                (dataStream) -> {
+                    // Get direct-load's execution id
+                    DirectLoader directLoader =
+                            DirectLoadUtils.buildDirectLoaderFromConnOption(connectorOptions, null);
+                    String executionId = directLoader.begin();
+                    directLoader.close();
 
-                        return dataStream.sinkTo(
-                                new MultiNodeSink(
-                                        executionId, connectorOptions, serializationSchema));
-                    });
-        } else {
-            return new DirectLoadStreamSinkProvider(
-                    (dataStream) -> {
-                        // Get direct-load's execution id
-                        DirectLoader directLoader =
-                                DirectLoadUtils.buildDirectLoaderFromConnOption(
-                                        connectorOptions, null);
-                        String executionId = directLoader.begin();
-                        directLoader.close();
-                        // Write data
-                        SingleOutputStreamOperator<Void> multiNodeWriter =
-                                dataStream.process(
-                                        new MultiNodeWriter(
-                                                executionId,
-                                                connectorOptions,
-                                                serializationSchema));
-                        // Commit
-                        return multiNodeWriter
-                                .sinkTo(new MultiNodeDSink(executionId, connectorOptions))
-                                .setParallelism(1)
-                                .setDescription("The direct-loader commiter");
-                    });
-        }
+                    return dataStream.sinkTo(
+                            new MultiNodeSink(executionId, connectorOptions, serializationSchema));
+                });
     }
 
     @Override

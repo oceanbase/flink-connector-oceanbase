@@ -20,7 +20,6 @@ import com.alipay.oceanbase.rpc.direct_load.ObDirectLoadConnection;
 import com.alipay.oceanbase.rpc.direct_load.ObDirectLoadManager;
 import com.alipay.oceanbase.rpc.direct_load.ObDirectLoadStatement;
 import com.alipay.oceanbase.rpc.direct_load.exception.ObDirectLoadException;
-import com.alipay.oceanbase.rpc.direct_load.execution.ObDirectLoadStatementExecutor;
 import com.alipay.oceanbase.rpc.protocol.payload.impl.ObLoadDupActionType;
 import org.apache.commons.lang3.StringUtils;
 
@@ -176,7 +175,7 @@ public class DirectLoaderBuilder implements Serializable {
                 .setQueryTimeout(timeout)
                 .setMaxErrorRowCount(maxErrorCount)
                 .setLoadMethod(directLoadMethod)
-                .setNodeRole(ObDirectLoadStatementExecutor.NodeRole.P2P);
+                .setIsP2PMode(true);
     }
 
     public String getHost() {
