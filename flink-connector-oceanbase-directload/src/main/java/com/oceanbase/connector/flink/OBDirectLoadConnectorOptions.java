@@ -80,6 +80,12 @@ public class OBDirectLoadConnectorOptions implements Serializable {
                     .defaultValue(8)
                     .withDescription("Parallelism of direct load.");
 
+    public static final ConfigOption<Integer> WRITE_CONNECTION_NUM =
+            ConfigOptions.key("write-connection-num")
+                    .intType()
+                    .defaultValue(1)
+                    .withDescription("Write connection num of direct-load.");
+
     public static final ConfigOption<Integer> BUFFER_SIZE =
             ConfigOptions.key("buffer-size")
                     .intType()
@@ -127,18 +133,12 @@ public class OBDirectLoadConnectorOptions implements Serializable {
                                     + "inc: normal incremental direct load, primary key conflict check will be performed, observer-4.3.2 and above support, dupAction REPLACE is not supported for the time being.\n"
                                     + "inc_replace: special replace mode incremental direct load, no primary key conflict check will be performed, directly overwrite the old data (equivalent to the effect of replace), dupAction parameter will be ignored, observer-4.3.2 and above support.");
 
-    public static final ConfigOption<Boolean> ENABLE_MULTI_NODE_WRITE =
-            ConfigOptions.key("enable-multi-node-write")
+    public static final ConfigOption<Boolean> BOUNDED_MODE_ENABLED =
+            ConfigOptions.key("enable-only-bounded-mode")
                     .booleanType()
                     .defaultValue(false)
-                    .withDescription("Enable multi node write.");
-
-    public static final ConfigOption<String> EXECUTION_ID =
-            ConfigOptions.key("execution-id")
-                    .stringType()
-                    .noDefaultValue()
                     .withDescription(
-                            "The direct-load execution id. This parameter takes effect only when the enable-multi-node-write parameter is true.");
+                            "Enforces the job to run strictly in bounded mode when enabled.");
 
     protected final ReadableConfig allConfig;
 
@@ -178,6 +178,10 @@ public class OBDirectLoadConnectorOptions implements Serializable {
         return allConfig.get(PARALLEL);
     }
 
+    public int getWriteConnNum() {
+        return allConfig.get(WRITE_CONNECTION_NUM);
+    }
+
     public int getBufferSize() {
         return allConfig.get(BUFFER_SIZE);
     }
@@ -206,11 +210,7 @@ public class OBDirectLoadConnectorOptions implements Serializable {
         return allConfig.get(LOAD_METHOD);
     }
 
-    public boolean getEnableMultiNodeWrite() {
-        return allConfig.get(ENABLE_MULTI_NODE_WRITE);
-    }
-
-    public String getExecutionId() {
-        return allConfig.get(EXECUTION_ID);
+    public boolean getBoundedModeEnabled() {
+        return allConfig.get(BOUNDED_MODE_ENABLED);
     }
 }

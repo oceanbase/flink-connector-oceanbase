@@ -43,7 +43,7 @@ public class DirectLoaderBuilder implements Serializable {
 
     private long maxErrorCount;
 
-    private ObLoadDupActionType duplicateKeyAction;
+    private ObLoadDupActionType duplicateKeyAction = ObLoadDupActionType.REPLACE;
 
     /** The overall timeout of the direct load task */
     private long timeout = 1000L * 1000 * 1000;
@@ -56,8 +56,6 @@ public class DirectLoaderBuilder implements Serializable {
     private String directLoadMethod = "full";
 
     private String executionId;
-
-    private boolean enableMultiNodeWrite = false;
 
     public DirectLoaderBuilder host(String host) {
         this.host = host;
@@ -131,33 +129,25 @@ public class DirectLoaderBuilder implements Serializable {
 
     public DirectLoaderBuilder executionId(String executionId) {
         this.executionId = executionId;
-        if (!enableMultiNodeWrite) {
-            this.executionId = null;
-        }
-        return this;
-    }
-
-    public DirectLoaderBuilder enableMultiNodeWrite(boolean enableMultiNodeWrite) {
-        this.enableMultiNodeWrite = enableMultiNodeWrite;
         return this;
     }
 
     public DirectLoader build() {
         try {
             ObDirectLoadConnection obDirectLoadConnection = buildConnection(parallel);
-            ObDirectLoadStatement obDirectLoadStatement = buildStatement(obDirectLoadConnection);
+            ObDirectLoadStatement.Builder statementBuilder = buildStatement(obDirectLoadConnection);
             if (StringUtils.isNotBlank(executionId)) {
                 return new DirectLoader(
                         this,
                         String.format("%s.%s", schema, table),
-                        obDirectLoadStatement,
+                        statementBuilder,
                         obDirectLoadConnection,
                         executionId);
             } else {
                 return new DirectLoader(
                         this,
                         String.format("%s.%s", schema, table),
-                        obDirectLoadStatement,
+                        statementBuilder,
                         obDirectLoadConnection);
             }
         } catch (ObDirectLoadException e) {
@@ -175,7 +165,7 @@ public class DirectLoaderBuilder implements Serializable {
                 .build();
     }
 
-    private ObDirectLoadStatement buildStatement(ObDirectLoadConnection connection)
+    private ObDirectLoadStatement.Builder buildStatement(ObDirectLoadConnection connection)
             throws ObDirectLoadException {
         return connection
                 .getStatementBuilder()
@@ -185,7 +175,7 @@ public class DirectLoaderBuilder implements Serializable {
                 .setQueryTimeout(timeout)
                 .setMaxErrorRowCount(maxErrorCount)
                 .setLoadMethod(directLoadMethod)
-                .build();
+                .setIsP2PMode(true);
     }
 
     public String getHost() {
@@ -234,9 +224,5 @@ public class DirectLoaderBuilder implements Serializable {
 
     public String getExecutionId() {
         return executionId;
-    }
-
-    public boolean getEnableMultiNodeWrite() {
-        return enableMultiNodeWrite;
     }
 }
