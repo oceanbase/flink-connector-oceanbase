@@ -381,6 +381,20 @@ under the License.
         <tag>HEAD</tag>
     </scm>
 
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>sonatype-snapshots</id>
+            <name>Sonatype Snapshot Repository</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </repository>
+    </repositories>
+
     <distributionManagement>
         <repository>
             <id>central</id>
