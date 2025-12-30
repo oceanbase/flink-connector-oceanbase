@@ -4,7 +4,7 @@ English | [简体中文](flink-connector-oceanbase-directload_cn.md)
 
 This Flink Connector is based on the direct-load feature of OceanBase, enabling high-performance bulk data loading from Flink to OceanBase.
 
-## ⚠️ Important Notes
+## Important Notes
 
 **This connector is specifically designed for batch processing scenarios with the following characteristics:**
 
