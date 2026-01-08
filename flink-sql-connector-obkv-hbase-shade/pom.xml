@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2024 OceanBase.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.oceanbase</groupId>
+        <artifactId>flink-connector-oceanbase-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>flink-sql-connector-obkv-hbase-shade</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>obkv-hbase-client</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-hbase-2.2 -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-hbase-2.2</artifactId>
+            <version>4.0.0-1.19</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>empty-javadoc-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${basedir}/src/main/java</classesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
+                <executions>
+                    <execution>
+                        <id>shade-flink</id>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <shadeTestJar>false</shadeTestJar>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <artifactSet>
+                                <includes>
+                                    <!-- Include OceanBase related clients -->
+                                    <include>com.oceanbase:*</include>
+                                    <!-- Include Alipay related dependencies -->
+                                    <include>com.alipay.*:*</include>
+                                    <!-- Include Alibaba dependencies -->
+                                    <include>com.alibaba:*</include>
+                                    <!-- Include Google related libraries -->
+                                    <include>com.google.*:*</include>
+                                    <!-- Include Jackson libraries -->
+                                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                    <include>com.fasterxml.jackson.core:jackson-annotations</include>
+                                    <include>com.fasterxml.jackson.dataformat:*</include>
+                                    <!-- Include Netty networking library -->
+                                    <include>io.netty:*</include>
+                                    <!-- Include Hadoop related -->
+                                    <include>org.apache.hadoop:*</include>
+                                    <!-- Include HBase client -->
+                                    <include>org.apache.hbase:*</include>
+                                    <include>org.apache.hbase.thirdparty:*</include>
+                                    <!-- Include Flink HBase connectors -->
+                                    <include>org.apache.flink:flink-connector-hbase-2.2</include>
+                                    <include>org.apache.flink:flink-connector-hbase-base</include>
+                                    <!-- Include Apache Commons libraries (Hadoop dependencies) -->
+                                    <include>commons-logging:commons-logging</include>
+                                    <include>commons-lang:commons-lang</include>
+                                    <include>org.apache.commons:commons-lang3</include>
+                                    <include>commons-configuration:commons-configuration</include>
+                                    <include>commons-cli:commons-cli</include>
+                                    <include>commons-collections:commons-collections</include>
+                                    <include>commons-io:commons-io</include>
+                                    <include>commons-codec:commons-codec</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <!-- Shade Log4j to avoid conflicts -->
+                                <relocation>
+                                    <pattern>org.apache.log4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.log4j</shadedPattern>
+                                </relocation>
+                                <!-- Shade Log4j2 to avoid conflicts with Flink's Log4j2 for obkv-table-client -->
+                                <relocation>
+                                    <pattern>org.apache.logging.log4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.logging.log4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.logging.slf4j</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.logging.slf4j</shadedPattern>
+                                </relocation>
+                                <!-- Shade Apache Commons libraries to match shaded Hadoop -->
+                                <relocation>
+                                    <pattern>org.apache.commons.logging</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.logging</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.lang</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.lang</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.lang3</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.lang3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.configuration</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.configuration</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.cli</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.cli</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.collections</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.collections</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.io</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.io</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.codec</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.commons.codec</shadedPattern>
+                                </relocation>
+                                <!-- Shade Jackson to avoid version conflicts -->
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>${shaded.prefix}.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
+                                <!-- Shade Guava to avoid version conflicts -->
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>${shaded.prefix}.com.google</shadedPattern>
+                                </relocation>
+                                <!-- Shade Hadoop classes -->
+                                <relocation>
+                                    <pattern>org.apache.hadoop</pattern>
+                                    <shadedPattern>${shaded.prefix}.org.apache.hadoop</shadedPattern>
+                                </relocation>
+                                <!-- Shade Netty to avoid conflicts -->
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>${shaded.prefix}.io.netty</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/NOTICE.txt</exclude>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/LICENSE.txt</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <!-- Process META-INF/services files -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
