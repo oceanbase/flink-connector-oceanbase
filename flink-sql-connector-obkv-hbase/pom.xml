@@ -22,6 +22,7 @@ under the License.
     </parent>
 
     <artifactId>flink-sql-connector-obkv-hbase</artifactId>
+    <name>Flink SQL Connector OBKV HBase</name>
 
     <dependencies>
         <dependency>

@@ -23,6 +23,7 @@ under the License.
 
     <artifactId>flink-connector-obkv-hbase2</artifactId>
     <packaging>jar</packaging>
+    <name>Flink Connector OBKV HBase2</name>
 
     <dependencies>
 

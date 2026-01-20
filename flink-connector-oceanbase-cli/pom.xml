@@ -24,6 +24,7 @@ under the License.
 
     <artifactId>flink-connector-oceanbase-cli</artifactId>
     <packaging>jar</packaging>
+    <name>Flink Connector OceanBase CLI</name>
 
     <dependencies>
         <dependency>

@@ -27,6 +27,7 @@ under the License.
     <artifactId>flink-connector-oceanbase-parent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
+    <name>Flink Connector OceanBase Parent</name>
 
     <modules>
         <module>flink-connector-oceanbase-base</module>
@@ -44,7 +45,7 @@ under the License.
     </modules>
 
     <properties>
-        <revision>1.6-SNAPSHOT</revision>
+        <revision>1.6</revision>
         <flink.version>1.18.0</flink.version>
         <flink.major.version>1.18</flink.major.version>
         <scala.binary.version>2.12</scala.binary.version>
@@ -345,6 +346,38 @@ under the License.
                         <phase>clean</phase>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- GPG Plugin for signing artifacts -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Central Publishing Plugin for Maven Central -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.9.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>validated</waitUntil>
+                </configuration>
             </plugin>
         </plugins>
     </build>
