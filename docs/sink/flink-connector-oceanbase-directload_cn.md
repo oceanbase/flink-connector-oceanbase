@@ -2,7 +2,16 @@
 
 [English](flink-connector-oceanbase-directload.md) | 简体中文
 
-本项目是一个基于 OceanBase 旁路导入功能的 Flink Connector，可以在 Flink 中通过旁路导入的方式将数据写入到 OceanBase。
+本项目是一个基于 OceanBase 旁路导入功能的 Flink Connector，可以在 Flink 中通过旁路导入的方式将数据高效写入到 OceanBase。
+
+## 重要说明
+
+**本连接器专为批处理场景设计，具有以下特点：**
+
+- ✅ **仅支持有界流（Bounded Stream）**：数据源必须是有界的，不支持无界流。推荐使用 Flink Batch 模式以获得更好的性能
+- ✅ **高吞吐量写入**：适合大批量数据导入场景，支持多节点并行写入
+- ⚠️ **导入期间锁表**：旁路导入执行期间会对目标表加锁，此时该表仅支持查询（SELECT）操作，无法进行写入（INSERT/UPDATE/DELETE）操作
+- ⚠️ **不适合实时写入**：如果您需要实时/流式写入无界流场景，请使用 [flink-connector-oceanbase](flink-connector-oceanbase_cn.md) 连接器
 
 关于 OceanBase 的旁路导入功能，见 [旁路导入文档](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001428636)。
 
@@ -54,19 +63,34 @@ mvn clean package -DskipTests
 - 正式版本：https://repo1.maven.org/maven2/com/oceanbase/flink-sql-connector-oceanbase-directload
 - 快照版本：https://s01.oss.sonatype.org/content/repositories/snapshots/com/oceanbase/flink-sql-connector-oceanbase-directload
 
-### 使用说明：
+### 使用前提条件
 
-- 目前旁路导入 Flink Connector 仅支持在Flink Batch执行模式下运行, 参考下列方式启用Flink Batch执行模式。
-  - Table-API/Flink-SQL: `SET 'execution.runtime-mode' = 'BATCH';`
-  - DataStream API:
+**数据源必须是有界流（Bounded Stream）**，旁路导入 Connector 不支持无界流。
 
-    ```
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH);
-    ```
-- 目前旁路导入 Flink Connector支持单节点写入和多节点写入两种方式：
-  - 单节点写入: 此方式下Flink Task有且仅有一个并行度进行写入。适用于中小规模的数据量导入。此方式简单易用，推荐使用。
-  - 多节点写入：此方式下可以根据要导入数据量的大小自由调节Flink Task的并行度，以提高写入吞吐量。
+**推荐使用 Flink Batch 模式**以获得更好的性能：
+
+- **Table API / Flink SQL**：
+
+  ```sql
+  SET 'execution.runtime-mode' = 'BATCH';
+  ```
+- **DataStream API**：
+
+  ```java
+  StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+  env.setRuntimeMode(RuntimeExecutionMode.BATCH);
+  ```
+
+> **注意**：虽然也可以在 Streaming 模式下使用有界数据源，但 Batch 模式通常能提供更好的性能和资源利用率。
+
+### 性能调优
+
+- **并行度调整**：支持多节点并行写入，可以通过调整 Flink Task 的并行度来提高写入吞吐量
+
+  ```sql
+  SET 'parallelism.default' = '8';  -- 根据数据量调整并行度
+  ```
+- **服务端并行度**：通过 `parallel` 参数配置 OceanBase 服务端处理导入任务的 CPU 资源
 
 ### 示例
 
@@ -85,14 +109,16 @@ CREATE TABLE `t_sink`
 );
 ```
 
-#### 单节点写入
-
-##### Flink SQL 示例
+#### Flink SQL 示例
 
 将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
 
 ```sql
+-- 推荐设置为 BATCH 模式以获得更好性能
 SET 'execution.runtime-mode' = 'BATCH';
+
+-- 可选：根据数据量调整并行度以提高吞吐量
+SET 'parallelism.default' = '8';
 
 CREATE TABLE t_sink
 (
@@ -100,81 +126,7 @@ CREATE TABLE t_sink
     username VARCHAR,
     score    INT,
     PRIMARY KEY (id) NOT ENFORCED
-) with (
-    'connector' = 'oceanbase-directload',
-    'host' = '127.0.0.1',
-    'port' = '2882',
-    'schema-name' = 'test',
-    'table-name' = 't_sink',
-    'username' = 'root',
-    'tenant-name' = 'test',
-    'password' = 'password'
-    );
-```
-
-插入测试数据
-
-```sql
-INSERT INTO t_sink
-VALUES (1, 'Tom', 99),
-       (2, 'Jerry', 88),
-       (1, 'Tom', 89);
-```
-
-执行完成后，即可在 OceanBase 中查询验证。
-
-#### 多节点写入
-
-##### 1、代码中创建旁路导入任务，并获取execution id
-
-- 创建一个Java Maven项目，其中POM文件如下：
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.oceanbase.directload</groupId>
-    <artifactId>multi-node-write-demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>obkv-table-client</artifactId>
-            <version>1.2.13</version>
-        </dependency>
-        <dependency>
-          <groupId>com.alibaba.fastjson2</groupId>
-          <artifactId>fastjson2</artifactId>
-          <version>2.0.53</version>
-        </dependency>
-    </dependencies>
-</project>
-```
-
-- 代码中创建旁路导入任务，并获取execution id
-
-代码示例见下面的完整示例代码。
-
-#### 2、在上述步骤中获取execution id后，提交Flink任务
-
-将需要用到的依赖的 JAR 文件放到 Flink 的 lib 目录下，之后通过 SQL Client 在 Flink 中创建目的表。
-注意，将`enable-multi-node-write`设为true，同时将`execution-id`设置为上述步骤获取到execution id。
-
-```sql
-SET 'execution.runtime-mode' = 'BATCH';
-SET 'parallelism.default' = '3';
-
-CREATE TABLE t_sink
-(
-    id       INT,
-    username VARCHAR,
-    score    INT,
-    PRIMARY KEY (id) NOT ENFORCED
-) with (
+) WITH (
     'connector' = 'oceanbase-directload',
     'host' = '127.0.0.1',
     'port' = '2882',
@@ -183,80 +135,22 @@ CREATE TABLE t_sink
     'username' = 'root',
     'tenant-name' = 'test',
     'password' = 'password',
-    'enable-multi-node-write' = 'true',
-    'execution-id' = '5cIeLwELBIWAxOAKAAAAwhY='
-    );
+    'parallel' = '8'  -- OceanBase 服务端并行度
+);
 ```
 
-插入测试数据
+插入测试数据：
 
 ```sql
 INSERT INTO t_sink
 VALUES (1, 'Tom', 99),
        (2, 'Jerry', 88),
-       (1, 'Tom', 89);
-```
-
-#### 3、等待上述提交的Flink任务执行完成，最后在代码中进行旁路导入任务最后的提交动作
-
-代码示例见下面的完整示例代码。
-
-#### 完整的示例代码
-
-```java
-public class MultiNode {
-    private static String host = "127.0.0.1";
-    private static int port = 2882;
-
-    private static String userName = "root";
-    private static String tenantName = "test";
-    private static String password = "password";
-    private static String dbName = "test";
-    private static String tableName = "t_sink";
-
-    public static void main(String[] args) throws ObDirectLoadException, IOException, InterruptedException {
-        // 1、构建旁路导入任务，并获取execution id。
-        ObDirectLoadConnection connection = ObDirectLoadManager.getConnectionBuilder()
-                        .setServerInfo(host, port)
-                        .setLoginInfo(tenantName, userName, password, dbName)
-                        .build();
-        ObDirectLoadStatement statement = connection.getStatementBuilder()
-                        .setTableName(tableName)
-                        .build();
-        statement.begin();
-        ObDirectLoadStatementExecutionId statementExecutionId =
-                statement.getExecutionId();
-        byte[] executionIdBytes = statementExecutionId.encode();
-        // 将byte[]形式的execution id转换为字符串形式，方便作为参数传递给Flink-SQL作业。
-        String executionId = java.util.Base64.getEncoder().encodeToString(executionIdBytes);
-        System.out.println(executionId);
-
-        // 2、获取到executionId后，提交Flink SQL作业。
-
-        // 3、命令行输入第二歩提交的Flink作业的id，等待Flink作业完成。
-        Scanner scanner = new Scanner((System.in));
-        String flinkJobId = scanner.nextLine();
-
-        while (true) {
-            // 循环检测Flink作业的运行状态，见：https://nightlies.apache.org/flink/flink-docs-master/zh/docs/ops/rest_api/
-            JSONObject jsonObject = JSON.parseObject(new URL("http://localhost:8081/jobs/" + flinkJobId));
-            String status = jsonObject.getString("state");
-            if ("FINISHED".equals(status)) {
-                break;
-            }
-            Thread.sleep(3_000);
-        }
-
-        // 4、等待Flink作业执行完成后，进行旁路导入任务的最后提交动作。
-        statement.commit();
-
-        statement.close();
-        connection.close();
-    }
-}
+       (3, 'Alice', 95);
 ```
 
 执行完成后，即可在 OceanBase 中查询验证。
+
+**注意**：在 `INSERT` 语句执行期间（旁路导入进行中），目标表 `t_sink` 会被锁定，此时只能对该表执行查询操作，无法执行其他写入操作。
 
 ## 配置项
 
@@ -398,22 +292,6 @@ public class MultiNode {
                     <li><code>inc_replace</code>: 特殊replace模式的增量旁路导入，不会进行主键冲突检查，直接覆盖旧数据（相当于replace的效果），direct-load.dup-action参数会被忽略，observer-4.3.2及以上支持。</li>
                 </ul>
                 </td>
-            </tr>
-            <tr>
-                <td>enable-multi-node-write</td>
-                <td>否</td>
-                <td>否</td>
-                <td>false</td>
-                <td>Boolean</td>
-                <td>是否启用支持多节点写入的旁路导入。默认不开启。</td>
-            </tr>
-            <tr>
-                <td>execution-id</td>
-                <td>否</td>
-                <td>否</td>
-                <td></td>
-                <td>String</td>
-                <td>旁路导入任务的 execution id。仅当 <code>enable-multi-node-write</code>参数为true时生效。</td>
             </tr>
         </tbody>
     </table>

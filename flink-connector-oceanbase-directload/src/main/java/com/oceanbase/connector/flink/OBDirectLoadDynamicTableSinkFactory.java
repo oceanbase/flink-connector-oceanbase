@@ -19,7 +19,6 @@ package com.oceanbase.connector.flink;
 import com.oceanbase.connector.flink.sink.OBDirectLoadDynamicTableSink;
 import com.oceanbase.connector.flink.utils.OptionUtils;
 
-import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ExecutionOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
@@ -54,14 +53,10 @@ public class OBDirectLoadDynamicTableSinkFactory implements DynamicTableSinkFact
                         resolvedSchema.getPrimaryKey().orElse(null));
         Map<String, String> options = context.getCatalogTable().getOptions();
         OptionUtils.printOptions(IDENTIFIER, options);
-        RuntimeExecutionMode runtimeExecutionMode =
-                context.getConfiguration().get(ExecutionOptions.RUNTIME_MODE);
+        context.getConfiguration().get(ExecutionOptions.RUNTIME_MODE);
         int numberOfTaskSlots = context.getConfiguration().get(TaskManagerOptions.NUM_TASK_SLOTS);
         return new OBDirectLoadDynamicTableSink(
-                physicalSchema,
-                new OBDirectLoadConnectorOptions(options),
-                runtimeExecutionMode,
-                numberOfTaskSlots);
+                physicalSchema, new OBDirectLoadConnectorOptions(options), numberOfTaskSlots);
     }
 
     @Override
@@ -85,14 +80,12 @@ public class OBDirectLoadDynamicTableSinkFactory implements DynamicTableSinkFact
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(OBDirectLoadConnectorOptions.EXECUTION_ID);
         options.add(OBDirectLoadConnectorOptions.PARALLEL);
         options.add(OBDirectLoadConnectorOptions.MAX_ERROR_ROWS);
         options.add(OBDirectLoadConnectorOptions.DUP_ACTION);
         options.add(OBDirectLoadConnectorOptions.TIMEOUT);
         options.add(OBDirectLoadConnectorOptions.HEARTBEAT_TIMEOUT);
         options.add(OBDirectLoadConnectorOptions.LOAD_METHOD);
-        options.add(OBDirectLoadConnectorOptions.ENABLE_MULTI_NODE_WRITE);
         options.add(OBDirectLoadConnectorOptions.BUFFER_SIZE);
         return options;
     }
