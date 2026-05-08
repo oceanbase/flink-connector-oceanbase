@@ -77,6 +77,28 @@ public interface OceanBaseDialect extends Serializable {
             @Nullable SerializableFunction<String, String> placeholderFunc);
 
     /**
+     * Gets the upsert statement for multiple rows
+     *
+     * @param schemaName schema name
+     * @param tableName table name
+     * @param fieldNames field names list
+     * @param uniqueKeyFields unique key field names list
+     * @param rowCount number of rows to upsert in a single statement
+     * @param placeholderFunc function used to get placeholder for the fields
+     * @return the statement string
+     */
+    default String getUpsertStatement(
+            @Nonnull String schemaName,
+            @Nonnull String tableName,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<String> uniqueKeyFields,
+            int rowCount,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
+        return getUpsertStatement(
+                schemaName, tableName, fieldNames, uniqueKeyFields, placeholderFunc);
+    }
+
+    /**
      * Gets the insert statement
      *
      * @param schemaName schema name

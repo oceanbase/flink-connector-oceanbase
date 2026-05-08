@@ -109,7 +109,6 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
     private Properties initializeDefaultJdbcProperties(String jdbcUrl) {
         Properties defaultJdbcProperties = new Properties();
         defaultJdbcProperties.setProperty("useSSL", "false");
-        defaultJdbcProperties.setProperty("rewriteBatchedStatements", "true");
         defaultJdbcProperties.setProperty("initialTimeout", "2");
         defaultJdbcProperties.setProperty("autoReconnect", "true");
         defaultJdbcProperties.setProperty("maxReconnects", "3");
@@ -120,6 +119,11 @@ public class OceanBaseConnectionProvider implements ConnectionProvider {
         defaultJdbcProperties.setProperty("zeroDateTimeBehavior", "convertToNull");
         defaultJdbcProperties.setProperty("characterEncoding", "UTF-8");
         defaultJdbcProperties.setProperty("characterSetResults", "UTF-8");
+
+        if (dialect instanceof OceanBaseMySQLDialect) {
+            defaultJdbcProperties.setProperty("allowMultiQueries", "true");
+            defaultJdbcProperties.setProperty("rewriteBatchedStatements", "true");
+        }
 
         // Avoid overwriting user's custom jdbc properties.
         List<String> jdbcUrlProperties =

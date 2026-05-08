@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class OceanBaseOracleDialect implements OceanBaseDialect {
 
@@ -53,10 +54,36 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
             @Nonnull List<String> fieldNames,
             @Nonnull List<String> uniqueKeyFields,
             @Nullable SerializableFunction<String, String> placeholderFunc) {
-        String sourceFields =
+        return getUpsertStatement(
+                schemaName, tableName, fieldNames, uniqueKeyFields, 1, placeholderFunc);
+    }
+
+    @Override
+    public String getUpsertStatement(
+            @Nonnull String schemaName,
+            @Nonnull String tableName,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<String> uniqueKeyFields,
+            int rowCount,
+            @Nullable SerializableFunction<String, String> placeholderFunc) {
+        String selectFields =
                 fieldNames.stream()
                         .map(f -> getPlaceholder(f, placeholderFunc) + " AS " + quoteIdentifier(f))
                         .collect(Collectors.joining(", "));
+
+        String usingClause;
+        if (rowCount == 1) {
+            usingClause = "SELECT " + selectFields + " FROM DUAL";
+        } else {
+            usingClause =
+                    "SELECT "
+                            + selectFields
+                            + " FROM DUAL"
+                            + IntStream.range(0, rowCount - 1)
+                                    .mapToObj(
+                                            i -> " UNION ALL SELECT " + selectFields + " FROM DUAL")
+                                    .collect(Collectors.joining());
+        }
 
         String onClause =
                 uniqueKeyFields.stream()
@@ -80,9 +107,9 @@ public class OceanBaseOracleDialect implements OceanBaseDialect {
         return "MERGE INTO "
                 + getFullTableName(schemaName, tableName)
                 + " t "
-                + " USING (SELECT "
-                + sourceFields
-                + " FROM DUAL) s "
+                + " USING ("
+                + usingClause
+                + ") s "
                 + " ON ("
                 + onClause
                 + ") "

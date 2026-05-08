@@ -23,6 +23,7 @@ import com.oceanbase.connector.flink.connection.OceanBaseUserInfo;
 import com.oceanbase.connector.flink.connection.OceanBaseVersion;
 import com.oceanbase.connector.flink.dialect.OceanBaseDialect;
 import com.oceanbase.connector.flink.dialect.OceanBaseMySQLDialect;
+import com.oceanbase.connector.flink.dialect.OceanBaseOracleDialect;
 import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.SchemaChangeRecord;
 import com.oceanbase.connector.flink.table.TableId;
@@ -32,6 +33,8 @@ import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
+
+import org.apache.flink.util.function.SerializableFunction;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -118,6 +121,14 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                                 tableInfo.getFieldNames(),
                                 tableInfo.getPlaceholderFunc()),
                         tableInfo.getFieldNames(),
+                        upsertBatch);
+            } else if (dialect instanceof OceanBaseOracleDialect) {
+                flushMultiRowUpsert(
+                        tableId.getSchemaName(),
+                        tableId.getTableName(),
+                        tableInfo.getFieldNames(),
+                        tableInfo.getKey(),
+                        tableInfo.getPlaceholderFunc(),
                         upsertBatch);
             } else {
                 flush(
@@ -207,6 +218,50 @@ public class OceanBaseRecordFlusher implements RecordFlusher {
                                     + groupRecords,
                             e);
                 }
+            }
+        }
+    }
+
+    private void flushMultiRowUpsert(
+            String schemaName,
+            String tableName,
+            List<String> fieldNames,
+            List<String> uniqueKeyFields,
+            SerializableFunction<String, String> placeholderFunc,
+            List<DataChangeRecord> records)
+            throws Exception {
+        Map<Long, List<DataChangeRecord>> group = groupRecords(records);
+        if (group == null) {
+            return;
+        }
+        for (List<DataChangeRecord> groupRecords : group.values()) {
+            String sql =
+                    dialect.getUpsertStatement(
+                            schemaName,
+                            tableName,
+                            fieldNames,
+                            uniqueKeyFields,
+                            groupRecords.size(),
+                            placeholderFunc);
+            try (Connection connection = connectionProvider.getConnection();
+                    PreparedStatement statement = connection.prepareStatement(sql)) {
+                int fieldCount = fieldNames.size();
+                for (int rowIdx = 0; rowIdx < groupRecords.size(); rowIdx++) {
+                    DataChangeRecord record = groupRecords.get(rowIdx);
+                    for (int i = 0; i < fieldCount; i++) {
+                        statement.setObject(
+                                rowIdx * fieldCount + i + 1,
+                                record.getFieldValue(fieldNames.get(i)));
+                    }
+                }
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(
+                        "Failed to execute multi-row upsert with sql: "
+                                + sql
+                                + ", records: "
+                                + groupRecords,
+                        e);
             }
         }
     }

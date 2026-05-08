@@ -37,9 +37,11 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.RowKind;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +50,27 @@ import static org.junit.Assert.assertTrue;
 
 @Disabled
 public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
+
+    private static final String TABLE_MULTI_ROW_MERGE = "multi_row_merge_test";
+    private static final String TABLE_A = "table_a";
+    private static final String TABLE_B = "TABLE_b";
+    private static final String TABLE_C = "TABLE_C";
+
+    @AfterEach
+    public void cleanup() {
+        dropTableIfExists(TABLE_MULTI_ROW_MERGE);
+        dropTableIfExists(TABLE_A);
+        dropTableIfExists(TABLE_B);
+        dropTableIfExists(TABLE_C);
+    }
+
+    private void dropTableIfExists(String tableName) {
+        try {
+            dropTables(tableName);
+        } catch (SQLException e) {
+            // ignore - table may not exist
+        }
+    }
 
     @Test
     public void testSink() throws Exception {
@@ -111,8 +134,7 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        OceanBaseConnectorOptions connectorOptions =
-                new OceanBaseConnectorOptions(getBaseOptions());
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
         OceanBaseSink<OceanBaseTestData> sink =
                 new OceanBaseSink<>(
                         connectorOptions,
@@ -123,9 +145,9 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
 
         OceanBaseDialect dialect = new OceanBaseOracleDialect(connectorOptions);
         String schemaName = getSchemaName();
-        String tableA = "table_a";
-        String tableB = "TABLE_b";
-        String tableC = "TABLE_C";
+        String tableA = TABLE_A;
+        String tableB = TABLE_B;
+        String tableC = TABLE_C;
 
         String tableFullNameA = dialect.getFullTableName(schemaName, tableA);
         String tableFullNameB = dialect.getFullTableName(schemaName, tableB);
@@ -200,7 +222,7 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                                         RowKind.INSERT, 4, StringData.fromString("4"))));
 
         env.fromCollection(dataSet).sinkTo(sink);
-        env.execute().wait();
+        env.execute();
 
         assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,1"));
         assertEqualsInAnyOrder(queryTable(tableFullNameB), Arrays.asList("2,2", "3,3"));
@@ -228,7 +250,7 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                                         RowKind.DELETE, 3, StringData.fromString("3"))));
 
         env.fromCollection(dataSet).sinkTo(sink);
-        env.execute().wait();
+        env.execute();
 
         assertEqualsInAnyOrder(queryTable(tableFullNameA), Collections.singletonList("1,2"));
         assertEqualsInAnyOrder(queryTable(tableFullNameB), Collections.singletonList("2,3"));
@@ -247,30 +269,163 @@ public class OceanBaseOracleConnectorITCase extends OceanBaseOracleTestBase {
                                 SchemaChangeRecord.Type.TRUNCATE,
                                 String.format("TRUNCATE TABLE %s", tableFullNameB)));
         env.fromCollection(dataSet).sinkTo(sink);
-        env.execute().wait();
+        env.execute();
 
         assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameA)));
         assertTrue(CollectionUtils.isEmpty(queryTable(tableFullNameB)));
+    }
 
-        // drop tables
-        dataSet =
+    @Test
+    public void testMultiRowMergeUpsert() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        OceanBaseConnectorOptions connectorOptions = new OceanBaseConnectorOptions(getOptions());
+        OceanBaseSink<OceanBaseTestData> sink =
+                new OceanBaseSink<>(
+                        connectorOptions,
+                        null,
+                        new OceanBaseTestDataSerializationSchema(),
+                        DataChangeRecord.KeyExtractor.simple(),
+                        new OceanBaseRecordFlusher(connectorOptions));
+
+        OceanBaseDialect dialect = new OceanBaseOracleDialect(connectorOptions);
+        String schemaName = getSchemaName();
+        String tableName = TABLE_MULTI_ROW_MERGE;
+        String tableFullName = dialect.getFullTableName(schemaName, tableName);
+
+        ResolvedSchema tableSchema =
+                new ResolvedSchema(
+                        Arrays.asList(
+                                Column.physical("id", DataTypes.INT().notNull()),
+                                Column.physical("name", DataTypes.VARCHAR(50).notNull()),
+                                Column.physical("val", DataTypes.INT().notNull())),
+                        Collections.emptyList(),
+                        UniqueConstraint.primaryKey("pk", Collections.singletonList("id")));
+
+        // Create table and insert 5 rows
+        List<OceanBaseTestData> insertDataSet =
                 Arrays.asList(
                         new OceanBaseTestData(
                                 schemaName,
-                                tableA,
-                                SchemaChangeRecord.Type.DROP,
-                                String.format("DROP TABLE %s ", tableFullNameA)),
+                                tableName,
+                                SchemaChangeRecord.Type.CREATE,
+                                String.format(
+                                        "CREATE TABLE %s (id NUMBER PRIMARY KEY, name VARCHAR2(50), val NUMBER)",
+                                        tableFullName)),
                         new OceanBaseTestData(
                                 schemaName,
-                                tableB,
-                                SchemaChangeRecord.Type.CREATE,
-                                String.format("DROP TABLE %s ", tableFullNameB)),
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 1, StringData.fromString("alice"), 10)),
                         new OceanBaseTestData(
                                 schemaName,
-                                tableC,
-                                SchemaChangeRecord.Type.CREATE,
-                                String.format("DROP TABLE %s ", tableFullNameC)));
-        env.fromCollection(dataSet).sinkTo(sink);
-        env.execute().wait();
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 2, StringData.fromString("bob"), 20)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 3, StringData.fromString("carol"), 30)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 4, StringData.fromString("dave"), 40)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 5, StringData.fromString("eve"), 50)));
+
+        env.fromCollection(insertDataSet).sinkTo(sink);
+        env.execute();
+
+        waitingAndAssertTableCount(tableName, 5);
+        List<String> actual = queryTable(tableName);
+        assertEqualsInAnyOrder(
+                Arrays.asList("1,alice,10", "2,bob,20", "3,carol,30", "4,dave,40", "5,eve,50"),
+                actual);
+
+        // Upsert: update id=1,2 and insert id=6,7 (multi-row MERGE)
+        List<OceanBaseTestData> upsertDataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.UPDATE_AFTER,
+                                        1,
+                                        StringData.fromString("alice_v2"),
+                                        111)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.UPDATE_AFTER,
+                                        2,
+                                        StringData.fromString("bob_v2"),
+                                        222)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 6, StringData.fromString("frank"), 60)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.INSERT, 7, StringData.fromString("grace"), 70)));
+
+        env.fromCollection(upsertDataSet).sinkTo(sink);
+        env.execute();
+
+        waitingAndAssertTableCount(tableName, 7);
+        actual = queryTable(tableName);
+        assertEqualsInAnyOrder(
+                Arrays.asList(
+                        "1,alice_v2,111",
+                        "2,bob_v2,222",
+                        "3,carol,30",
+                        "4,dave,40",
+                        "5,eve,50",
+                        "6,frank,60",
+                        "7,grace,70"),
+                actual);
+
+        // Delete rows
+        List<OceanBaseTestData> deleteDataSet =
+                Arrays.asList(
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.DELETE, 1, StringData.fromString("alice_v2"), 111)),
+                        new OceanBaseTestData(
+                                schemaName,
+                                tableName,
+                                tableSchema,
+                                GenericRowData.ofKind(
+                                        RowKind.DELETE, 7, StringData.fromString("grace"), 70)));
+
+        env.fromCollection(deleteDataSet).sinkTo(sink);
+        env.execute();
+
+        waitingAndAssertTableCount(tableName, 5);
+        actual = queryTable(tableName);
+        assertEqualsInAnyOrder(
+                Arrays.asList("2,bob_v2,222", "3,carol,30", "4,dave,40", "5,eve,50", "6,frank,60"),
+                actual);
     }
 }
