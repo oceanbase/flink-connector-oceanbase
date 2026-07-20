@@ -236,6 +236,11 @@ public class OceanBaseSourceReader implements SourceReader<RowData, OceanBaseSpl
         switch (typeRoot) {
             case VARCHAR:
             case CHAR:
+                // Short-circuit when the value is already a StringData to avoid double-wrapping
+                // (e.g. JSON columns surfaced via STRING, or drivers that pre-wrap strings).
+                if (value instanceof StringData) {
+                    return value;
+                }
                 return StringData.fromString(value.toString());
             case BOOLEAN:
                 if (value instanceof Number) {
@@ -287,6 +292,7 @@ public class OceanBaseSourceReader implements SourceReader<RowData, OceanBaseSpl
                 return value;
             case TIMESTAMP_WITHOUT_TIME_ZONE:
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 if (value instanceof Timestamp) {
                     return TimestampData.fromTimestamp((Timestamp) value);
                 }

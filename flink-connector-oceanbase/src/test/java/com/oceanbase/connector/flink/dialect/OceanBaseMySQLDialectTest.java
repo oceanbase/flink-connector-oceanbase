@@ -53,4 +53,59 @@ class OceanBaseMySQLDialectTest {
         Assertions.assertEquals(
                 "INSERT IGNORE INTO `sche1`.`tb1`(`id`) VALUES (?)", upsertStatement);
     }
+
+    @Test
+    void quoteIdentifier() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals("`name`", dialect.quoteIdentifier("name"));
+        Assertions.assertEquals("`sche1`.`tb1`", dialect.getFullTableName("sche1", "tb1"));
+    }
+
+    @Test
+    void quoteIdentifierWithBacktick() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals("`col``name`", dialect.quoteIdentifier("col`name"));
+        Assertions.assertEquals("```col```", dialect.quoteIdentifier("`col`"));
+    }
+
+    @Test
+    void getSysDatabase() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals("oceanbase", dialect.getSysDatabase());
+    }
+
+    @Test
+    void getQueryTenantNameStatement() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals("SHOW TENANT", dialect.getQueryTenantNameStatement());
+    }
+
+    @Test
+    void getListSchemaStatement() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals(
+                "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`",
+                dialect.getListSchemaStatement());
+    }
+
+    @Test
+    void getListTableStatement() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals(
+                "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = 'test_db'",
+                dialect.getListTableStatement("test_db"));
+    }
+
+    @Test
+    void getDeleteStatement() {
+        OceanBaseMySQLDialect dialect = new OceanBaseMySQLDialect();
+        Assertions.assertEquals(
+                "DELETE FROM `sche1`.`tb1` WHERE `id` = ?",
+                dialect.getDeleteStatement(
+                        "sche1", "tb1", Stream.of("id").collect(Collectors.toList())));
+        Assertions.assertEquals(
+                "DELETE FROM `sche1`.`tb1` WHERE `id` = ? AND `name` = ?",
+                dialect.getDeleteStatement(
+                        "sche1", "tb1", Stream.of("id", "name").collect(Collectors.toList())));
+    }
 }
