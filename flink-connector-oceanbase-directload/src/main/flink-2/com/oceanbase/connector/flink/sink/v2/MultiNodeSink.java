@@ -1,0 +1,54 @@
+/*
+ * Copyright 2024 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.oceanbase.connector.flink.sink.v2;
+
+import com.oceanbase.connector.flink.OBDirectLoadConnectorOptions;
+import com.oceanbase.connector.flink.table.RecordSerializationSchema;
+
+import org.apache.flink.api.connector.sink2.Committer;
+import org.apache.flink.api.connector.sink2.CommitterInitContext;
+import org.apache.flink.api.connector.sink2.CommittingSinkWriter;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.api.connector.sink2.SupportsCommitter;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
+import org.apache.flink.streaming.api.connector.sink2.SupportsPostCommitTopology;
+import org.apache.flink.table.data.RowData;
+
+import java.io.IOException;
+
+/** Direct-load Sink V2 implementation for Flink 2.x. */
+public class MultiNodeSink extends MultiNodeSinkSupport
+        implements Sink<RowData>, SupportsCommitter<String>, SupportsPostCommitTopology<String> {
+
+    public MultiNodeSink(
+            String executionId,
+            OBDirectLoadConnectorOptions connectorOptions,
+            RecordSerializationSchema<RowData> recordSerializer) {
+        super(executionId, connectorOptions, recordSerializer);
+    }
+
+    @Override
+    public CommittingSinkWriter<RowData, String> createWriter(WriterInitContext context)
+            throws IOException {
+        return createWriterInternal();
+    }
+
+    @Override
+    public Committer<String> createCommitter(CommitterInitContext context) throws IOException {
+        return createCommitterInternal();
+    }
+}

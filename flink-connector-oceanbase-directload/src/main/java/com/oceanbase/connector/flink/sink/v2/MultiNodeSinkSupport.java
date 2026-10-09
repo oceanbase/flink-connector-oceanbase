@@ -20,30 +20,23 @@ import com.oceanbase.connector.flink.OBDirectLoadConnectorOptions;
 import com.oceanbase.connector.flink.table.RecordSerializationSchema;
 
 import org.apache.flink.api.connector.sink2.Committer;
-import org.apache.flink.api.connector.sink2.Sink;
-import org.apache.flink.api.connector.sink2.TwoPhaseCommittingSink;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.streaming.api.connector.sink2.CommittableMessage;
-import org.apache.flink.streaming.api.connector.sink2.WithPostCommitTopology;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.data.RowData;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
+import java.io.Serializable;
 
-/** The direct-load sink. see {@link Sink}. */
-public class MultiNodeSink
-        implements TwoPhaseCommittingSink<RowData, String>,
-                WithPostCommitTopology<RowData, String> {
-    private static final Logger LOG = LoggerFactory.getLogger(MultiNodeSink.class);
+abstract class MultiNodeSinkSupport implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String executionId;
     private final OBDirectLoadConnectorOptions connectorOptions;
     private final RecordSerializationSchema<RowData> recordSerializer;
 
-    public MultiNodeSink(
+    protected MultiNodeSinkSupport(
             String executionId,
             OBDirectLoadConnectorOptions connectorOptions,
             RecordSerializationSchema<RowData> recordSerializer) {
@@ -52,24 +45,19 @@ public class MultiNodeSink
         this.recordSerializer = recordSerializer;
     }
 
-    @Override
-    public PrecommittingSinkWriter<RowData, String> createWriter(InitContext context)
-            throws IOException {
+    protected final MultiNodeWriter createWriterInternal() {
         return new MultiNodeWriter(executionId, connectorOptions, recordSerializer);
     }
 
-    @Override
-    public Committer<String> createCommitter() throws IOException {
+    protected final Committer<String> createCommitterInternal() throws IOException {
         return new NoOPCommiter(executionId, connectorOptions);
     }
 
-    @Override
-    public SimpleVersionedSerializer<String> getCommittableSerializer() {
+    public final SimpleVersionedSerializer<String> getCommittableSerializer() {
         return new NoOpSerializer();
     }
 
-    @Override
-    public void addPostCommitTopology(DataStream<CommittableMessage<String>> commits) {
+    public final void addPostCommitTopology(DataStream<CommittableMessage<String>> commits) {
         commits.rebalance()
                 .sinkTo(new GlobalCommiter(executionId, connectorOptions))
                 .setParallelism(1)

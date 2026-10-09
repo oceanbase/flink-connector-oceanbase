@@ -12,8 +12,33 @@
 
 运行环境需要准备
 
-- JDK 8
-- Flink 1.15 或后续版本
+- Flink 1.15–1.20：JDK 8
+- Flink 2.0–2.3：JDK 17
+
+OceanBase Connector 和 OceanBase Direct Load Connector 为 Flink 2.x 提供独立制品，避免影响 Flink 1.x 制品的二进制兼容性。可使用以下命令构建 Flink 2.x SQL Connector：
+
+```shell
+mvn -pl flink-sql-connector-oceanbase-flink2,flink-sql-connector-oceanbase-directload-flink2 \
+    -am clean package -Pflink-2 -DskipTests
+```
+
+生成的制品分别为 `flink-sql-connector-oceanbase-flink2` 和
+`flink-sql-connector-oceanbase-directload-flink2`；不带 `-flink2` 后缀的制品继续兼容 Flink 1.x。
+
+Flink 2.x 制品会持续在当前各版本线的最新补丁版本上进行测试：2.0.2、2.1.3、2.2.1 和
+2.3.0。默认使用 Flink 2.0.2 构建；如需针对其他受支持的 Flink 2.x 版本构建和测试，可覆盖
+`flink2.version`，例如：
+
+```shell
+mvn -pl flink-sql-connector-oceanbase-flink2,flink-sql-connector-oceanbase-directload-flink2 \
+    -am clean package -Pflink-2 -Dflink2.version=2.3.0
+```
+
+Flink 1.x 以及全量 Connector 仍使用默认的 JDK 8 构建方式：
+
+```shell
+mvn clean package -DskipTests
+```
 
 本仓库提供了如下 Connector：
 

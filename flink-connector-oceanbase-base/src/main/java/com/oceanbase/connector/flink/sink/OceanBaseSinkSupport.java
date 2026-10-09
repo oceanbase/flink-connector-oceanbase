@@ -21,10 +21,12 @@ import com.oceanbase.connector.flink.table.DataChangeRecord;
 import com.oceanbase.connector.flink.table.RecordSerializationSchema;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
+import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 
-public class OceanBaseSink<T> implements Sink<T> {
+import java.io.Serializable;
+
+abstract class OceanBaseSinkSupport<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -34,7 +36,7 @@ public class OceanBaseSink<T> implements Sink<T> {
     private final DataChangeRecord.KeyExtractor keyExtractor;
     private final RecordFlusher recordFlusher;
 
-    public OceanBaseSink(
+    protected OceanBaseSinkSupport(
             ConnectorOptions options,
             TypeSerializer<T> typeSerializer,
             RecordSerializationSchema<T> recordSerializer,
@@ -47,9 +49,14 @@ public class OceanBaseSink<T> implements Sink<T> {
         this.recordFlusher = recordFlusher;
     }
 
-    @Override
-    public SinkWriter<T> createWriter(InitContext context) {
+    protected final SinkWriter<T> createWriterInternal(
+            SinkWriterMetricGroup metricGroup, TypeSerializer<T> inputSerializer) {
         return new OceanBaseWriter<>(
-                options, context, typeSerializer, recordSerializer, keyExtractor, recordFlusher);
+                options,
+                metricGroup,
+                typeSerializer == null ? inputSerializer : typeSerializer,
+                recordSerializer,
+                keyExtractor,
+                recordFlusher);
     }
 }

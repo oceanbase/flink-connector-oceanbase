@@ -32,7 +32,7 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithParallelism() {
         // Test with parallelism set
         AbstractDynamicTableSink.SinkProvider providerWithParallelism =
-                new AbstractDynamicTableSink.SinkProvider(typeSerializer -> null, 4);
+                new AbstractDynamicTableSink.SinkProvider(() -> null, 4);
 
         Optional<Integer> parallelism = providerWithParallelism.getParallelism();
         assertTrue(parallelism.isPresent());
@@ -43,7 +43,7 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithoutParallelism() {
         // Test without parallelism set (null)
         AbstractDynamicTableSink.SinkProvider providerWithoutParallelism =
-                new AbstractDynamicTableSink.SinkProvider(typeSerializer -> null, null);
+                new AbstractDynamicTableSink.SinkProvider(() -> null, null);
 
         Optional<Integer> parallelism = providerWithoutParallelism.getParallelism();
         assertFalse(parallelism.isPresent());
@@ -53,9 +53,9 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithInvalidParallelism() {
         assertThrows(
                 IllegalStateException.class,
-                () -> new AbstractDynamicTableSink.SinkProvider(typeSerializer -> null, 0));
+                () -> new AbstractDynamicTableSink.SinkProvider(() -> null, 0));
         assertThrows(
                 IllegalStateException.class,
-                () -> new AbstractDynamicTableSink.SinkProvider(typeSerializer -> null, -1));
+                () -> new AbstractDynamicTableSink.SinkProvider(() -> null, -1));
     }
 }

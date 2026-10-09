@@ -26,8 +26,6 @@ import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.types.RowKind;
 
-import org.apache.flink.shaded.guava31.com.google.common.collect.Lists;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +33,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -132,7 +131,7 @@ public class OceanBaseRowDataSerializationSchema
 
         result.append("[");
         LogicalType lt = ((ArrayType) type).getElementType();
-        List<Object> data = Lists.newArrayList((arrayData).toObjectArray(lt));
+        List<Object> data = Arrays.asList(arrayData.toObjectArray(lt));
         if (LogicalTypeRoot.ARRAY.equals(lt.getTypeRoot())) {
             // traversal of the nested array
             for (int i = 0; i < data.size(); i++) {

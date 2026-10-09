@@ -16,7 +16,6 @@
 
 package com.oceanbase.connector.flink.sink;
 
-import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -27,7 +26,7 @@ import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
-import org.apache.flink.util.function.SerializableFunction;
+import org.apache.flink.util.function.SerializableSupplier;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -63,12 +62,10 @@ public abstract class AbstractDynamicTableSink implements DynamicTableSink {
 
         private static final long serialVersionUID = 1L;
 
-        private final SerializableFunction<TypeSerializer<RowData>, Sink<RowData>> sinkSupplier;
+        private final SerializableSupplier<Sink<RowData>> sinkSupplier;
         private final Integer parallelism;
 
-        public SinkProvider(
-                SerializableFunction<TypeSerializer<RowData>, Sink<RowData>> sinkSupplier,
-                Integer parallelism) {
+        public SinkProvider(SerializableSupplier<Sink<RowData>> sinkSupplier, Integer parallelism) {
             checkState(
                     parallelism == null || parallelism > 0,
                     "sink.parallelism must be a positive integer, but got: %s",
@@ -85,14 +82,7 @@ public abstract class AbstractDynamicTableSink implements DynamicTableSink {
         @Override
         public DataStreamSink<?> consumeDataStream(
                 ProviderContext providerContext, DataStream<RowData> dataStream) {
-            final boolean objectReuse =
-                    dataStream.getExecutionEnvironment().getConfig().isObjectReuseEnabled();
-            TypeSerializer<RowData> typeSerializer =
-                    objectReuse
-                            ? dataStream.getType().createSerializer(dataStream.getExecutionConfig())
-                            : null;
-            DataStreamSink<?> dataStreamSink =
-                    dataStream.sinkTo(sinkSupplier.apply(typeSerializer));
+            DataStreamSink<?> dataStreamSink = dataStream.sinkTo(sinkSupplier.get());
             if (parallelism != null) {
                 dataStreamSink.setParallelism(parallelism);
             }

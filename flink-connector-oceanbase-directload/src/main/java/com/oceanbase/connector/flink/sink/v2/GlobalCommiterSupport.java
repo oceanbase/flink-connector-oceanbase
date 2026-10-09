@@ -20,24 +20,26 @@ import com.oceanbase.connector.flink.OBDirectLoadConnectorOptions;
 import com.oceanbase.connector.flink.directload.DirectLoadUtils;
 import com.oceanbase.connector.flink.directload.DirectLoader;
 
-import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.streaming.api.connector.sink2.CommittableMessage;
 
 import java.io.IOException;
+import java.io.Serializable;
 
-public class GlobalCommiter implements Sink<CommittableMessage<String>> {
+abstract class GlobalCommiterSupport implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final String executionId;
     private final OBDirectLoadConnectorOptions connectorOptions;
 
-    public GlobalCommiter(String executionId, OBDirectLoadConnectorOptions connectorOptions) {
+    protected GlobalCommiterSupport(
+            String executionId, OBDirectLoadConnectorOptions connectorOptions) {
         this.executionId = executionId;
         this.connectorOptions = connectorOptions;
     }
 
-    @Override
-    public SinkWriter<CommittableMessage<String>> createWriter(InitContext context)
-            throws IOException {
+    protected final SinkWriter<CommittableMessage<String>> createWriterInternal() {
         return new GlobalCommiterWriter(executionId, connectorOptions);
     }
 }
@@ -61,8 +63,12 @@ class GlobalCommiterWriter implements SinkWriter<CommittableMessage<String>> {
         if (endOfInput) {
             DirectLoader directLoader =
                     DirectLoadUtils.buildDirectLoaderFromConnOption(connectorOptions, executionId);
-            directLoader.begin();
-            directLoader.commit();
+            try {
+                directLoader.begin();
+                directLoader.commit();
+            } finally {
+                directLoader.close();
+            }
         }
     }
 

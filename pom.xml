@@ -48,6 +48,7 @@ under the License.
         <revision>1.7-SNAPSHOT</revision>
         <flink.version>1.18.0</flink.version>
         <flink.major.version>1.18</flink.major.version>
+        <flink2.version>2.0.2</flink2.version>
         <scala.binary.version>2.12</scala.binary.version>
         <shaded.prefix>com.oceanbase.connector.flink.shaded</shaded.prefix>
         <!-- CLI Dependencies -->
@@ -183,6 +184,15 @@ under the License.
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -381,6 +391,7 @@ under the License.
             </plugin>
         </plugins>
     </build>
+
     <inceptionYear>2023</inceptionYear>
 
     <organization>
@@ -441,5 +452,18 @@ under the License.
             <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>flink-2</id>
+            <modules>
+                <module>flink-connector-oceanbase-base-flink2</module>
+                <module>flink-connector-oceanbase-flink2</module>
+                <module>flink-connector-oceanbase-directload-flink2</module>
+                <module>flink-sql-connector-oceanbase-flink2</module>
+                <module>flink-sql-connector-oceanbase-directload-flink2</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

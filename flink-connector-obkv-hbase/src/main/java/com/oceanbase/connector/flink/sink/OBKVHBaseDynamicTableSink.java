@@ -38,10 +38,10 @@ public class OBKVHBaseDynamicTableSink extends AbstractDynamicTableSink {
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
         return new SinkProvider(
-                typeSerializer ->
+                () ->
                         new OceanBaseSink<>(
                                 connectorOptions,
-                                typeSerializer,
+                                null,
                                 new OBKVHBaseRowDataSerializationSchema(
                                         new HTableInfo(
                                                 new TableId(
