@@ -43,13 +43,18 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 public class OceanBaseSinkCompatibilityTest {
 
     @Test
-    public void testUsesInputSerializerWhenObjectReuseIsEnabled() throws Exception {
+    public void testUsesVersionCompatibleSerializerWhenObjectReuseIsEnabled() throws Exception {
         AtomicInteger serializerRequests = new AtomicInteger();
         SinkWriter<Integer> writer =
                 createWriter(null, true, IntSerializer.INSTANCE, serializerRequests);
 
-        assertSame(IntSerializer.INSTANCE, getTypeSerializer(writer));
-        assertEquals(1, serializerRequests.get());
+        if (usesWriterInitContext()) {
+            assertSame(IntSerializer.INSTANCE, getTypeSerializer(writer));
+            assertEquals(1, serializerRequests.get());
+        } else {
+            assertNull(getTypeSerializer(writer));
+            assertEquals(0, serializerRequests.get());
+        }
         writer.close();
     }
 
@@ -71,7 +76,7 @@ public class OceanBaseSinkCompatibilityTest {
                 createWriter(IntSerializer.INSTANCE, true, null, serializerRequests);
 
         assertSame(IntSerializer.INSTANCE, getTypeSerializer(writer));
-        assertEquals(1, serializerRequests.get());
+        assertEquals(usesWriterInitContext() ? 1 : 0, serializerRequests.get());
         writer.close();
     }
 
@@ -141,6 +146,10 @@ public class OceanBaseSinkCompatibilityTest {
         } catch (ClassNotFoundException ignored) {
             return Class.forName("org.apache.flink.api.connector.sink2.Sink$InitContext");
         }
+    }
+
+    private static boolean usesWriterInitContext() throws ClassNotFoundException {
+        return getWriterContextClass().getName().endsWith("WriterInitContext");
     }
 
     private static TypeSerializer<?> getTypeSerializer(SinkWriter<?> writer) throws Exception {

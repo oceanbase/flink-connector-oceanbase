@@ -16,12 +16,23 @@
 
 package com.oceanbase.connector.flink.sink;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,7 +43,7 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithParallelism() {
         // Test with parallelism set
         AbstractDynamicTableSink.SinkProvider providerWithParallelism =
-                new AbstractDynamicTableSink.SinkProvider(() -> null, 4);
+                new AbstractDynamicTableSink.SinkProvider(ignored -> null, 4);
 
         Optional<Integer> parallelism = providerWithParallelism.getParallelism();
         assertTrue(parallelism.isPresent());
@@ -43,7 +54,7 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithoutParallelism() {
         // Test without parallelism set (null)
         AbstractDynamicTableSink.SinkProvider providerWithoutParallelism =
-                new AbstractDynamicTableSink.SinkProvider(() -> null, null);
+                new AbstractDynamicTableSink.SinkProvider(ignored -> null, null);
 
         Optional<Integer> parallelism = providerWithoutParallelism.getParallelism();
         assertFalse(parallelism.isPresent());
@@ -53,9 +64,56 @@ public class AbstractDynamicTableSinkTest {
     public void testSinkProviderWithInvalidParallelism() {
         assertThrows(
                 IllegalStateException.class,
-                () -> new AbstractDynamicTableSink.SinkProvider(() -> null, 0));
+                () -> new AbstractDynamicTableSink.SinkProvider(ignored -> null, 0));
         assertThrows(
                 IllegalStateException.class,
-                () -> new AbstractDynamicTableSink.SinkProvider(() -> null, -1));
+                () -> new AbstractDynamicTableSink.SinkProvider(ignored -> null, -1));
     }
+
+    @Test
+    public void testSinkProviderCreatesSerializerWhenObjectReuseIsEnabled() {
+        StreamExecutionEnvironment environment =
+                StreamExecutionEnvironment.getExecutionEnvironment();
+        environment.getConfig().enableObjectReuse();
+        DataStream<RowData> dataStream = createDataStream(environment);
+        AtomicReference<TypeSerializer<RowData>> serializer = new AtomicReference<>();
+        AbstractDynamicTableSink.SinkProvider provider =
+                new AbstractDynamicTableSink.SinkProvider(
+                        value -> {
+                            serializer.set(value);
+                            throw new ExpectedException();
+                        },
+                        null);
+
+        assertThrows(ExpectedException.class, () -> provider.consumeDataStream(null, dataStream));
+        assertNotNull(serializer.get());
+    }
+
+    @Test
+    public void testSinkProviderSkipsSerializerWhenObjectReuseIsDisabled() {
+        StreamExecutionEnvironment environment =
+                StreamExecutionEnvironment.getExecutionEnvironment();
+        DataStream<RowData> dataStream = createDataStream(environment);
+        AtomicReference<TypeSerializer<RowData>> serializer = new AtomicReference<>();
+        AbstractDynamicTableSink.SinkProvider provider =
+                new AbstractDynamicTableSink.SinkProvider(
+                        value -> {
+                            serializer.set(value);
+                            throw new ExpectedException();
+                        },
+                        null);
+
+        assertThrows(ExpectedException.class, () -> provider.consumeDataStream(null, dataStream));
+        assertNull(serializer.get());
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static DataStream<RowData> createDataStream(StreamExecutionEnvironment environment) {
+        TypeInformation<RowData> typeInformation =
+                (TypeInformation) TypeInformation.of(GenericRowData.class);
+        return environment.fromCollection(
+                Collections.<RowData>singletonList(GenericRowData.of(1)), typeInformation);
+    }
+
+    private static class ExpectedException extends RuntimeException {}
 }

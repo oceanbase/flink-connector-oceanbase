@@ -40,8 +40,6 @@ public class OceanBaseSink<T> extends OceanBaseSinkSupport<T> implements Sink<T>
 
     @Override
     public SinkWriter<T> createWriter(InitContext context) {
-        return createWriterInternal(
-                context.metricGroup(),
-                context.isObjectReuseEnabled() ? context.createInputSerializer() : null);
+        return createWriterInternal(context.metricGroup(), null);
     }
 }

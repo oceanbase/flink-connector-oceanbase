@@ -48,10 +48,10 @@ public class OceanBaseDynamicTableSink extends AbstractDynamicTableSink {
         OceanBaseRecordFlusher recordFlusher =
                 new OceanBaseRecordFlusher(connectorOptions, connectionProvider);
         return new SinkProvider(
-                () ->
+                typeSerializer ->
                         new OceanBaseSink<>(
                                 connectorOptions,
-                                null,
+                                typeSerializer,
                                 new OceanBaseRowDataSerializationSchema(
                                         new TableInfo(tableId, physicalSchema)),
                                 DataChangeRecord.KeyExtractor.simple(),
