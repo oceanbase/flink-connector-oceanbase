@@ -88,9 +88,7 @@ public abstract class AbstractDynamicTableSink implements DynamicTableSink {
             final boolean objectReuse =
                     dataStream.getExecutionEnvironment().getConfig().isObjectReuseEnabled();
             TypeSerializer<RowData> typeSerializer =
-                    objectReuse
-                            ? dataStream.getType().createSerializer(dataStream.getExecutionConfig())
-                            : null;
+                    objectReuse ? SinkTypeSerializerProvider.create(dataStream) : null;
             DataStreamSink<?> dataStreamSink =
                     dataStream.sinkTo(sinkSupplier.apply(typeSerializer));
             if (parallelism != null) {

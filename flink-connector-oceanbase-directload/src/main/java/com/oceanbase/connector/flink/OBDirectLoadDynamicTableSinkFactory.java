@@ -81,12 +81,15 @@ public class OBDirectLoadDynamicTableSinkFactory implements DynamicTableSinkFact
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
         options.add(OBDirectLoadConnectorOptions.PARALLEL);
+        options.add(OBDirectLoadConnectorOptions.WRITE_CONNECTION_NUM);
         options.add(OBDirectLoadConnectorOptions.MAX_ERROR_ROWS);
         options.add(OBDirectLoadConnectorOptions.DUP_ACTION);
         options.add(OBDirectLoadConnectorOptions.TIMEOUT);
         options.add(OBDirectLoadConnectorOptions.HEARTBEAT_TIMEOUT);
+        options.add(OBDirectLoadConnectorOptions.HEARTBEAT_INTERVAL);
         options.add(OBDirectLoadConnectorOptions.LOAD_METHOD);
         options.add(OBDirectLoadConnectorOptions.BUFFER_SIZE);
+        options.add(OBDirectLoadConnectorOptions.BOUNDED_MODE_ENABLED);
         return options;
     }
 }

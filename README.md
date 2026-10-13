@@ -12,8 +12,36 @@ This repository contains the OceanBase connectors for Apache Flink.
 
 Prerequisites
 
-- JDK 8
-- Flink 1.15 or later version
+- Flink 1.15–1.20: JDK 8
+- Flink 2.0–2.3: JDK 17
+
+The OceanBase and OceanBase Direct Load connectors provide separate Flink 2.x artifacts so that
+their Flink 1.x artifacts remain binary compatible. Build the Flink 2.x SQL connector artifacts
+with:
+
+```shell
+mvn -pl flink-sql-connector-oceanbase-flink2,flink-sql-connector-oceanbase-directload-flink2 \
+    -am clean package -Pflink-2 -DskipTests
+```
+
+The generated artifacts are `flink-sql-connector-oceanbase-flink2` and
+`flink-sql-connector-oceanbase-directload-flink2`. The artifacts without the `-flink2` suffix
+remain compatible with Flink 1.x.
+
+The Flink 2.x artifacts are tested against the latest patch releases of every currently supported
+minor line: 2.0.2, 2.1.3, 2.2.1, and 2.3.0. The default build targets Flink 2.0.2. To build and
+test against another supported Flink 2.x version, override `flink2.version`, for example:
+
+```shell
+mvn -pl flink-sql-connector-oceanbase-flink2,flink-sql-connector-oceanbase-directload-flink2 \
+    -am clean package -Pflink-2 -Dflink2.version=2.3.0
+```
+
+For Flink 1.x and all connectors, use the default JDK 8 build:
+
+```shell
+mvn clean package -DskipTests
+```
 
 This repository contains connectors as following:
 

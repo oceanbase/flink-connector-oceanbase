@@ -17,7 +17,8 @@
 package com.oceanbase.connector.flink.source;
 
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableResult;
@@ -38,6 +39,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -134,7 +136,7 @@ public class OceanBaseSourceFailoverITCase extends OceanBaseSourceTestBase {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(parallelism);
         env.enableCheckpointing(200L);
-        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
+        configureFixedDelayRestart(env);
 
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(
@@ -178,7 +180,7 @@ public class OceanBaseSourceFailoverITCase extends OceanBaseSourceTestBase {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(parallelism);
         env.enableCheckpointing(200L);
-        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
+        configureFixedDelayRestart(env);
 
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(
@@ -214,6 +216,14 @@ public class OceanBaseSourceFailoverITCase extends OceanBaseSourceTestBase {
             List<String> rows = fetchRows(iterator, EXPECTED_ROW_COUNT);
             assertStringPkExactlyOnce(rows);
         }
+    }
+
+    private static void configureFixedDelayRestart(StreamExecutionEnvironment env) {
+        Configuration configuration = new Configuration();
+        configuration.set(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
+        configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 1);
+        configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ZERO);
+        env.configure(configuration);
     }
 
     private static List<String> fetchRows(Iterator<Row> iter, int size) {
